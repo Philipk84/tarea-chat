@@ -4,3 +4,45 @@
  * This is a general purpose Gradle build.
  * Learn more about Gradle by exploring our Samples at https://docs.gradle.org/9.0.0/samples
  */
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.chatapp'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.google.code.gson:gson:2.10.1'
+}
+
+application {
+    // Clase principal
+    mainClass = 'com.chatapp.Main'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+// ⚙️ Esto genera un JAR ejecutable con todas las dependencias
+tasks.named('jar') {
+    manifest {
+        attributes(
+            'Main-Class': application.mainClass.get()
+        )
+    }
+
+    // Incluye dependencias dentro del JAR
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
