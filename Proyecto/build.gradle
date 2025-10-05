@@ -4,45 +4,36 @@
  * This is a general purpose Gradle build.
  * Learn more about Gradle by exploring our Samples at https://docs.gradle.org/9.0.0/samples
  */
-plugins {
-    id 'java'
-    id 'application'
-}
 
-group = 'com.chatapp'
-version = '1.0.0'
+subprojects {
+    //
+    // Apply Java and Ice Builder plug-ins to all sub-projects
+    //
+    apply plugin: 'java'
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    implementation 'com.google.code.gson:gson:2.10.1'
-}
-
-application {
-    // Clase principal
-    mainClass = 'com.chatapp.Main'
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-}
-
-// ⚙️ Esto genera un JAR ejecutable con todas las dependencias
-tasks.named('jar') {
-    manifest {
-        attributes(
-            'Main-Class': application.mainClass.get()
-        )
+    //
+    // Use Ice JAR files from maven central repository
+    //
+    repositories {
+        mavenCentral()
     }
 
-    // Incluye dependencias dentro del JAR
-    from {
-        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    //
+    // Both Client and Server depend only on Ice JAR
+    //
+    dependencies {
+        implementation 'com.google.code.gson:gson:2.13.2'
     }
 
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    //
+    // Create a JAR file with the appropriate Main-Class and Class-Path attributes
+    //
+    jar {
+        manifest {
+            attributes(
+                "Main-Class": project.name.capitalize(),
+                "Class-Path": configurations.runtimeClasspath.resolve().collect { it.toURI() }.join(' ')
+            )
+        }
+    }
 }

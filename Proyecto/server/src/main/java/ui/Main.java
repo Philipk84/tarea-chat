@@ -2,6 +2,7 @@ package ui;
 
 import controller.Controller;
 import java.util.Scanner;
+import java.util.InputMismatchException;
 
 public class Main {
     private Scanner sc;

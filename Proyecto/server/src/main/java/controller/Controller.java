@@ -1,6 +1,9 @@
 package controller;
 
 import model.*;
+import com.google.gson.Gson;
+import java.io.FileReader;
+import java.io.IOException;
 
 public class Controller {
     private Gson gson;
@@ -9,8 +12,12 @@ public class Controller {
 
     public Controller() {
         this.gson = new Gson();
-        this.config = gson.fromJson(new FileReader("config.json"), Config.class);
-        this.server = Server.getInstance(config);
+        try {
+            this.config = gson.fromJson(new FileReader("config.json"), Config.class);
+            this.server = Server.getInstance(config);
+        } catch (Exception e) {
+            throw new RuntimeException("Error initializing controller", e);
+        }
     }
 
     public String startServer () {

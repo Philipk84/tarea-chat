@@ -1,9 +1,9 @@
-package model.server;
+package model;
 
-import model.Config;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.*;
 
 public class Server {
     // Singleton
