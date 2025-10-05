@@ -14,7 +14,10 @@ public class Controller {
     }
 
     public String startServer () {
-        server.startServer();
-        return "Servidor Iniciado en " + config.getHost() + " : " + config.getPort();
+        return server.startServer();
+    }
+
+    public String closeServer () {
+        return server.closeServer();
     }
 }

@@ -27,13 +27,15 @@ public class Main {
             + "\n============================="
             + "\nSeleccione un modo:"
             + "\n1. Iniciar servidor"
-            + "\n2. Iniciar cliente"
+            + "\n2. Cerrar servidor"
+            + "\n3. Iniciar cliente"
             + "\n0. Salir");
 
             try{
                 switch (sc.nextInt()) {
                     case 1 -> startServer();
-                    case 2 -> ChatClient.startClient();
+                    case 2 -> closeServer();
+                    case 3 -> ChatClient.startClient();
                     case 0 -> {
                         System.out.println("Saliendo...");
                         exit = true;
@@ -49,5 +51,9 @@ public class Main {
 
     private void startServer() {
         System.out.println(controller.startServer());
+    }
+
+    private void closeServer() {
+        System.out.println(controller.closeServer());
     }
 }

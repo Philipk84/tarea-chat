@@ -1,7 +1,9 @@
 package model.server;
 
+import model.Config;
 import java.io.*;
 import java.net.*;
+import java.util.*;
 
 public class ChatServer {
     // Singleton
@@ -11,47 +13,58 @@ public class ChatServer {
     private Map<SocketAddress, String> clients;
     private byte[] receiveData;
     private BufferedReader reader;
+    private DatagramPacket packet;
+    private Config config;
+    private ExecutorService pool;
+    private Thread receiveThread;
     
-    private ChatServer (Config config) {
-        this.socket = new DatagramSocket(
-                config.getPort(), InetAddress.getByName(config.getHost())
-        );
+    private ChatServer (Config config) throws SocketException, UnknownHostException {
+        this.config = config;
+
+        this.receiveData = new byte[256];
+        
         this.pool = Executors.newFixedThreadPool(10);
         this.clients = new ConcurrentHashMap<>();
-        this.receiveData = new byte[256];
-        this.reader = new BufferedReader(new InputStreamReader(System.in));
+
+        this.socket = new DatagramSocket(config.getPort(), InetAddress.getByName(config.getHost()));
+        this.packet = new DatagramPacket(receiveData, receiveData.length);
     }
 
-    public static ChatServer getInstance(Config config) {
+    public static ChatServer getInstance(Config config) throws SocketException, UnknownHostException {
         if (instance == null) {
             instance = new ChatServer(config);
         }
         return instance;
     }
 
-    private void startServer() {
-        try {
-            inicializeConfig();
-
-            ExecutorService pool = Executors.newFixedThreadPool(10);
-            Map<SocketAddress, String> clients = new ConcurrentHashMap<>();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-            while (true) {
-                Socket socket = serverSocket.accept();
-                System.out.println("Cliente conectado: " + socket.getInetAddress());
-
-                ClientHandler clientHandler = new ClientHandler(socket, clients);
-                clients.add(clientHandler);
-                new Thread(clientHandler).start();
+    public String startServer() {
+        receiveThread = new Thread(() -> {
+            while (!socket.isClosed()) {
+                try { 
+                    socket.receive(packet);
+                    pool.submit(new ClientHandler(packet, socket, clients));
+                } catch (Exception e) {
+                    if (!socket.isClosed()) e.printStackTrace();
+                }
             }
-        } catch (IOException e) {
-            System.err.println("Error en el servidor: " + e.getMessage());
+        });
+        receiveThread.start();
+        return "Servidor Iniciado en " + config.getHost() + " : " + config.getPort();
+    }
+
+    public String closeServer() {
+        try {
+            socket.close();
+            pool.shutdownNow();
+            
+            // Esperar a que el hilo termine
+            if (receiveThread != null && receiveThread.isAlive()) {
+                receiveThread.join(5000); // Espera máximo 5 segundos
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.err.println("Interrupción durante el cierre del servidor: " + e.getMessage());
         }
+        return "Servidor detenido.";
     }
 }
