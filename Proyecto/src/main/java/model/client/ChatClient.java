@@ -1,6 +1,5 @@
-package com.chatapp.client;
+package model.client;
 
-import com.chatapp.common.Message;
 import java.io.*;
 import java.net.*;
 import java.util.Scanner;
@@ -12,9 +11,9 @@ public class ChatClient {
 
     public static void startClient() {
         try (Socket socket = new Socket(SERVER_IP, SERVER_PORT);
-             ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
-             ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
-             Scanner scanner = new Scanner(System.in)) {
+            ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
+            Scanner scanner = new Scanner(System.in)) {
 
             System.out.print("Ingrese su nombre: ");
             String name = scanner.nextLine();

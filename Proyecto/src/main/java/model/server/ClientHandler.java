@@ -1,9 +1,8 @@
-package com.chatapp.server;
+package model.server;
 
-import com.chatapp.common.Message;
+import model.Message;
 import java.io.*;
-import java.net.Socket;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.net.*;
 
 public class ClientHandler implements Runnable {
 
