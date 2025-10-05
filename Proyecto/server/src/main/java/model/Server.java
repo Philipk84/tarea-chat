@@ -5,9 +5,9 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-public class ChatServer {
+public class Server {
     // Singleton
-    private static ChatServer instance;
+    private static Server instance;
 
     private DatagramSocket socket;
     private Map<SocketAddress, String> clients;
@@ -18,7 +18,7 @@ public class ChatServer {
     private ExecutorService pool;
     private Thread receiveThread;
     
-    private ChatServer (Config config) throws SocketException, UnknownHostException {
+    private Server (Config config) throws SocketException, UnknownHostException {
         this.config = config;
 
         this.receiveData = new byte[256];
@@ -30,9 +30,9 @@ public class ChatServer {
         this.packet = new DatagramPacket(receiveData, receiveData.length);
     }
 
-    public static ChatServer getInstance(Config config) throws SocketException, UnknownHostException {
+    public static Server getInstance(Config config) throws SocketException, UnknownHostException {
         if (instance == null) {
-            instance = new ChatServer(config);
+            instance = new Server(config);
         }
         return instance;
     }
@@ -57,14 +57,13 @@ public class ChatServer {
             socket.close();
             pool.shutdownNow();
             
-            // Esperar a que el hilo termine
             if (receiveThread != null && receiveThread.isAlive()) {
-                receiveThread.join(5000); // Espera máximo 5 segundos
+                receiveThread.join(5000);
             }
+            return "Servidor Cerrado";
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            System.err.println("Interrupción durante el cierre del servidor: " + e.getMessage());
+            return "Interrupción durante el cierre del servidor: " + e.getMessage();
         }
-        return "Servidor detenido.";
     }
 }

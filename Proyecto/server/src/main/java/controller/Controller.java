@@ -5,12 +5,12 @@ import model.*;
 public class Controller {
     private Gson gson;
     private Config config;
-    private ChatServer server;
+    private Server server;
 
     public Controller() {
         this.gson = new Gson();
         this.config = gson.fromJson(new FileReader("config.json"), Config.class);
-        this.server = ChatServer.getInstance(config);
+        this.server = Server.getInstance(config);
     }
 
     public String startServer () {
