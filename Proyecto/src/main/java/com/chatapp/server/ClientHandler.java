@@ -1,8 +1,9 @@
 package com.chatapp.server;
 
-import com.chatapp.common.Message;
 import java.io.*;
 import java.net.Socket;
+import java.util.Scanner;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ClientHandler implements Runnable {
@@ -11,11 +12,14 @@ public class ClientHandler implements Runnable {
     private ObjectInputStream input;
     private ObjectOutputStream output;
     private CopyOnWriteArrayList<ClientHandler> clients;
-    private String clientName;
+    private ConcurrentHashMap<String, Group> groups;
+    private String name;
 
-    public ClientHandler(Socket socket, CopyOnWriteArrayList<ClientHandler> clients) {
+    public ClientHandler(Socket socket, CopyOnWriteArrayList<ClientHandler> clients,
+                         ConcurrentHashMap<String, Group> groups) {
         this.socket = socket;
         this.clients = clients;
+        this.groups = groups;
     }
 
     @Override
@@ -23,33 +27,97 @@ public class ClientHandler implements Runnable {
         try {
             output = new ObjectOutputStream(socket.getOutputStream());
             input = new ObjectInputStream(socket.getInputStream());
+            name = (String) input.readObject();
 
-            // El cliente envía su nombre al conectarse
-            clientName = (String) input.readObject();
-            System.out.println("Usuario conectado: " + clientName);
+            sendMessage("Bienvenido, " + name + "!");
+            showMenu();
 
-            Message message;
-            while ((message = (Message) input.readObject()) != null) {
-                System.out.println("[" + clientName + "]: " + message.getContent());
-                broadcast(message);
+            while (true) {
+                String option = (String) input.readObject();
+                handleOption(option);
             }
 
-        } catch (IOException | ClassNotFoundException e) {
-            System.out.println("Cliente desconectado: " + clientName);
+        } catch (Exception e) {
+            System.out.println(name + " se ha desconectado.");
         } finally {
             clients.remove(this);
-            try {
-                socket.close();
-            } catch (IOException ignored) {}
+            try { socket.close(); } catch (IOException ignored) {}
         }
     }
 
-    private void broadcast(Message message) {
-        for (ClientHandler client : clients) {
-            try {
-                client.output.writeObject(message);
-                client.output.flush();
-            } catch (IOException ignored) {}
+    private void showMenu() throws IOException {
+        sendMessage("\n=== MENÚ PRINCIPAL ===");
+        sendMessage("1. Crear grupo");
+        sendMessage("2. Enviar mensaje privado");
+        sendMessage("3. Enviar mensaje a grupo");
+        sendMessage("4. Salir");
+        sendMessage("Seleccione una opción:");
+    }
+
+    private void handleOption(String option) throws IOException, ClassNotFoundException {
+        switch (option) {
+            case "1" -> createGroup();
+            case "2" -> sendPrivateMessage();
+            case "3" -> sendGroupMessage();
+            case "4" -> {
+                sendMessage("Desconectando...");
+                socket.close();
+            }
+            default -> sendMessage("Opción inválida.");
         }
+        showMenu();
+    }
+
+    private void createGroup() throws IOException, ClassNotFoundException {
+        sendMessage("Ingrese el nombre del grupo:");
+        String groupName = (String) input.readObject();
+
+        if (groups.containsKey(groupName)) {
+            sendMessage("El grupo ya existe.");
+        } else {
+            Group group = new Group(groupName);
+            group.addMember(this);
+            groups.put(groupName, group);
+            sendMessage("Grupo '" + groupName + "' creado correctamente.");
+        }
+    }
+
+    private void sendPrivateMessage() throws IOException, ClassNotFoundException {
+        sendMessage("Ingrese el nombre del usuario destinatario:");
+        String recipientName = (String) input.readObject();
+
+        sendMessage("Escriba su mensaje:");
+        String content = (String) input.readObject();
+
+        for (ClientHandler client : clients) {
+            if (client.name.equals(recipientName)) {
+                client.sendMessage("[Privado de " + name + "]: " + content);
+                return;
+            }
+        }
+        sendMessage("Usuario no encontrado.");
+    }
+
+    private void sendGroupMessage() throws IOException, ClassNotFoundException {
+        sendMessage("Ingrese el nombre del grupo:");
+        String groupName = (String) input.readObject();
+
+        if (!groups.containsKey(groupName)) {
+            sendMessage("El grupo no existe.");
+            return;
+        }
+
+        sendMessage("Escriba el mensaje para el grupo:");
+        String content = (String) input.readObject();
+
+        Group group = groups.get(groupName);
+        group.broadcast(content, name);
+    }
+
+    public void sendMessage(String message) {
+        try {
+            output.writeObject(message);
+            output.flush();
+        } catch (IOException ignored) {}
     }
 }

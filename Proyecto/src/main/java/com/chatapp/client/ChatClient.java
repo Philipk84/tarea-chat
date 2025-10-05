@@ -1,8 +1,7 @@
 package com.chatapp.client;
 
-import com.chatapp.common.Message;
 import java.io.*;
-import java.net.*;
+import java.net.Socket;
 import java.util.Scanner;
 
 public class ChatClient {
@@ -14,19 +13,18 @@ public class ChatClient {
         try (Socket socket = new Socket(SERVER_IP, SERVER_PORT);
              ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
              ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
-             Scanner scanner = new Scanner(System.in)) {
+             Scanner sc = new Scanner(System.in)) {
 
             System.out.print("Ingrese su nombre: ");
-            String name = scanner.nextLine();
+            String name = sc.nextLine();
             output.writeObject(name);
             output.flush();
 
-            // Hilo para escuchar mensajes
             Thread listener = new Thread(() -> {
                 try {
-                    Message msg;
-                    while ((msg = (Message) input.readObject()) != null) {
-                        System.out.println("[" + msg.getSender() + "]: " + msg.getContent());
+                    String msg;
+                    while ((msg = (String) input.readObject()) != null) {
+                        System.out.println(msg);
                     }
                 } catch (Exception e) {
                     System.out.println("Conexión cerrada.");
@@ -34,11 +32,9 @@ public class ChatClient {
             });
             listener.start();
 
-            // Bucle de envío de mensajes
             while (true) {
-                String content = scanner.nextLine();
-                Message msg = new Message(name, "ALL", content);
-                output.writeObject(msg);
+                String inputLine = sc.nextLine();
+                output.writeObject(inputLine);
                 output.flush();
             }
 
