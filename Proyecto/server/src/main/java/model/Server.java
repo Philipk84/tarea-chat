@@ -1,6 +1,5 @@
 package model;
 
-import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -12,7 +11,6 @@ public class Server {
     private DatagramSocket socket;
     private Map<SocketAddress, String> clients;
     private byte[] receiveData;
-    private BufferedReader reader;
     private DatagramPacket packet;
     private Config config;
     private ExecutorService pool;
