@@ -66,4 +66,13 @@ public class Client {
             e.printStackTrace();
         }
     }
+
+    public void sendVoiceNote(byte[] audioData){
+        try{
+            DatagramPacket packet = new DatagramPacket(audioData, audioData.length, ipAddressServer, port);
+            socket.send(packet);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
