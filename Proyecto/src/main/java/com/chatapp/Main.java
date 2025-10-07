@@ -1,12 +1,13 @@
 package com.chatapp;
 
-import com.chatapp.server.ChatServer;
 import com.chatapp.client.ChatClient;
+import com.chatapp.server.ChatServer;
+
 import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
+        Scanner scanner = new Scanner(System.in);
         System.out.println("============================");
         System.out.println("   SISTEMA DE CHAT");
         System.out.println("============================");
@@ -16,17 +17,34 @@ public class Main {
         System.out.println("3. Salir");
         System.out.print("> ");
 
-        int opcion = sc.nextInt();
-        sc.nextLine(); // limpiar buffer
+        String opcion = scanner.nextLine();
 
         switch (opcion) {
-            case 1 -> ChatServer.startServer();
-            case 2 -> ChatClient.startClient();
-            case 3 -> {
-                System.out.println("Saliendo...");
+            case "1":
+                ChatServer.iniciarServidor();
+                break;
+            case "2":
+                iniciarCliente();
+                break;
+            case "3":
+                System.out.println("Cerrando aplicación...");
                 System.exit(0);
-            }
-            default -> System.out.println("Opción no válida.");
+                break;
+            default:
+                System.out.println("Opción inválida.");
+                break;
         }
+        scanner.close();
+    }
+
+    public static void iniciarCliente() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Iniciando cliente...");
+        System.out.print("Ingrese su nombre de usuario: ");
+        String username = scanner.nextLine();
+        
+        ChatClient client = new ChatClient("localhost", 5000, username);
+        client.start();
+        scanner.close();
     }
 }

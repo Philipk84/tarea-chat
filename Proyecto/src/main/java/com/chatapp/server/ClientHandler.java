@@ -2,122 +2,134 @@ package com.chatapp.server;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.Scanner;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Set;
 
+/**
+ * Hilo por cliente que procesa comandos de señalización
+ * y delega en ChatServer para llamadas/grupos.
+ */
 public class ClientHandler implements Runnable {
+    private final Socket socket;
+    private BufferedReader in;
+    private PrintWriter out;
+    private String nombre;
+    private boolean activo = true;
 
-    private Socket socket;
-    private ObjectInputStream input;
-    private ObjectOutputStream output;
-    private CopyOnWriteArrayList<ClientHandler> clients;
-    private ConcurrentHashMap<String, Group> groups;
-    private String name;
-
-    public ClientHandler(Socket socket, CopyOnWriteArrayList<ClientHandler> clients,
-                         ConcurrentHashMap<String, Group> groups) {
+    public ClientHandler(Socket socket) {
         this.socket = socket;
-        this.clients = clients;
-        this.groups = groups;
+    }
+
+    public void enviarMensaje(String mensaje) {
+        out.println(mensaje);
+    }
+
+    public String getNombre() {
+        return nombre;
     }
 
     @Override
     public void run() {
         try {
-            output = new ObjectOutputStream(socket.getOutputStream());
-            input = new ObjectInputStream(socket.getInputStream());
-            name = (String) input.readObject();
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            out = new PrintWriter(socket.getOutputStream(), true);
 
-            sendMessage("Bienvenido, " + name + "!");
-            showMenu();
+            out.println("Ingrese su nombre:");
+            nombre = in.readLine();
+            ChatServer.registrarUsuario(nombre, this);
+            out.println("Bienvenido, " + nombre + "!");
 
-            while (true) {
-                String option = (String) input.readObject();
-                handleOption(option);
+            mostrarMenu();
+
+            String linea;
+            while (activo && (linea = in.readLine()) != null) {
+                // comandos:
+                // /udpport <puerto>
+                // /call <usuario>
+                // /callgroup <grupo>
+                // /endcall <callId>
+                // /creargroup <nombre>
+                // /joingroup <nombre>
+                // /listgroups
+                if (linea.startsWith("/udpport")) {
+                    String[] parts = linea.split(" ", 2);
+                    if (parts.length == 2) {
+                        String clientIp = socket.getInetAddress().getHostAddress();
+                        String ipPort = clientIp + ":" + parts[1].trim();
+                        ChatServer.registrarUdpInfo(nombre, ipPort);
+                        out.println("UDP registrado: " + ipPort);
+                    } else out.println("Uso: /udpport <port>");
+                } else if (linea.startsWith("/callgroup")) {
+                    String[] parts = linea.split(" ", 2);
+                    if (parts.length < 2) {
+                        out.println("Uso: /callgroup <groupName>");
+                        continue;
+                    }
+                    String group = parts[1].trim();
+                    String callId = ChatServer.iniciarLlamadaGrupal(nombre, group);
+                    if (callId == null) out.println("No se pudo iniciar llamada grupal (pocos miembros online/udp).");
+                    else out.println("Llamada grupal iniciada: " + callId);
+                } else if (linea.startsWith("/call")) {
+                    String[] parts = linea.split(" ", 2);
+                    if (parts.length < 2) {
+                        out.println("Uso: /call <username>");
+                        continue;
+                    }
+                    String target = parts[1].trim();
+                    String callId = ChatServer.iniciarLlamadaIndividual(nombre, target);
+                    if (callId == null) out.println("No se pudo iniciar llamada (usuario no disponible o sin UDP).");
+                    else out.println("Llamada iniciada: " + callId);
+                } else if (linea.startsWith("/endcall")) {
+                    String[] parts = linea.split(" ", 2);
+                    String callId = parts.length == 2 ? parts[1].trim() : ChatServer.callManager != null ? ChatServer.callManager.getCallOfUser(nombre) : null;
+                    if (callId == null) {
+                        out.println("No estás en ninguna llamada.");
+                    } else {
+                        ChatServer.terminarLlamada(callId, nombre);
+                    }
+                } else if (linea.startsWith("/creargroup")) {
+                    String[] p = linea.split(" ", 2);
+                    if (p.length == 2) {
+                        ChatServer.crearGrupo(p[1].trim(), nombre);
+                    } else {
+                        out.println("Uso: /creargroup <groupName>");
+                    }
+                } else if (linea.startsWith("/joingroup")) {
+                    String[] p = linea.split(" ", 2);
+                    if (p.length == 2) {
+                        ChatServer.unirseAGrupo(p[1].trim(), nombre);
+                    } else out.println("Uso: /joingroup <groupName>");
+                } else if (linea.equals("/listgroups")) {
+                
+                    Set<String> g = ChatServer.obtenerGrupos();
+                    out.println("Grupos: " + g);
+                } else if (linea.equals("/help")) {
+                    mostrarMenu();
+                }else if (linea.equals("/quit")) {
+                    activo = false;
+                    out.println("Adiós!");
+                } else {
+                    out.println("Comando no reconocido.");
+                }
             }
 
-        } catch (Exception e) {
-            System.out.println(name + " se ha desconectado.");
+        } catch (IOException e) {
+            System.err.println("Error cliente " + nombre + ": " + e.getMessage());
         } finally {
-            clients.remove(this);
+            ChatServer.removerUsuario(nombre);
             try { socket.close(); } catch (IOException ignored) {}
         }
     }
 
-    private void showMenu() throws IOException {
-        sendMessage("\n=== MENÚ PRINCIPAL ===");
-        sendMessage("1. Crear grupo");
-        sendMessage("2. Enviar mensaje privado");
-        sendMessage("3. Enviar mensaje a grupo");
-        sendMessage("4. Salir");
-        sendMessage("Seleccione una opción:");
-    }
-
-    private void handleOption(String option) throws IOException, ClassNotFoundException {
-        switch (option) {
-            case "1" -> createGroup();
-            case "2" -> sendPrivateMessage();
-            case "3" -> sendGroupMessage();
-            case "4" -> {
-                sendMessage("Desconectando...");
-                socket.close();
-            }
-            default -> sendMessage("Opción inválida.");
-        }
-        showMenu();
-    }
-
-    private void createGroup() throws IOException, ClassNotFoundException {
-        sendMessage("Ingrese el nombre del grupo:");
-        String groupName = (String) input.readObject();
-
-        if (groups.containsKey(groupName)) {
-            sendMessage("El grupo ya existe.");
-        } else {
-            Group group = new Group(groupName);
-            group.addMember(this);
-            groups.put(groupName, group);
-            sendMessage("Grupo '" + groupName + "' creado correctamente.");
-        }
-    }
-
-    private void sendPrivateMessage() throws IOException, ClassNotFoundException {
-        sendMessage("Ingrese el nombre del usuario destinatario:");
-        String recipientName = (String) input.readObject();
-
-        sendMessage("Escriba su mensaje:");
-        String content = (String) input.readObject();
-
-        for (ClientHandler client : clients) {
-            if (client.name.equals(recipientName)) {
-                client.sendMessage("[Privado de " + name + "]: " + content);
-                return;
-            }
-        }
-        sendMessage("Usuario no encontrado.");
-    }
-
-    private void sendGroupMessage() throws IOException, ClassNotFoundException {
-        sendMessage("Ingrese el nombre del grupo:");
-        String groupName = (String) input.readObject();
-
-        if (!groups.containsKey(groupName)) {
-            sendMessage("El grupo no existe.");
-            return;
-        }
-
-        sendMessage("Escriba el mensaje para el grupo:");
-        String content = (String) input.readObject();
-
-        Group group = groups.get(groupName);
-        group.broadcast(content, name);
-    }
-
-    public void sendMessage(String message) {
-        try {
-            output.writeObject(message);
-            output.flush();
-        } catch (IOException ignored) {}
+    private void mostrarMenu() {
+        out.println("Comandos disponibles:");
+        out.println("/udpport <port>          -> registrar puerto UDP local");
+        out.println("/call <user>             -> iniciar llamada privada");
+        out.println("/callgroup <group>       -> iniciar llamada grupal");
+        out.println("/creargroup <name>       -> crear grupo");
+        out.println("/joingroup <name>        -> unirse a grupo");
+        out.println("/listgroups              -> listar grupos");
+        out.println("/endcall [callId]        -> terminar llamada");
+        out.println("/help                    -> mostrar comandos");
+        out.println("/quit                    -> desconectarse");
     }
 }
