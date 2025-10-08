@@ -1,76 +1,161 @@
 package model;
 
-import java.net.*;
-import java.util.Map;
+import java.io.*;
+import java.net.Socket;
+import command.*;
 
+/**
+ * Manejador de cliente que procesa conexiones TCP y ejecuta comandos
+ * de señalización para llamadas y gestión de grupos.
+ * 
+ * Cada cliente conectado tiene su propio hilo de ejecución que procesa
+ * los comandos de manera asíncrona.
+ */
 public class ClientHandler implements Runnable {
-    private DatagramPacket packet;
-    private DatagramSocket socket;
-    private Map<SocketAddress, String> clients;
+    private final Socket socket;
+    private final CommandRegistry commandRegistry;
+    private BufferedReader in;
+    private PrintWriter out;
+    private String name;
+    private boolean active = true;
 
-    public ClientHandler(DatagramPacket packet, DatagramSocket socket, Map<SocketAddress, String> clients) {
-        this.packet = packet;
+    public ClientHandler(Socket socket) {
         this.socket = socket;
-        this.clients = clients;
+        this.commandRegistry = new CommandRegistry();
+        initializeCommands();
     }
 
+    /**
+     * Inicializa todos los comandos disponibles en el sistema.
+     * Siguiendo el patrón Command y principio Open/Closed.
+     */
+    private void initializeCommands() {
+        commandRegistry.registerHandler(new UdpPortCommandHandler());
+        commandRegistry.registerHandler(new CallCommandHandler());
+        commandRegistry.registerHandler(new CallGroupCommandHandler());
+        commandRegistry.registerHandler(new EndCallCommandHandler());
+        commandRegistry.registerHandler(new CreateGroupCommandHandler());
+        commandRegistry.registerHandler(new JoinGroupCommandHandler());
+        commandRegistry.registerHandler(new ListGroupsCommandHandler());
+        commandRegistry.registerHandler(new HelpCommandHandler());
+        commandRegistry.registerHandler(new QuitCommandHandler());
+    }
+
+    /**
+     * Envía un mensaje al cliente a través del socket TCP.
+     * 
+     * @param message El mensaje a enviar
+     */
+    public void sendMessage(String message) {
+        if (out != null) {
+            out.println(message);
+        }
+    }
+
+    /**
+     * Obtiene el nombre del usuario asociado a este cliente.
+     * 
+     * @return El nombre del usuario
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Obtiene el socket TCP del cliente.
+     * 
+     * @return El socket del cliente
+     */
+    public Socket getClientSocket() {
+        return socket;
+    }
+
+    /**
+     * Hilo principal que maneja la comunicación con el cliente.
+     * Procesa el registro del usuario y ejecuta comandos de manera continua.
+     */
     @Override
     public void run() {
         try {
-            String message = new String(packet.getData(), 0, packet.getLength());
-            SocketAddress clientAddress = packet.getSocketAddress();
-
-            if (!clients.containsKey(clientAddress)) {
-                handleClientRegistration(clientAddress, message);
-            } else {
-                handleMessageBroadcast(clientAddress, message);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+            setupClientConnection();
+            handleUserRegistration();
+            processUserCommands();
+        } catch (IOException e) {
+            System.err.println("Error del cliente " + name + ": " + e.getMessage());
+        } finally {
+            cleanup();
         }
     }
 
-    private void handleClientRegistration(SocketAddress clientAddress, String clientName) {
-        clients.put(clientAddress, clientName);
-        String welcomeMessage = "Bienvenido " + clientName;
+    /**
+     * Configura las conexiones de entrada y salida con el cliente.
+     * 
+     * @throws IOException Si hay problemas con los streams
+     */
+    private void setupClientConnection() throws IOException {
+        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        out = new PrintWriter(socket.getOutputStream(), true);
+    }
+
+    /**
+     * Maneja el proceso de registro del usuario.
+     * 
+     * @throws IOException Si hay problemas de comunicación
+     */
+    private void handleUserRegistration() throws IOException {
+        out.println("Ingresa tu nombre:");
+        name = in.readLine();
         
-        try {
-            DatagramPacket welcomePacket = new DatagramPacket(
-                    welcomeMessage.getBytes(), welcomeMessage.length(),
-                    packet.getAddress(), packet.getPort()
-            );
-            socket.send(welcomePacket);
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (name == null || name.trim().isEmpty()) {
+            out.println("Error: Nombre inválido");
+            active = false;
+            return;
         }
+        
+        name = name.trim();
+        ChatServer.registerUser(name, this);
+        out.println("¡Bienvenido, " + name + "!");
+        
+        commandRegistry.executeCommand("/help", name, this);
     }
 
-    private void handleMessageBroadcast(SocketAddress senderAddress, String message) {
-        String senderName = clients.get(senderAddress);
-        String fullMessage = senderName + ": " + message;
-        broadcastMessage(fullMessage, senderAddress);
-    }
-
-    private void broadcastMessage(String message, SocketAddress senderAddress) {
-        for (Map.Entry<SocketAddress, String> entry : clients.entrySet()) {
-            SocketAddress clientAddress = entry.getKey();
-
-            if (!clientAddress.equals(senderAddress)) {
-                InetSocketAddress inetAddress = (InetSocketAddress) clientAddress;
-                sendPacketToClient(message, inetAddress.getAddress(), inetAddress.getPort());
+    /**
+     * Procesa los comandos enviados por el usuario de manera continua.
+     * 
+     * @throws IOException Si hay problemas de comunicación
+     */
+    private void processUserCommands() throws IOException {
+        String line;
+        while (active && (line = in.readLine()) != null) {
+            if (line.trim().isEmpty()) {
+                continue;
+            }
+            
+            if (line.equals("/quit")) {
+                commandRegistry.executeCommand(line, name, this);
+                active = false;
+                break;
+            }
+            
+            if (!commandRegistry.executeCommand(line, name, this)) {
+                out.println("Comando no reconocido. Usa /help para ver comandos disponibles.");
             }
         }
     }
 
-    private void sendPacketToClient(String message, InetAddress address, int port) {
+    /**
+     * Limpia los recursos al finalizar la conexión del cliente.
+     */
+    private void cleanup() {
+        if (name != null) {
+            ChatServer.removeUser(name);
+        }
         try {
-            byte[] messageBytes = message.getBytes();
-            DatagramPacket sendPacket = new DatagramPacket(
-                messageBytes, messageBytes.length, address, port
-            );
-            socket.send(sendPacket);
-        } catch (Exception e) {
-            e.printStackTrace();
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
+            }
+        } catch (IOException e) {
+            System.err.println("Error cerrando socket: " + e.getMessage());
         }
     }
 }
