@@ -1,0 +1,14 @@
+// Client module build configuration
+
+// Apply application plugin for executable JAR
+apply plugin: 'application'
+
+dependencies {
+    // Add any specific dependencies for the client module here
+    // Dependencies from the parent build.gradle are automatically inherited
+}
+
+// Set the main class for the client module
+application {
+    mainClass = 'ui.Main'
+}
