@@ -17,7 +17,7 @@ public class Controller {
     public Controller() {
         this.gson = new Gson();
         try {
-            this.config = gson.fromJson(new FileReader("config.json"), Config.class);
+            this.config = gson.fromJson(new FileReader("Proyecto\\config.json"), Config.class);
             this.chatServer = new ChatServer(config);
         } catch (Exception e) {
             throw new RuntimeException("Error initializing controller", e);
