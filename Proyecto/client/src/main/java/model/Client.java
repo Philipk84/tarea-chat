@@ -16,6 +16,7 @@ public class Client {
     private byte[] sendData;
     private DatagramPacket namePacket;
     private Thread receiveThread;
+    private Thread audioThread;
 
     private Client(Config config, String username) {
         try {
@@ -40,16 +41,24 @@ public class Client {
         return instance;
     }
 
-    public void connectToChat () {
+    public void connectToChat() {
         receiveThread = new Thread(() -> {
-            byte[] buffer = new byte[256];
+            byte[] buffer = new byte[1024];
             while (true) {
                 try {
-                    DatagramPacket receivePacket = new DatagramPacket(buffer, buffer.length);
-                    socket.receive(receivePacket);
-                    String msg = new String(receivePacket.getData(), 0, receivePacket.getLength());
-                    System.out.println(msg);
+                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                    socket.receive(packet);
+
+                    String msg = new String(packet.getData(), 0, packet.getLength());
+
+                    // Solo procesa mensajes de texto
+                    if (msg.startsWith("TEXT:")) {
+                        String cleanMsg = msg.substring(5);
+                        System.out.println("[MENSAJE] " + cleanMsg);
+                    }
+
                 } catch (Exception e) {
+                    System.out.println("Chat cerrado: " + e.getMessage());
                     break;
                 }
             }
@@ -59,20 +68,57 @@ public class Client {
 
     public void sendMessage(String message) {
         try {
-            this.sendData = message.getBytes();
-            this.packet = new DatagramPacket(sendData, sendData.length, ipAddressServer, port);
+            String fullMsg = "TEXT:" + message;
+            byte[] data = fullMsg.getBytes();
+            DatagramPacket packet = new DatagramPacket(data, data.length, ipAddressServer, port);
             socket.send(packet);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void sendVoiceNote(byte[] audioData){
-        try{
-            DatagramPacket packet = new DatagramPacket(audioData, audioData.length, ipAddressServer, port);
+    public void sendVoiceNote(byte[] audioData) {
+        try {
+            byte[] header = "AUDIO:".getBytes();
+            byte[] fullData = new byte[header.length + audioData.length];
+            System.arraycopy(header, 0, fullData, 0, header.length);
+            System.arraycopy(audioData, 0, fullData, header.length, audioData.length);
+
+            DatagramPacket packet = new DatagramPacket(fullData, fullData.length, ipAddressServer, port);
             socket.send(packet);
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+
+     public void connectToAudio() {
+        audioThread = new Thread(() -> {
+            byte[] buffer = new byte[4096];
+            while (true) {
+                try {
+                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                    socket.receive(packet);
+
+                    // Detectar cabecera
+                    if (packet.getLength() > 6) {
+                        String header = new String(buffer, 0, 6);
+
+                        if (header.equals("AUDIO:")) {
+                            byte[] audioData = new byte[packet.getLength() - 6];
+                            System.arraycopy(buffer, 6, audioData, 0, audioData.length);
+
+                            // Reproducir audio
+                            AudioUtils.playAudio(audioData);
+                        }
+                    }
+
+                } catch (Exception e) {
+                    System.out.println("Audio cerrado: " + e.getMessage());
+                    break;
+                }
+            }
+        });
+        audioThread.start();
     }
 }

@@ -19,7 +19,7 @@ public class Server {
     private Server (Config config) throws SocketException, UnknownHostException {
         this.config = config;
 
-        this.receiveData = new byte[256];
+        this.receiveData = new byte[4096];
         
         this.pool = Executors.newFixedThreadPool(10);
         this.clients = new ConcurrentHashMap<>();
