@@ -1,4 +1,4 @@
-package com.chatapp.common;
+package model;
 
 public enum Command {
     PRIVATE_MESSAGE,

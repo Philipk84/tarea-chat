@@ -2,7 +2,6 @@ package com.chatapp.server;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -15,8 +14,7 @@ public class ClientHandler implements Runnable {
     private ConcurrentHashMap<String, Group> groups;
     private String name;
 
-    public ClientHandler(Socket socket, CopyOnWriteArrayList<ClientHandler> clients,
-                         ConcurrentHashMap<String, Group> groups) {
+    public ClientHandler(Socket socket, CopyOnWriteArrayList<ClientHandler> clients, ConcurrentHashMap<String, Group> groups) {
         this.socket = socket;
         this.clients = clients;
         this.groups = groups;

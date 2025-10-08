@@ -1,4 +1,4 @@
-package com.chatapp.common;
+package model;
 
 import java.io.Serializable;
 

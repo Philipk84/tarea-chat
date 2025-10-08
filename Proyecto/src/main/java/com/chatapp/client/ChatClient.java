@@ -10,10 +10,10 @@ public class ChatClient {
     private static final int SERVER_PORT = 5000;
 
     public static void startClient() {
-        try (Socket socket = new Socket(SERVER_IP, SERVER_PORT);
-             ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
-             ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
-             Scanner sc = new Scanner(System.in)) {
+        try (Socket socket = new Socket(SERVER_IP, SERVER_PORT); 
+            ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
+            Scanner sc = new Scanner(System.in)) {
 
             System.out.print("Ingrese su nombre: ");
             String name = sc.nextLine();
