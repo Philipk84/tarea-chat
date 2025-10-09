@@ -32,7 +32,7 @@ subprojects {
         manifest {
             attributes(
                 "Main-Class": project.name.capitalize(),
-                "Class-Path": configurations.runtimeClasspath.resolve().collect { it.toURI() }.join(' ')
+                "Class-Path": configurations.runtimeClasspath.resolve().collect { it.toURI() }.join(' ')  
             )
         }
     }
