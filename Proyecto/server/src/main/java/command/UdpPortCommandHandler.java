@@ -6,7 +6,7 @@ import model.ChatServer;
 
 /**
  * Manejador del comando /udpport que permite a los clientes registrar
- * su puerto UDP local para comunicación de audio.
+ * su puerto UDP local para comunicaciÃ³n de audio.
  */
 public class UdpPortCommandHandler implements CommandHandler {
 
@@ -45,7 +45,7 @@ public class UdpPortCommandHandler implements CommandHandler {
             ChatServer.registerUdpInfo(userName, ipPort);
             clientHandler.sendMessage("UDP registrado: " + ipPort);
         } catch (NumberFormatException e) {
-            clientHandler.sendMessage("Error: El puerto debe ser un número válido");
+            clientHandler.sendMessage("Error: El puerto debe ser un nÃºmero vÃ¡lido");
         }
     }
 }

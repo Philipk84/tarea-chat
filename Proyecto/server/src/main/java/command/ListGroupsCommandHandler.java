@@ -43,7 +43,7 @@ public class ListGroupsCommandHandler implements CommandHandler {
         
         for (String group : groups) {
             Set<String> members = ChatServer.getGroupMembers(group);
-            response.append("• ").append(group)
+            response.append("â€¢ ").append(group)
                 .append(" (").append(members.size()).append(" miembros)");
             
             if (members.contains(userName)) {

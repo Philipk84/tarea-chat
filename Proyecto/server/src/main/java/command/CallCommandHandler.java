@@ -34,7 +34,7 @@ public class CallCommandHandler implements CommandHandler {
         String targetUser = parts[1].trim();
         
         if (targetUser.isEmpty()) {
-            clientHandler.sendMessage("Error: Debes especificar un nombre de usuario válido");
+            clientHandler.sendMessage("Error: Debes especificar un nombre de usuario vÃ¡lido");
             return;
         }
         

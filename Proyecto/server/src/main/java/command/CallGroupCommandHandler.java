@@ -6,7 +6,7 @@ import model.ChatServer;
 
 /**
  * Manejador del comando /callgroup que permite iniciar llamadas grupales
- * con todos los miembros de un grupo específico.
+ * con todos los miembros de un grupo especÃ­fico.
  */
 public class CallGroupCommandHandler implements CommandHandler {
 
@@ -34,13 +34,13 @@ public class CallGroupCommandHandler implements CommandHandler {
         String groupName = parts[1].trim();
         
         if (groupName.isEmpty()) {
-            clientHandler.sendMessage("Error: Debes especificar un nombre de grupo válido");
+            clientHandler.sendMessage("Error: Debes especificar un nombre de grupo vÃ¡lido");
             return;
         }
         
         String callId = ChatServer.startGroupCall(userName, groupName);
         if (callId == null) {
-            clientHandler.sendMessage("No se pudo iniciar la llamada grupal (pocos miembros en línea/udp).");
+            clientHandler.sendMessage("No se pudo iniciar la llamada grupal (pocos miembros en lÃ­nea/udp).");
         } else {
             clientHandler.sendMessage("Llamada grupal iniciada: " + callId);
         }

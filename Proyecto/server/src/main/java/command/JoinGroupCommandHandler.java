@@ -34,7 +34,7 @@ public class JoinGroupCommandHandler implements CommandHandler {
         String groupName = parts[1].trim();
         
         if (groupName.isEmpty()) {
-            clientHandler.sendMessage("Error: Debes especificar un nombre de grupo válido");
+            clientHandler.sendMessage("Error: Debes especificar un nombre de grupo vÃ¡lido");
             return;
         }
         

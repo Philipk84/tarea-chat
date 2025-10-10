@@ -6,7 +6,7 @@ import model.ChatServer;
 
 /**
  * Manejador del comando /endcall que permite terminar una llamada activa.
- * Puede especificar un ID de llamada específico o terminar la llamada actual del usuario.
+ * Puede especificar un ID de llamada especÃ­fico o terminar la llamada actual del usuario.
  */
 public class EndCallCommandHandler implements CommandHandler {
 
@@ -35,7 +35,7 @@ public class EndCallCommandHandler implements CommandHandler {
         String callId = null;
         
         if (parts.length == 2) {
-            // ID de llamada específico proporcionado
+            // ID de llamada especÃ­fico proporcionado
             callId = parts[1].trim();
         } else {
             // Buscar la llamada actual del usuario
@@ -45,7 +45,7 @@ public class EndCallCommandHandler implements CommandHandler {
         }
         
         if (callId == null || callId.isEmpty()) {
-            clientHandler.sendMessage("No estás en ninguna llamada.");
+            clientHandler.sendMessage("No estÃ¡s en ninguna llamada.");
             return;
         }
         

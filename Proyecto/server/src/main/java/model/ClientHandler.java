@@ -6,10 +6,10 @@ import command.*;
 
 /**
  * Manejador de cliente que procesa conexiones TCP y ejecuta comandos
- * de señalización para llamadas y gestión de grupos.
+ * de seÃ±alizaciÃ³n para llamadas y gestiÃ³n de grupos.
  * 
- * Cada cliente conectado tiene su propio hilo de ejecución que procesa
- * los comandos de manera asíncrona.
+ * Cada cliente conectado tiene su propio hilo de ejecuciÃ³n que procesa
+ * los comandos de manera asÃ­ncrona.
  */
 public class ClientHandler implements Runnable {
     private final Socket socket;
@@ -36,11 +36,15 @@ public class ClientHandler implements Runnable {
         commandRegistry.registerHandler(new CreateGroupCommandHandler());
         commandRegistry.registerHandler(new JoinGroupCommandHandler());
         commandRegistry.registerHandler(new ListGroupsCommandHandler());
+        commandRegistry.registerHandler(new MessageCommandHandler());
+        commandRegistry.registerHandler(new MessageGroupCommandHandler());
+        commandRegistry.registerHandler(new VoiceNoteCommandHandler());
+        commandRegistry.registerHandler(new VoiceGroupCommandHandler());
         commandRegistry.registerHandler(new QuitCommandHandler());
     }
 
     /**
-     * Envía un mensaje al cliente a través del socket TCP.
+     * EnvÃ­a un mensaje al cliente a travÃ©s del socket TCP.
      * 
      * @param message El mensaje a enviar
      */
@@ -69,7 +73,7 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Hilo principal que maneja la comunicación con el cliente.
+     * Hilo principal que maneja la comunicaciÃ³n con el cliente.
      * Procesa el registro del usuario y ejecuta comandos de manera continua.
      */
     @Override
@@ -98,27 +102,27 @@ public class ClientHandler implements Runnable {
     /**
      * Maneja el proceso de registro del usuario.
      * 
-     * @throws IOException Si hay problemas de comunicación
+     * @throws IOException Si hay problemas de comunicaciÃ³n
      */
     private void handleUserRegistration() throws IOException {
         out.println("Ingresa tu nombre:");
         name = in.readLine();
         
         if (name == null || name.trim().isEmpty()) {
-            out.println("Error: Nombre inválido");
+            out.println("Error: Nombre invÃ¡lido");
             active = false;
             return;
         }
         
         name = name.trim();
         ChatServer.registerUser(name, this);
-        out.println("¡Bienvenido, " + name + "!");        
+        out.println("Â¡Bienvenido, " + name + "!");        
     }
 
     /**
      * Procesa los comandos enviados por el usuario de manera continua.
      * 
-     * @throws IOException Si hay problemas de comunicación
+     * @throws IOException Si hay problemas de comunicaciÃ³n
      */
     private void processUserCommands() throws IOException {
         String line;
@@ -134,13 +138,13 @@ public class ClientHandler implements Runnable {
             }
             
             if (!commandRegistry.executeCommand(line, name, this)) {
-                out.println("Opción inválida.");
+                out.println("OpciÃ³n invÃ¡lida.");
             }
         }
     }
 
     /**
-     * Limpia los recursos al finalizar la conexión del cliente.
+     * Limpia los recursos al finalizar la conexiÃ³n del cliente.
      */
     private void cleanup() {
         if (name != null) {

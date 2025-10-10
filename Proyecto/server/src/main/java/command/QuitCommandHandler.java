@@ -29,7 +29,7 @@ public class QuitCommandHandler implements CommandHandler {
      */
     @Override
     public void execute(String command, String userName, ClientHandler clientHandler) {
-        clientHandler.sendMessage("¡Adiós " + userName + "! Gracias por usar el sistema de chat.");
+        clientHandler.sendMessage("Â¡AdiÃ³s " + userName + "! Gracias por usar el sistema de chat.");
         clientHandler.sendMessage("DISCONNECT");
     }
 }

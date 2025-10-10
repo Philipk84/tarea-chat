@@ -8,7 +8,7 @@ import java.util.List;
 
 /**
  * Registro centralizado de comandos que permite agregar y ejecutar comandos
- * siguiendo el patrón Command y el principio Open/Closed.
+ * siguiendo el patrÃ³n Command y el principio Open/Closed.
  */
 public class CommandRegistry {
     private final List<CommandHandler> handlers = new ArrayList<>();
@@ -32,7 +32,7 @@ public class CommandRegistry {
      * @param command El comando completo ingresado por el usuario
      * @param userName El nombre del usuario que ejecuta el comando
      * @param clientHandler El manejador del cliente
-     * @return true si el comando fue procesado, false si no se encontró un manejador
+     * @return true si el comando fue procesado, false si no se encontrÃ³ un manejador
      */
     public boolean executeCommand(String command, String userName, ClientHandler clientHandler) {
         for (CommandHandler handler : handlers) {

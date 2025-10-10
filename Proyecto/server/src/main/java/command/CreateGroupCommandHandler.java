@@ -6,7 +6,7 @@ import model.ChatServer;
 
 /**
  * Manejador del comando /creategroup que permite crear nuevos grupos de chat.
- * El usuario que crea el grupo automáticamente se convierte en miembro.
+ * El usuario que crea el grupo automÃ¡ticamente se convierte en miembro.
  */
 public class CreateGroupCommandHandler implements CommandHandler {
 
@@ -34,7 +34,7 @@ public class CreateGroupCommandHandler implements CommandHandler {
         String groupName = parts[1].trim();
         
         if (groupName.isEmpty()) {
-            clientHandler.sendMessage("Error: El nombre del grupo no puede estar vacío");
+            clientHandler.sendMessage("Error: El nombre del grupo no puede estar vacÃ­o");
             return;
         }
         
@@ -44,7 +44,7 @@ public class CreateGroupCommandHandler implements CommandHandler {
         }
         
         if (!isValidGroupName(groupName)) {
-            clientHandler.sendMessage("Error: El nombre del grupo contiene caracteres no válidos. Use solo letras, números, guiones y guiones bajos");
+            clientHandler.sendMessage("Error: El nombre del grupo contiene caracteres no vÃ¡lidos. Use solo letras, nÃºmeros, guiones y guiones bajos");
             return;
         }
         
@@ -56,7 +56,7 @@ public class CreateGroupCommandHandler implements CommandHandler {
      * Valida que el nombre del grupo contenga solo caracteres permitidos.
      * 
      * @param groupName El nombre del grupo a validar
-     * @return true si el nombre es válido, false en caso contrario
+     * @return true si el nombre es vÃ¡lido, false en caso contrario
      */
     private boolean isValidGroupName(String groupName) {
         return groupName.matches("^[a-zA-Z0-9_-]+$");

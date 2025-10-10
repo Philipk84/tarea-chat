@@ -10,14 +10,22 @@ import service.GroupManagerImpl;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.DatagramSocket;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.SocketAddress;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Servidor principal del sistema de chat que coordina todas las operaciones
- * de comunicación, gestión de usuarios, grupos, llamadas, mensajes y audios.
+ * de comunicaciÃ³n, gestiÃ³n de usuarios, grupos, llamadas, mensajes y audios.
  */
 public class ChatServer implements ServerService {
     private static ChatServer instance;
+    private static final int THREAD_POOL_SIZE = 10; // Como en class/Server.java
     
     private final Config config;
     private final UserManager userManager;
@@ -25,6 +33,9 @@ public class ChatServer implements ServerService {
     public final CallManagerImpl CallManagerImpl;
 
     private ServerSocket serverSocket;
+    private DatagramSocket udpSocket; // Socket UDP para audio y notas de voz (como class/UDPserver.java)
+    private ExecutorService threadPool;
+    private Map<SocketAddress, String> udpClients; // Mapa de clientes UDP (como class/UDPserver.java)
     private boolean running = false;
 
     public ChatServer(Config config) {
@@ -32,35 +43,42 @@ public class ChatServer implements ServerService {
         this.userManager = new UserManagerImpl();
         this.groupManager = new GroupManagerImpl();
         this.CallManagerImpl = new CallManagerImpl();
+        this.udpClients = new ConcurrentHashMap<>(); // Inicializar mapa UDP como en class/UDPserver.java
     }
 
     /**
      * Inicia el servidor de chat y comienza a aceptar conexiones de clientes.
+     * Usa ExecutorService con ThreadPool fijo para manejar clientes de manera eficiente.
+     * PatrÃ³n similar a class/Server.java
      * 
-     * @return Mensaje de estado del resultado de la operación
+     * @return Mensaje de estado del resultado de la operaciÃ³n
      */
     @Override
     public String startServer() {
         if (running) {
-            return "El servidor ya está ejecutándose en el puerto " + config.getPort();
+            return "El servidor ya estÃ¡ ejecutÃ¡ndose en el puerto " + config.getPort();
         }
         
         instance = this;
         
         try {
             serverSocket = new ServerSocket(config.getPort());
+            udpSocket = new DatagramSocket(config.getPort() + 1, InetAddress.getByName(config.getHost())); // Puerto UDP+1 como en class/UDPserver.java
+            threadPool = Executors.newFixedThreadPool(THREAD_POOL_SIZE); // Como class/Server.java
             running = true;
             
+            // Hilo para conexiones TCP (como class/Server.java)
             Thread serverThread = new Thread(() -> {
+                System.out.println("Servidor TCP escuchando en puerto " + config.getPort() + "...");
                 
                 while (running) {
                     try {
                         Socket socket = serverSocket.accept();
                         ClientHandler handler = new ClientHandler(socket);
-                        new Thread(handler).start();
+                        threadPool.submit(handler); // Usar threadPool en lugar de new Thread()
                     } catch (IOException e) {
                         if (running) {
-                            System.err.println("Error aceptando conexión del cliente: " + e.getMessage());
+                            System.err.println("Error aceptando conexión TCP del cliente: " + e.getMessage());
                         }
                     }
                 }
@@ -68,7 +86,28 @@ public class ChatServer implements ServerService {
             serverThread.setDaemon(true);
             serverThread.start();
             
-            return "Servidor iniciado exitosamente en puerto " + config.getPort();
+            // Hilo para mensajes UDP (como class/UDPserver.java)
+            Thread udpThread = new Thread(() -> {
+                System.out.println("Servidor UDP escuchando en puerto " + (config.getPort() + 1) + "...");
+                byte[] receiveData = new byte[4096]; // Buffer más grande para audio
+                
+                while (running && !udpSocket.isClosed()) {
+                    try {
+                        DatagramPacket packet = new DatagramPacket(receiveData, receiveData.length);
+                        udpSocket.receive(packet);
+                        // Usar UDPMessageHandler como ClientHandler en class/UDPserver.java
+                        threadPool.submit(new UDPMessageHandler(packet, udpSocket, udpClients));
+                    } catch (Exception e) {
+                        if (running && !udpSocket.isClosed()) {
+                            System.err.println("Error procesando mensaje UDP: " + e.getMessage());
+                        }
+                    }
+                }
+            });
+            udpThread.setDaemon(true);
+            udpThread.start();
+            
+            return "Servidor iniciado exitosamente - TCP:" + config.getPort() + " UDP:" + (config.getPort() + 1);
         } catch (IOException e) {
             running = false;
             return "Error iniciando servidor: " + e.getMessage();
@@ -77,19 +116,26 @@ public class ChatServer implements ServerService {
 
     /**
      * Cierra el servidor de chat y libera los recursos asociados.
+     * Cierra el threadPool de manera ordenada como en class/Server.java
      * 
-     * @return Mensaje de estado del resultado de la operación
+     * @return Mensaje de estado del resultado de la operaciÃ³n
      */
     @Override
     public String closeServer() {
         if (!running) {
-            return "El servidor no está ejecutándose";
+            return "El servidor no estÃ¡ ejecutÃ¡ndose";
         }
         
         running = false;
         try {
+            if (threadPool != null) {
+                threadPool.shutdown(); // Cerrar threadPool como en class/Server.java
+            }
             if (serverSocket != null && !serverSocket.isClosed()) {
                 serverSocket.close();
+            }
+            if (udpSocket != null && !udpSocket.isClosed()) {
+                udpSocket.close(); // Cerrar socket UDP como en class/UDPserver.java
             }
             return "Servidor cerrado exitosamente";
         } catch (IOException e) {
@@ -98,9 +144,9 @@ public class ChatServer implements ServerService {
     }
 
     /**
-     * Verifica si el servidor está actualmente en ejecución.
+     * Verifica si el servidor estÃ¡ actualmente en ejecuciÃ³n.
      * 
-     * @return true si el servidor está ejecutándose, false en caso contrario
+     * @return true si el servidor estÃ¡ ejecutÃ¡ndose, false en caso contrario
      */
     @Override
     public boolean isRunning() {
@@ -127,20 +173,20 @@ public class ChatServer implements ServerService {
     }
 
     /**
-     * Registra la información UDP de un usuario para llamadas de audio.
+     * Registra la informaciÃ³n UDP de un usuario para llamadas de audio.
      * 
      * @param name Nombre del usuario
-     * @param ipPort Dirección IP y puerto UDP en formato "ip:puerto"
+     * @param ipPort DirecciÃ³n IP y puerto UDP en formato "ip:puerto"
      */
     public static synchronized void registerUdpInfo(String name, String ipPort) {
         instance.userManager.registerUdpInfo(name, ipPort);
     }
 
     /**
-     * Obtiene la información UDP de un usuario.
+     * Obtiene la informaciÃ³n UDP de un usuario.
      * 
      * @param name Nombre del usuario
-     * @return Información UDP en formato "ip:puerto" o null si no existe
+     * @return InformaciÃ³n UDP en formato "ip:puerto" o null si no existe
      */
     public static synchronized String getUdpInfo(String name) {
         return instance.userManager.getUdpInfo(name);
@@ -167,7 +213,7 @@ public class ChatServer implements ServerService {
     }
 
     /**
-     * Obtiene la lista de miembros de un grupo específico.
+     * Obtiene la lista de miembros de un grupo especÃ­fico.
      * 
      * @param groupName Nombre del grupo
      * @return Conjunto de nombres de usuarios miembros del grupo
@@ -272,12 +318,15 @@ public class ChatServer implements ServerService {
     }
 
     /**
-     * Obtiene el manejador de cliente para un usuario específico.
+     * Obtiene el manejador de cliente para un usuario especÃ­fico.
      * 
      * @param username Nombre del usuario
      * @return Manejador del cliente o null si no existe
      */
-    private static ClientHandler getClientHandler(String username) {
+    public static ClientHandler getClientHandler(String username) {
+        if (instance == null || instance.userManager == null) {
+            return null;
+        }
         if (instance.userManager instanceof UserManagerImpl) {
             return ((UserManagerImpl) instance.userManager).getClientHandler(username);
         }

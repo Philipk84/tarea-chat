@@ -6,8 +6,8 @@ import java.io.FileReader;
 
 /**
  * Controlador principal del servidor de chat.
- * Actúa como intermediario entre la interfaz de usuario y el modelo del servidor.
- * Maneja la configuración y las operaciones del servidor de chat.
+ * ActÃºa como intermediario entre la interfaz de usuario y el modelo del servidor.
+ * Maneja la configuraciÃ³n y las operaciones del servidor de chat.
  */
 public class Controller {
     private Gson gson;
@@ -27,7 +27,7 @@ public class Controller {
     /**
      * Inicia el servidor de chat.
      * 
-     * @return Mensaje de estado del resultado de la operación
+     * @return Mensaje de estado del resultado de la operaciÃ³n
      */
     public String startServer() {
         return chatServer.startServer();
@@ -36,16 +36,16 @@ public class Controller {
     /**
      * Cierra el servidor de chat.
      * 
-     * @return Mensaje de estado del resultado de la operación
+     * @return Mensaje de estado del resultado de la operaciÃ³n
      */
     public String closeServer() {
         return chatServer.closeServer();
     }
 
     /**
-     * Verifica si el servidor de chat está en ejecución.
+     * Verifica si el servidor de chat estÃ¡ en ejecuciÃ³n.
      * 
-     * @return true si el servidor está en ejecución, false en caso contrario
+     * @return true si el servidor estÃ¡ en ejecuciÃ³n, false en caso contrario
      */
     public boolean isServerRunning() {
         return chatServer.isRunning();
