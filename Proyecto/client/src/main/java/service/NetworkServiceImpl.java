@@ -12,7 +12,6 @@ import java.net.*;
 public class NetworkServiceImpl implements NetworkService {
     private final String serverHost;
     private final int serverPort;
-    private String username;
     
     private Socket tcpSocket;
     private BufferedReader tcpIn;
@@ -35,7 +34,6 @@ public class NetworkServiceImpl implements NetworkService {
 
     @Override
     public String connect(String username) {
-        this.username = username;
         try {
             tcpSocket = new Socket(serverHost, serverPort);
             tcpIn = new BufferedReader(new InputStreamReader(tcpSocket.getInputStream()));
@@ -124,9 +122,9 @@ public class NetworkServiceImpl implements NetworkService {
      */
     private void cleanup() {
         try {
-            if (tcpSocket != null && !tcpSocket.isClosed()) {
-                tcpSocket.close();
-            }
-        } catch (IOException ignored) {}
+            if (tcpSocket != null && !tcpSocket.isClosed()) tcpSocket.close();
+        } catch (IOException ignored) {
+            System.err.println("Error cerrando socket TCP: " + ignored.getMessage());
+        }
     }
 }

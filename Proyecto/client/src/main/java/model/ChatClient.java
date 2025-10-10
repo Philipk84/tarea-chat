@@ -10,7 +10,7 @@ import java.net.*;
  */
 public class ChatClient {
     private final NetworkService networkService;
-    private final CallManagerImpl CallManagerImpl;
+    private final CallManager CallManagerImpl;
     private final AudioService audioService;
     private final MessageHandler messageHandler;
     
@@ -19,7 +19,7 @@ public class ChatClient {
     public ChatClient(Config config) {
         // Crear servicios con inyección de dependencias
         this.networkService = new NetworkServiceImpl(config.getHost(), config.getPort());
-        this.CallManagerImpl = new CallManagerImplImpl();
+        this.CallManagerImpl = new CallManagerImpl();
         this.audioService = new AudioServiceImpl();
         this.messageHandler = new MessageHandlerImpl(""); // username se establece en connect()
         

@@ -1,6 +1,6 @@
 package service;
 
-import interfaces.CallManagerImpl;
+import interfaces.CallManager;
 import interfaces.MessageHandler;
 import java.net.InetSocketAddress;
 import java.util.*;
@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
  * Procesa y delega mensajes recibidos del servidor.
  */
 public class MessageHandlerImpl implements MessageHandler {
-    private CallManagerImpl CallManagerImpl;
+    private CallManager CallManagerImpl;
     private String username;
 
     /**
@@ -86,7 +86,7 @@ public class MessageHandlerImpl implements MessageHandler {
      * 
      * @param CallManagerImpl Gestor de llamadas del cliente
      */
-    public void setCallManagerImpl(CallManagerImpl CallManagerImpl) {
+    public void setCallManagerImpl(CallManager CallManagerImpl) {
         this.CallManagerImpl = CallManagerImpl;
     }
 
@@ -97,19 +97,19 @@ public class MessageHandlerImpl implements MessageHandler {
      */
     private void handleCallStartedMessage(String message) {
         try {
-            String payload = message.substring("CALL_STARTED".length()).trim();
+            String payload = message.substring("LLAMADA_INICIADA".length()).trim();
             String[] parts = payload.split(" ", 2);
             String callId = parts[0];
             String participants = parts.length > 1 ? parts[1] : "";
             
             handleCallStarted(callId, participants);
         } catch (Exception e) {
-            System.err.println("Error procesando CALL_STARTED: " + e.getMessage());
+            System.err.println("Error procesando LLAMADA_TERMINADA: " + e.getMessage());
         }
     }
 
     /**
-     * Maneja el mensaje de finalizaciÃƒÂ³n de llamada del servidor.
+     * Maneja el mensaje de finalización de llamada del servidor.
      * 
      * @param message Mensaje completo "CALL_ENDED <callId>"
      */
@@ -119,7 +119,7 @@ public class MessageHandlerImpl implements MessageHandler {
             String callId = parts.length > 1 ? parts[1].trim() : null;
             handleCallEnded(callId);
         } catch (Exception e) {
-            System.err.println("Error procesando CALL_ENDED: " + e.getMessage());
+            System.err.println("Error procesando LLAMADA_TERMINADA: " + e.getMessage());
         }
     }
 
@@ -152,9 +152,9 @@ public class MessageHandlerImpl implements MessageHandler {
             String user = tokens[0];
             String ip = tokens[1];
             String portStr = tokens[2];
-            
-            if (user.equals(username)) return null; // No enviar a sÃƒÂ­ mismo
-            
+
+            if (user.equals(username)) return null; // No enviar a sí mismo
+
             int port = Integer.parseInt(portStr);
             return new InetSocketAddress(ip, port);
             
@@ -171,7 +171,7 @@ public class MessageHandlerImpl implements MessageHandler {
      */
     private void handlePrivateMessage(String message) {
         // El mensaje ya viene formateado desde el servidor
-        // Solo se muestra en la salida estÃ¡ndar
+        // Solo se muestra en la salida estándar
     }
 
     /**
@@ -181,11 +181,11 @@ public class MessageHandlerImpl implements MessageHandler {
      */
     private void handleGroupMessage(String message) {
         // El mensaje ya viene formateado desde el servidor
-        // Solo se muestra en la salida estÃ¡ndar
+        // Solo se muestra en la salida estándar
     }
 
     /**
-     * Maneja la notificaciÃ³n de nota de voz entrante de un usuario.
+     * Maneja la notificación de nota de voz entrante de un usuario.
      * 
      * @param message Mensaje con formato "VOICE_NOTE_INCOMING from <user> <ip:port>"
      */
