@@ -7,10 +7,6 @@ import java.net.*;
 /**
  * Cliente de chat principal que coordina todos los servicios del cliente.
  * Actúa como coordinador central usando inyección de dependencias.
- * Implementa el principio SOLID de Inversión de Dependencias (DIP).
- * 
- * @author Sistema de Chat
- * @version 1.0
  */
 public class ChatClient {
     private final NetworkService networkService;
@@ -19,7 +15,6 @@ public class ChatClient {
     private final MessageHandler messageHandler;
     
     private DatagramSocket udpSocket;
-    private String username;
 
     public ChatClient(Config config) {
         // Crear servicios con inyección de dependencias
@@ -38,9 +33,7 @@ public class ChatClient {
      * @param username Nombre de usuario para la conexión
      * @return Mensaje de bienvenida del servidor o error
      */
-    public String connect(String username) {
-        this.username = username;
-        
+    public String connect(String username) {        
         try {
             // Configurar socket UDP
             udpSocket = new DatagramSocket(); // Sistema selecciona puerto libre
