@@ -20,6 +20,8 @@ public class ChatServer {
     // groups: groupName -> set of usernames
     private static final Map<String, Set<String>> grupos = new HashMap<>();
 
+    private static final Map<String, Set<ClientHandler>> gruposChat = new HashMap<>();
+
     // call manager
     public static final CallManager callManager = new CallManager();
 
@@ -42,6 +44,39 @@ public class ChatServer {
         System.out.println("Usuario registrado: " + nombre);
     }
 
+    public static synchronized void enviarMensajeDirecto(String destinatario, String mensaje) {
+        ClientHandler handler = usuarios.get(destinatario);
+        if (handler != null) handler.enviarMensaje(mensaje);
+    }
+
+    public static synchronized void crearGrupo(String nombreGrupo, ClientHandler creador) {
+        gruposChat.putIfAbsent(nombreGrupo, new HashSet<>());
+        gruposChat.get(nombreGrupo).add(creador);
+        creador.enviarMensaje("Grupo '" + nombreGrupo + "' creado y unido.");
+    }
+
+    public static synchronized void unirseAGrupo(String nombreGrupo, ClientHandler cliente) {
+        if (!gruposChat.containsKey(nombreGrupo)) {
+            cliente.enviarMensaje("El grupo no existe.");
+            return;
+        }
+        gruposChat.get(nombreGrupo).add(cliente);
+        cliente.enviarMensaje("Te has unido al grupo '" + nombreGrupo + "'.");
+    }
+
+    public static synchronized void enviarMensajeAGrupo(String nombreGrupo, String mensaje, ClientHandler remitente) {
+        Set<ClientHandler> miembros = gruposChat.get(nombreGrupo);
+        if (miembros != null) {
+            for (ClientHandler miembro : miembros) {
+                miembro.enviarMensaje("[Grupos: " + nombreGrupo + "] " + remitente.getNombre() + ": " + mensaje);
+            }
+        }
+    }
+
+    public static synchronized Set<String> obtenerGruposChat() {
+        return gruposChat.keySet();
+    }
+    
     public static synchronized void removerUsuario(String nombre) {
         usuarios.remove(nombre);
         udpInfo.remove(nombre);
@@ -61,7 +96,7 @@ public class ChatServer {
     public static synchronized void crearGrupo(String nombreGrupo, String creador) {
         grupos.putIfAbsent(nombreGrupo, new HashSet<>());
         grupos.get(nombreGrupo).add(creador);
-        System.out.println("Grupo creado: " + nombreGrupo + " por " + creador);
+        System.out.println("Grupo creado: '" + nombreGrupo + "' por " + creador);
     }
 
     public static synchronized void unirseAGrupo(String nombreGrupo, String usuario) {

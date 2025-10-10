@@ -14,6 +14,7 @@ public class ClientHandler implements Runnable {
     private PrintWriter out;
     private String nombre;
     private boolean activo = true;
+    private String grupoActual = null;
 
     public ClientHandler(Socket socket) {
         this.socket = socket;
@@ -86,13 +87,8 @@ public class ClientHandler implements Runnable {
                     } else {
                         ChatServer.terminarLlamada(callId, nombre);
                     }
-                } else if (linea.startsWith("/creargroup")) {
-                    String[] p = linea.split(" ", 2);
-                    if (p.length == 2) {
-                        ChatServer.crearGrupo(p[1].trim(), nombre);
-                    } else {
-                        out.println("Uso: /creargroup <groupName>");
-                    }
+                } else if (linea.startsWith("/GroupChat")) {
+                    chatGrupal();
                 } else if (linea.startsWith("/joingroup")) {
                     String[] p = linea.split(" ", 2);
                     if (p.length == 2) {
@@ -107,7 +103,9 @@ public class ClientHandler implements Runnable {
                 }else if (linea.equals("/quit")) {
                     activo = false;
                     out.println("Adiós!");
-                } else {
+                } else if (linea.equals("/msg")) {
+                    chatDirecto();
+                }else {
                     out.println("Comando no reconocido.");
                 }
             }
@@ -125,11 +123,50 @@ public class ClientHandler implements Runnable {
         out.println("/udpport <port>          -> registrar puerto UDP local");
         out.println("/call <user>             -> iniciar llamada privada");
         out.println("/callgroup <group>       -> iniciar llamada grupal");
-        out.println("/creargroup <name>       -> crear grupo");
-        out.println("/joingroup <name>        -> unirse a grupo");
+        out.println("/GroupChat       -> Ver opciones de grupos");
         out.println("/listgroups              -> listar grupos");
+        out.println("/msg       -> Mensaje directo");
         out.println("/endcall [callId]        -> terminar llamada");
         out.println("/help                    -> mostrar comandos");
         out.println("/quit                    -> desconectarse");
     }
+
+    private void chatDirecto() throws IOException{
+        out.println("Ingrese el nombre del usuario al que desea escribir:");
+        String destino = in.readLine();
+        out.println("Escriba su mensaje (o 'salir' para volver al menú):");
+
+        String mensaje;
+        while (!(mensaje = in.readLine()).equalsIgnoreCase("salir")) {
+            ChatServer.enviarMensajeDirecto(destino, nombre + ": " + mensaje);
+        }
+        mostrarMenu();
+    }
+
+    private void chatGrupal() throws IOException {
+        out.println("Grupos disponibles: " + ChatServer.obtenerGruposChat());
+        out.println("1. Crear grupo");
+        out.println("2. Unirse a grupo existente");
+        String opcionGrupo = in.readLine();
+        out.println("Ingrese el nombre del grupo:");
+        String nombreGrupo = in.readLine();
+
+        if (opcionGrupo.equals("1")) {
+            ChatServer.crearGrupo(nombreGrupo, this);
+        } else if (opcionGrupo.equals("2")) {
+            ChatServer.unirseAGrupo(nombreGrupo, this);
+        }
+
+        grupoActual = nombreGrupo;
+        out.println("Estás en el chat del grupo '" + grupoActual + "'. Escribe 'salir' para volver al menú.");
+
+        String msgGrupo;
+        while (!(msgGrupo = in.readLine()).equalsIgnoreCase("salir")) {
+            ChatServer.enviarMensajeAGrupo(grupoActual, msgGrupo, this);
+        }
+
+        grupoActual = null;
+        mostrarMenu();
+    }
+
 }
