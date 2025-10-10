@@ -28,11 +28,8 @@ public class QuitCommandHandler implements CommandHandler {
      * @param clientHandler El manejador del cliente
      */
     @Override
-    public void execute(String command, String userName, Object clientHandler) {
-        if (!(clientHandler instanceof ClientHandler)) return;
-        
-        ClientHandler handler = (ClientHandler) clientHandler;
-        handler.sendMessage("¡Adiós " + userName + "! Gracias por usar el sistema de chat.");
-        handler.sendMessage("DISCONNECT");
+    public void execute(String command, String userName, ClientHandler clientHandler) {
+        clientHandler.sendMessage("¡Adiós " + userName + "! Gracias por usar el sistema de chat.");
+        clientHandler.sendMessage("DISCONNECT");
     }
 }

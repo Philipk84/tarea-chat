@@ -1,7 +1,7 @@
 package service;
 
 import interfaces.AudioService;
-import interfaces.CallManager;
+import interfaces.CallManagerImpl;
 import java.net.InetSocketAddress;
 import java.util.List;
 
@@ -9,14 +9,14 @@ import java.util.List;
  * Implementación del gestor de llamadas del cliente.
  * Coordina el inicio, manejo y finalización de llamadas de audio.
  */
-public class CallManagerImpl implements CallManager {
+public class CallManagerImplImpl implements CallManagerImpl {
     private String activeCallId;
     private AudioService audioService;
 
     /**
      * Constructor por defecto que inicializa el gestor sin llamada activa.
      */
-    public CallManagerImpl() {
+    public CallManagerImplImpl() {
         this.activeCallId = null;
     }
 

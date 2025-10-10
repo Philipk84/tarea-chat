@@ -29,36 +29,27 @@ public class CreateGroupCommandHandler implements CommandHandler {
      * @param clientHandler El manejador del cliente
      */
     @Override
-    public void execute(String command, String userName, Object clientHandler) {
-        if (!(clientHandler instanceof ClientHandler)) return;
-        
-        ClientHandler handler = (ClientHandler) clientHandler;
+    public void execute(String command, String userName, ClientHandler clientHandler) {
         String[] parts = command.split(" ", 2);
-        
-        if (parts.length != 2) {
-            handler.sendMessage("Uso: /creategroup <nombreGrupo>");
-            return;
-        }
-        
         String groupName = parts[1].trim();
         
         if (groupName.isEmpty()) {
-            handler.sendMessage("Error: El nombre del grupo no puede estar vacío");
+            clientHandler.sendMessage("Error: El nombre del grupo no puede estar vacío");
             return;
         }
         
         if (groupName.length() > 50) {
-            handler.sendMessage("Error: El nombre del grupo no puede exceder 50 caracteres");
+            clientHandler.sendMessage("Error: El nombre del grupo no puede exceder 50 caracteres");
             return;
         }
         
         if (!isValidGroupName(groupName)) {
-            handler.sendMessage("Error: El nombre del grupo contiene caracteres no válidos. Use solo letras, números, guiones y guiones bajos");
+            clientHandler.sendMessage("Error: El nombre del grupo contiene caracteres no válidos. Use solo letras, números, guiones y guiones bajos");
             return;
         }
         
         ChatServer.createGroup(groupName, userName);
-        handler.sendMessage("Grupo creado: " + groupName);
+        clientHandler.sendMessage("Grupo creado: " + groupName);
     }
 
     /**

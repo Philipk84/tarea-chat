@@ -14,7 +14,7 @@ import java.net.*;
  */
 public class ChatClient {
     private final NetworkService networkService;
-    private final CallManager callManager;
+    private final CallManagerImpl CallManagerImpl;
     private final AudioService audioService;
     private final MessageHandler messageHandler;
     
@@ -24,7 +24,7 @@ public class ChatClient {
     public ChatClient(Config config) {
         // Crear servicios con inyección de dependencias
         this.networkService = new NetworkServiceImpl(config.getHost(), config.getPort());
-        this.callManager = new CallManagerImpl();
+        this.CallManagerImpl = new CallManagerImplImpl();
         this.audioService = new AudioServiceImpl();
         this.messageHandler = new MessageHandlerImpl(""); // username se establece en connect()
         
@@ -49,7 +49,7 @@ public class ChatClient {
             
             // Crear nuevo messageHandler con username correcto
             MessageHandlerImpl newMessageHandler = new MessageHandlerImpl(username);
-            newMessageHandler.setCallManager(callManager);
+            newMessageHandler.setCallManagerImpl(CallManagerImpl);
             networkService.setMessageHandler(newMessageHandler);
             
             // Conectar vía TCP
@@ -76,7 +76,7 @@ public class ChatClient {
     public void sendCommand(String command) {
         if (command.startsWith("/endcall")) {
             networkService.sendCommand(command);
-            callManager.endCall();
+            CallManagerImpl.endCall();
         } else {
             networkService.sendCommand(command);
         }
@@ -86,7 +86,7 @@ public class ChatClient {
      * Desconecta del servidor y libera recursos.
      */
     public void disconnect() {
-        callManager.endCall();
+        CallManagerImpl.endCall();
         networkService.disconnect();
         if (audioService instanceof AudioServiceImpl) {
             ((AudioServiceImpl) audioService).shutdown();
@@ -110,6 +110,6 @@ public class ChatClient {
      */
     private void setupServiceDependencies() {
         networkService.setMessageHandler(messageHandler);
-        callManager.setAudioService(audioService);
+        CallManagerImpl.setAudioService(audioService);
     }
 }

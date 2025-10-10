@@ -29,10 +29,7 @@ public class EndCallCommandHandler implements CommandHandler {
      * @param clientHandler El manejador del cliente
      */
     @Override
-    public void execute(String command, String userName, Object clientHandler) {
-        if (!(clientHandler instanceof ClientHandler)) return;
-        
-        ClientHandler handler = (ClientHandler) clientHandler;
+    public void execute(String command, String userName, ClientHandler clientHandler) {
         String[] parts = command.split(" ", 2);
         
         String callId = null;
@@ -42,17 +39,17 @@ public class EndCallCommandHandler implements CommandHandler {
             callId = parts[1].trim();
         } else {
             // Buscar la llamada actual del usuario
-            if (ChatServer.getCallManager() != null) {
-                callId = ChatServer.getCallManager().getCallOfUser(userName);
+            if (ChatServer.getCallManagerImpl() != null) {
+                callId = ChatServer.getCallManagerImpl().getCallOfUser(userName);
             }
         }
         
         if (callId == null || callId.isEmpty()) {
-            handler.sendMessage("No estás en ninguna llamada.");
+            clientHandler.sendMessage("No estás en ninguna llamada.");
             return;
         }
         
         ChatServer.endCall(callId, userName);
-        handler.sendMessage("Llamada terminada: " + callId);
+        clientHandler.sendMessage("Llamada terminada: " + callId);
     }
 }

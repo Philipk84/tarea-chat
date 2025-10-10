@@ -30,14 +30,11 @@ public class ListGroupsCommandHandler implements CommandHandler {
      * @param clientHandler El manejador del cliente
      */
     @Override
-    public void execute(String command, String userName, Object clientHandler) {
-        if (!(clientHandler instanceof ClientHandler)) return;
-        
-        ClientHandler handler = (ClientHandler) clientHandler;
+    public void execute(String command, String userName, ClientHandler clientHandler) {        
         Set<String> groups = ChatServer.getGroups();
         
         if (groups.isEmpty()) {
-            handler.sendMessage("No hay grupos disponibles. Usa /creategroup <nombre> para crear uno.");
+            clientHandler.sendMessage("No hay grupos disponibles.");
             return;
         }
         
@@ -54,7 +51,7 @@ public class ListGroupsCommandHandler implements CommandHandler {
             }
             response.append("\n");
         }
-        
-        handler.sendMessage(response.toString().trim());
+
+        clientHandler.sendMessage(response.toString().trim());
     }
 }

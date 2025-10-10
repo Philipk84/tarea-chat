@@ -7,7 +7,7 @@ import java.util.List;
  * Interfaz para la gestión de llamadas del cliente.
  * Define las operaciones para iniciar, manejar y finalizar llamadas de audio.
  */
-public interface CallManager {
+public interface CallManagerImpl {
     /**
      * Inicia una nueva llamada con los participantes especificados.
      * 

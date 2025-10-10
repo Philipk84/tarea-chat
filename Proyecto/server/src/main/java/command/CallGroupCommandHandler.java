@@ -29,29 +29,20 @@ public class CallGroupCommandHandler implements CommandHandler {
      * @param clientHandler El manejador del cliente
      */
     @Override
-    public void execute(String command, String userName, Object clientHandler) {
-        if (!(clientHandler instanceof ClientHandler)) return;
-        
-        ClientHandler handler = (ClientHandler) clientHandler;
+    public void execute(String command, String userName, ClientHandler clientHandler) {
         String[] parts = command.split(" ", 2);
-        
-        if (parts.length < 2) {
-            handler.sendMessage("Uso: /callgroup <nombreGrupo>");
-            return;
-        }
-        
         String groupName = parts[1].trim();
         
         if (groupName.isEmpty()) {
-            handler.sendMessage("Error: Debes especificar un nombre de grupo válido");
+            clientHandler.sendMessage("Error: Debes especificar un nombre de grupo válido");
             return;
         }
         
         String callId = ChatServer.startGroupCall(userName, groupName);
         if (callId == null) {
-            handler.sendMessage("No se pudo iniciar la llamada grupal (pocos miembros en línea/udp).");
+            clientHandler.sendMessage("No se pudo iniciar la llamada grupal (pocos miembros en línea/udp).");
         } else {
-            handler.sendMessage("Llamada grupal iniciada: " + callId);
+            clientHandler.sendMessage("Llamada grupal iniciada: " + callId);
         }
     }
 }

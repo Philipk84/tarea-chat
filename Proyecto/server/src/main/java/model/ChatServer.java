@@ -4,6 +4,7 @@ import interfaces.ServerService;
 import interfaces.UserManager;
 import interfaces.GroupManager;
 import service.UserManagerImpl;
+import service.CallManagerImpl;
 import service.GroupManagerImpl;
 
 import java.io.IOException;
@@ -13,31 +14,32 @@ import java.util.*;
 
 /**
  * Servidor principal del sistema de chat que coordina todas las operaciones
- * de comunicación, gestión de usuarios, grupos y llamadas.
- * 
- * Implementa el patrón Dependency Inversion y utiliza inyección de dependencias
- * para mantener bajo acoplamiento entre componentes.
+ * de comunicación, gestión de usuarios, grupos, llamadas, mensajes y audios.
  */
 public class ChatServer implements ServerService {
+    private static ChatServer instance;
+    
     private final Config config;
     private final UserManager userManager;
     private final GroupManager groupManager;
-    public final CallManager callManager;
+    public final CallManagerImpl CallManagerImpl;
 
     private ServerSocket serverSocket;
     private boolean running = false;
 
     public ChatServer(Config config) {
-        this(config, new UserManagerImpl(), new GroupManagerImpl());
-    }
-
-    public ChatServer(Config config, UserManager userManager, GroupManager groupManager) {
         this.config = config;
-        this.userManager = userManager;
-        this.groupManager = groupManager;
-        this.callManager = new CallManager();
+        this.userManager = new UserManagerImpl();
+        this.groupManager = new GroupManagerImpl();
+        this.CallManagerImpl = new CallManagerImpl();
     }
 
+    /**
+     * Inicia el servidor de chat y comienza a aceptar conexiones de clientes.
+     * 
+     * @return Mensaje de estado del resultado de la operación
+     */
+    @Override
     public String startServer() {
         if (running) {
             return "El servidor ya está ejecutándose en el puerto " + config.getPort();
@@ -50,7 +52,6 @@ public class ChatServer implements ServerService {
             running = true;
             
             Thread serverThread = new Thread(() -> {
-                System.out.println("Servidor iniciado en puerto " + config.getPort());
                 
                 while (running) {
                     try {
@@ -74,6 +75,12 @@ public class ChatServer implements ServerService {
         }
     }
 
+    /**
+     * Cierra el servidor de chat y libera los recursos asociados.
+     * 
+     * @return Mensaje de estado del resultado de la operación
+     */
+    @Override
     public String closeServer() {
         if (!running) {
             return "El servidor no está ejecutándose";
@@ -178,8 +185,6 @@ public class ChatServer implements ServerService {
         return instance.groupManager.getGroups();
     }
 
-    private static ChatServer instance;
-
     /**
      * Inicia una llamada individual entre dos usuarios.
      * 
@@ -192,7 +197,7 @@ public class ChatServer implements ServerService {
         Set<String> participants = new HashSet<>();
         participants.add(from);
         participants.add(to);
-        String callId = instance.callManager.createCall(participants);
+        String callId = instance.CallManagerImpl.createCall(participants);
         notifyCallStarted(callId);
         return callId;
     }
@@ -215,7 +220,7 @@ public class ChatServer implements ServerService {
         }
         participants.add(from);
         if (participants.size() < 2) return null;
-        String callId = instance.callManager.createCall(participants);
+        String callId = instance.CallManagerImpl.createCall(participants);
         notifyCallStarted(callId);
         return callId;
     }
@@ -226,7 +231,7 @@ public class ChatServer implements ServerService {
      * @param callId ID de la llamada iniciada
      */
     private static void notifyCallStarted(String callId) {
-        Set<String> participants = instance.callManager.getParticipants(callId);
+        Set<String> participants = instance.CallManagerImpl.getParticipants(callId);
         Map<String, String> peerMap = new HashMap<>();
         for (String u : participants) {
             String ipPort = instance.userManager.getUdpInfo(u);
@@ -237,7 +242,7 @@ public class ChatServer implements ServerService {
             ClientHandler ch = getClientHandler(u);
             if (ch != null) {
                 StringBuilder sb = new StringBuilder();
-                sb.append("CALL_STARTED ").append(callId).append(" ");
+                sb.append("LLAMADA_INICIADA: ").append(callId).append(" ");
                 boolean first = true;
                 for (Map.Entry<String, String> e : peerMap.entrySet()) {
                     if (!first) sb.append(",");
@@ -256,15 +261,14 @@ public class ChatServer implements ServerService {
      * @param requester Usuario que solicita terminar la llamada
      */
     public static synchronized void endCall(String callId, String requester) {
-        Set<String> participants = instance.callManager.getParticipants(callId);
+        Set<String> participants = instance.CallManagerImpl.getParticipants(callId);
         if (participants == null) return;
         
         for (String u : participants) {
             ClientHandler ch = getClientHandler(u);
-            if (ch != null) ch.sendMessage("CALL_ENDED " + callId);
+            if (ch != null) ch.sendMessage("LLAMADA_TERMINADA: " + callId + " por " + requester);
         }
-        instance.callManager.endCall(callId);
-        System.out.println("Llamada terminada: " + callId + " por " + requester);
+        instance.CallManagerImpl.endCall(callId);
     }
 
     /**
@@ -285,7 +289,7 @@ public class ChatServer implements ServerService {
      * 
      * @return Gestor de llamadas o null si no hay instancia activa
      */
-    public static CallManager getCallManager() {
-        return instance != null ? instance.callManager : null;
+    public static CallManagerImpl getCallManagerImpl() {
+        return instance != null ? instance.CallManagerImpl : null;
     }
 }

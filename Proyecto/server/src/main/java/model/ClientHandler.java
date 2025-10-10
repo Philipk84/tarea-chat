@@ -27,7 +27,6 @@ public class ClientHandler implements Runnable {
 
     /**
      * Inicializa todos los comandos disponibles en el sistema.
-     * Siguiendo el patrón Command y principio Open/Closed.
      */
     private void initializeCommands() {
         commandRegistry.registerHandler(new UdpPortCommandHandler());
@@ -37,7 +36,6 @@ public class ClientHandler implements Runnable {
         commandRegistry.registerHandler(new CreateGroupCommandHandler());
         commandRegistry.registerHandler(new JoinGroupCommandHandler());
         commandRegistry.registerHandler(new ListGroupsCommandHandler());
-        commandRegistry.registerHandler(new HelpCommandHandler());
         commandRegistry.registerHandler(new QuitCommandHandler());
     }
 
@@ -114,9 +112,7 @@ public class ClientHandler implements Runnable {
         
         name = name.trim();
         ChatServer.registerUser(name, this);
-        out.println("¡Bienvenido, " + name + "!");
-        
-        commandRegistry.executeCommand("/help", name, this);
+        out.println("¡Bienvenido, " + name + "!");        
     }
 
     /**
@@ -138,7 +134,7 @@ public class ClientHandler implements Runnable {
             }
             
             if (!commandRegistry.executeCommand(line, name, this)) {
-                out.println("Comando no reconocido. Usa /help para ver comandos disponibles.");
+                out.println("Opción inválida.");
             }
         }
     }

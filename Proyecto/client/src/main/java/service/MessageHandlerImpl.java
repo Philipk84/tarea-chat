@@ -1,6 +1,6 @@
 package service;
 
-import interfaces.CallManager;
+import interfaces.CallManagerImpl;
 import interfaces.MessageHandler;
 import java.net.InetSocketAddress;
 import java.util.*;
@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
  * Procesa y delega mensajes recibidos del servidor.
  */
 public class MessageHandlerImpl implements MessageHandler {
-    private CallManager callManager;
+    private CallManagerImpl CallManagerImpl;
     private String username;
 
     /**
@@ -37,8 +37,8 @@ public class MessageHandlerImpl implements MessageHandler {
 
     @Override
     public void handleCallStarted(String callId, String participants) {
-        if (callManager == null) {
-            System.err.println("CallManager no configurado");
+        if (CallManagerImpl == null) {
+            System.err.println("CallManagerImpl no configurado");
             return;
         }
 
@@ -50,7 +50,7 @@ public class MessageHandlerImpl implements MessageHandler {
             }
 
             System.out.println("Iniciando llamada (callId=" + callId + ") con pares: " + peers);
-            callManager.startCall(callId, peers);
+            CallManagerImpl.startCall(callId, peers);
 
         } catch (Exception e) {
             System.err.println("Error iniciando llamada: " + e.getMessage());
@@ -59,8 +59,8 @@ public class MessageHandlerImpl implements MessageHandler {
 
     @Override
     public void handleCallEnded(String callId) {
-        if (callManager != null) {
-            callManager.endCall();
+        if (CallManagerImpl != null) {
+            CallManagerImpl.endCall();
         }
         System.out.println("Llamada terminada: " + callId);
     }
@@ -68,10 +68,10 @@ public class MessageHandlerImpl implements MessageHandler {
     /**
      * Establece el gestor de llamadas para manejar eventos de llamadas.
      * 
-     * @param callManager Gestor de llamadas del cliente
+     * @param CallManagerImpl Gestor de llamadas del cliente
      */
-    public void setCallManager(CallManager callManager) {
-        this.callManager = callManager;
+    public void setCallManagerImpl(CallManagerImpl CallManagerImpl) {
+        this.CallManagerImpl = CallManagerImpl;
     }
 
     /**

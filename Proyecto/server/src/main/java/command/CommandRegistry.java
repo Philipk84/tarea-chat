@@ -1,6 +1,8 @@
 package command;
 
 import interfaces.CommandHandler;
+import model.ClientHandler;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,7 +34,7 @@ public class CommandRegistry {
      * @param clientHandler El manejador del cliente
      * @return true si el comando fue procesado, false si no se encontró un manejador
      */
-    public boolean executeCommand(String command, String userName, Object clientHandler) {
+    public boolean executeCommand(String command, String userName, ClientHandler clientHandler) {
         for (CommandHandler handler : handlers) {
             if (handler.canHandle(command)) {
                 handler.execute(command, userName, clientHandler);

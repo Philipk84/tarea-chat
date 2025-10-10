@@ -1,13 +1,15 @@
-package model;
+package service;
 
 import java.util.*;
+
+import interfaces.CallManager;
 
 /**
  * Gestor de llamadas activas para el sistema de chat.
  * Administra el estado de las llamadas y la relación entre usuarios y llamadas.
  * Solo maneja la señalización; el audio UDP se gestiona directamente entre clientes.
  */
-public class CallManager {
+public class CallManagerImpl implements CallManager {
 
     /**
      * Mapa de llamadas activas: ID de llamada -> conjunto de participantes
@@ -25,6 +27,7 @@ public class CallManager {
      * @param participants Conjunto de nombres de usuario que participarán en la llamada
      * @return ID único de la llamada creada
      */
+    @Override
     public synchronized String createCall(Set<String> participants) {
         String callId = UUID.randomUUID().toString();
         calls.put(callId, new HashSet<>(participants));
@@ -37,6 +40,7 @@ public class CallManager {
      * 
      * @param callId ID de la llamada a terminar
      */
+    @Override
     public synchronized void endCall(String callId) {
         Set<String> parts = calls.remove(callId);
         if (parts != null) {
@@ -50,6 +54,7 @@ public class CallManager {
      * @param username Nombre del usuario a verificar
      * @return true si el usuario está en una llamada, false en caso contrario
      */
+    @Override
     public synchronized boolean isInCall(String username) {
         return userToCall.containsKey(username);
     }
@@ -60,6 +65,7 @@ public class CallManager {
      * @param username Nombre del usuario
      * @return ID de la llamada o null si el usuario no está en ninguna llamada
      */
+    @Override
     public synchronized String getCallOfUser(String username) {
         return userToCall.get(username);
     }
@@ -70,6 +76,7 @@ public class CallManager {
      * @param callId ID de la llamada
      * @return Conjunto de nombres de usuario participantes o conjunto vacío si la llamada no existe
      */
+    @Override
     public synchronized Set<String> getParticipants(String callId) {
         return calls.getOrDefault(callId, Collections.emptySet());
     }

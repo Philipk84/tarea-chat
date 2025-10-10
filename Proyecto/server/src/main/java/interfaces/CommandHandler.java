@@ -1,5 +1,7 @@
 package interfaces;
 
+import model.ClientHandler;
+
 /**
  * Interfaz para el manejo de comandos en el sistema de chat.
  * Define el contrato para procesar diferentes tipos de comandos de usuario.
@@ -20,5 +22,5 @@ public interface CommandHandler {
      * @param userName Nombre del usuario que ejecuta el comando
      * @param clientHandler Manejador del cliente que envió el comando
      */
-    void execute(String command, String userName, Object clientHandler);
+    void execute(String command, String userName, ClientHandler clientHandler);
 }

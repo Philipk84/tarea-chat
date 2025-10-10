@@ -29,34 +29,25 @@ public class CallCommandHandler implements CommandHandler {
      * @param clientHandler El manejador del cliente
      */
     @Override
-    public void execute(String command, String userName, Object clientHandler) {
-        if (!(clientHandler instanceof ClientHandler)) return;
-        
-        ClientHandler handler = (ClientHandler) clientHandler;
+    public void execute(String command, String userName, ClientHandler clientHandler) {
         String[] parts = command.split(" ", 2);
-        
-        if (parts.length < 2) {
-            handler.sendMessage("Uso: /call <nombreUsuario>");
-            return;
-        }
-        
         String targetUser = parts[1].trim();
         
         if (targetUser.isEmpty()) {
-            handler.sendMessage("Error: Debes especificar un nombre de usuario válido");
+            clientHandler.sendMessage("Error: Debes especificar un nombre de usuario válido");
             return;
         }
         
         if (targetUser.equals(userName)) {
-            handler.sendMessage("Error: No puedes llamarte a ti mismo");
+            clientHandler.sendMessage("Error: No puedes llamarte a ti mismo");
             return;
         }
         
         String callId = ChatServer.startIndividualCall(userName, targetUser);
         if (callId == null) {
-            handler.sendMessage("No se pudo iniciar la llamada (usuario no disponible o sin UDP).");
+            clientHandler.sendMessage("No se pudo iniciar la llamada (usuario no disponible o sin UDP).");
         } else {
-            handler.sendMessage("Llamada iniciada: " + callId);
+            clientHandler.sendMessage("Llamada iniciada: " + callId);
         }
     }
 }

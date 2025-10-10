@@ -41,4 +41,13 @@ public class Controller {
     public String closeServer() {
         return chatServer.closeServer();
     }
+
+    /**
+     * Verifica si el servidor de chat está en ejecución.
+     * 
+     * @return true si el servidor está en ejecución, false en caso contrario
+     */
+    public boolean isServerRunning() {
+        return chatServer.isRunning();
+    }
 }

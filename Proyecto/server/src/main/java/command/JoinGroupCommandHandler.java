@@ -29,37 +29,28 @@ public class JoinGroupCommandHandler implements CommandHandler {
      * @param clientHandler El manejador del cliente
      */
     @Override
-    public void execute(String command, String userName, Object clientHandler) {
-        if (!(clientHandler instanceof ClientHandler)) return;
-        
-        ClientHandler handler = (ClientHandler) clientHandler;
+    public void execute(String command, String userName, ClientHandler clientHandler) {
         String[] parts = command.split(" ", 2);
-        
-        if (parts.length != 2) {
-            handler.sendMessage("Uso: /joingroup <nombreGrupo>");
-            return;
-        }
-        
         String groupName = parts[1].trim();
         
         if (groupName.isEmpty()) {
-            handler.sendMessage("Error: Debes especificar un nombre de grupo válido");
+            clientHandler.sendMessage("Error: Debes especificar un nombre de grupo válido");
             return;
         }
         
         // Verificar si el grupo existe
         if (!ChatServer.getGroups().contains(groupName)) {
-            handler.sendMessage("Error: El grupo '" + groupName + "' no existe. Usa /listgroups para ver grupos disponibles");
+            clientHandler.sendMessage("Error: El grupo '" + groupName + "' no existe.");
             return;
         }
         
         // Verificar si el usuario ya es miembro del grupo
         if (ChatServer.getGroupMembers(groupName).contains(userName)) {
-            handler.sendMessage("Ya eres miembro del grupo: " + groupName);
+            clientHandler.sendMessage("Ya eres miembro del grupo: " + groupName);
             return;
         }
         
         ChatServer.joinGroup(groupName, userName);
-        handler.sendMessage("Te has unido al grupo: " + groupName);
+        clientHandler.sendMessage("Te has unido al grupo: " + groupName);
     }
 }
