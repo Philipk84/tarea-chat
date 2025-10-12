@@ -5,19 +5,28 @@ import java.net.Socket;
 import command.*;
 
 /**
- * Manejador de cliente que procesa conexiones TCP y ejecuta comandos
- * de seÃ±alizaciÃ³n para llamadas y gestiÃ³n de grupos.
- * 
- * Cada cliente conectado tiene su propio hilo de ejecuciÃ³n que procesa
- * los comandos de manera asÃ­ncrona.
+ * Manejador de cliente que procesa conexiones TCP (texto)
+ * y mantiene un canal de voz independiente.
+ *
+ * Este handler maneja:
+ *  🔹 Comandos de texto por TCP
+ *  🔹 Reenvío de notas de voz (binarias)
  */
 public class ClientHandler implements Runnable {
     private final Socket socket;
     private final CommandRegistry commandRegistry;
     private BufferedReader in;
     private PrintWriter out;
+
+    // Flujos binarios para notas de voz
+    private DataInputStream dataIn;
+    private DataOutputStream dataOut;
+
     private String name;
     private boolean active = true;
+
+    // Canal de voz separado (para futuras llamadas)
+    private VoiceChannelHandler voiceChannel;
 
     public ClientHandler(Socket socket) {
         this.socket = socket;
@@ -25,9 +34,7 @@ public class ClientHandler implements Runnable {
         initializeCommands();
     }
 
-    /**
-     * Inicializa todos los comandos disponibles en el sistema.
-     */
+    /** Inicializa los comandos disponibles en el sistema. */
     private void initializeCommands() {
         commandRegistry.registerHandler(new UdpPortCommandHandler());
         commandRegistry.registerHandler(new CallCommandHandler());
@@ -43,119 +50,123 @@ public class ClientHandler implements Runnable {
         commandRegistry.registerHandler(new QuitCommandHandler());
     }
 
-    /**
-     * EnvÃ­a un mensaje al cliente a travÃ©s del socket TCP.
-     * 
-     * @param message El mensaje a enviar
-     */
+    /** Envía un mensaje de texto al cliente. */
     public void sendMessage(String message) {
-        if (out != null) {
-            out.println(message);
+        if (out != null) out.println(message);
+    }
+
+    /** Envía una nota de voz binaria al cliente. */
+    public synchronized void sendVoiceNote(String fromUser, byte[] audioData) {
+        try {
+            if (dataOut == null) return;
+            dataOut.writeUTF("VOICE_NOTE_FROM:" + fromUser);
+            dataOut.writeInt(audioData.length);
+            dataOut.write(audioData);
+            dataOut.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
-    /**
-     * Obtiene el nombre del usuario asociado a este cliente.
-     * 
-     * @return El nombre del usuario
-     */
-    public String getName() {
-        return name;
-    }
+    public String getName() { return name; }
+    public Socket getClientSocket() { return socket; }
 
-    /**
-     * Obtiene el socket TCP del cliente.
-     * 
-     * @return El socket del cliente
-     */
-    public Socket getClientSocket() {
-        return socket;
-    }
-
-    /**
-     * Hilo principal que maneja la comunicaciÃ³n con el cliente.
-     * Procesa el registro del usuario y ejecuta comandos de manera continua.
-     */
     @Override
     public void run() {
         try {
             setupClientConnection();
             handleUserRegistration();
-            processUserCommands();
+            startVoiceChannel();
+
+            // 🔹 Escucha comandos de texto y voz
+            listenForMessages();
+
         } catch (IOException e) {
-            System.err.println("Error del cliente " + name + ": " + e.getMessage());
+            System.err.println("Error con cliente " + name + ": " + e.getMessage());
         } finally {
             cleanup();
         }
     }
 
-    /**
-     * Configura las conexiones de entrada y salida con el cliente.
-     * 
-     * @throws IOException Si hay problemas con los streams
-     */
+    /** Configura los streams de texto y binarios. */
     private void setupClientConnection() throws IOException {
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream(), true);
+
+        dataIn = new DataInputStream(socket.getInputStream());
+        dataOut = new DataOutputStream(socket.getOutputStream());
     }
 
-    /**
-     * Maneja el proceso de registro del usuario.
-     * 
-     * @throws IOException Si hay problemas de comunicaciÃ³n
-     */
+    /** Maneja el registro del usuario. */
     private void handleUserRegistration() throws IOException {
         out.println("Ingresa tu nombre:");
         name = in.readLine();
-        
+
         if (name == null || name.trim().isEmpty()) {
-            out.println("Error: Nombre invÃ¡lido");
+            out.println("Error: Nombre inválido");
             active = false;
             return;
         }
-        
+
         name = name.trim();
         ChatServer.registerUser(name, this);
-        out.println("Â¡Bienvenido, " + name + "!");        
+        out.println("¡Bienvenido, " + name + "!");
     }
 
-    /**
-     * Procesa los comandos enviados por el usuario de manera continua.
-     * 
-     * @throws IOException Si hay problemas de comunicaciÃ³n
-     */
-    private void processUserCommands() throws IOException {
+    /** Escucha comandos del cliente y posibles notas de voz. */
+    private void listenForMessages() throws IOException {
         String line;
         while (active && (line = in.readLine()) != null) {
-            if (line.trim().isEmpty()) {
-                continue;
-            }
-            
+            if (line.trim().isEmpty()) continue;
+
+            // Comando de salida
             if (line.equals("/quit")) {
                 commandRegistry.executeCommand(line, name, this);
                 active = false;
                 break;
             }
-            
+
+            // 🔊 Nota de voz (binaria)
+            if (line.startsWith("VOICE_NOTE:")) {
+                String[] parts = line.split(":", 4);
+                String from = parts[1];
+                String to = parts[2];
+                boolean isGroup = Boolean.parseBoolean(parts[3]);
+
+                int length = dataIn.readInt();
+                byte[] audioData = new byte[length];
+                dataIn.readFully(audioData);
+
+                ChatServer.handleVoiceNote(from, to, audioData, isGroup);
+                continue;
+            }
+
+            // Otros comandos
             if (!commandRegistry.executeCommand(line, name, this)) {
-                out.println("OpciÃ³n invÃ¡lida.");
+                out.println("Comando no reconocido.");
             }
         }
     }
 
-    /**
-     * Limpia los recursos al finalizar la conexiÃ³n del cliente.
-     */
+    /** Inicia el canal de voz independiente. */
+    private void startVoiceChannel() {
+        voiceChannel = new VoiceChannelHandler(name);
+        voiceChannel.start();
+    }
+
+    /** Limpia los recursos al finalizar. */
     private void cleanup() {
-        if (name != null) {
-            ChatServer.removeUser(name);
-        }
+        active = false;
+        ChatServer.removeUser(name);
         try {
-            if (socket != null && !socket.isClosed()) {
-                socket.close();
-            }
+            if (socket != null && !socket.isClosed()) socket.close();
+            if (in != null) in.close();
+            if (out != null) out.close();
+            if (dataIn != null) dataIn.close();
+            if (dataOut != null) dataOut.close();
+            if (voiceChannel != null) voiceChannel.shutdown();
         } catch (IOException e) {
-            System.err.println("Error cerrando socket: " + e.getMessage());
+            System.err.println("Error cerrando recursos de " + name + ": " + e.getMessage());
         }
     }
 }
