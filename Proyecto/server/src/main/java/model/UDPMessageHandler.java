@@ -20,7 +20,7 @@ public class UDPMessageHandler implements Runnable {
     /**
      * Constructor que recibe el paquete UDP a procesar.
      * Usa la misma firma que class/ClientHandler.java
-     * 
+     *
      * @param packet Paquete UDP recibido
      * @param socket Socket UDP del servidor
      * @param udpClients Mapa de direcciones UDP a nombres de usuario
@@ -75,7 +75,7 @@ public class UDPMessageHandler implements Runnable {
         // Reenviar la nota de voz al destinatario
         String senderName = udpClients.get(senderAddress);
         String forwardMessage = "VOICE_FROM:" + (senderName != null ? senderName : "Unknown") + ":" + audioDataStr;
-        
+
         DatagramPacket forwardPacket = new DatagramPacket(
             forwardMessage.getBytes(), forwardMessage.length(), targetAddress
         );
@@ -95,12 +95,12 @@ public class UDPMessageHandler implements Runnable {
         String groupName = parts[1];
         String audioDataStr = parts[2];
         String senderName = udpClients.get(senderAddress);
-        
+
         // Obtener miembros del grupo
         Set<String> members = ChatServer.getGroupMembers(groupName);
         if (members.isEmpty()) return;
 
-        String forwardMessage = "VOICE_GROUP_FROM:" + (senderName != null ? senderName : "Unknown") + 
+        String forwardMessage = "VOICE_GROUP_FROM:" + (senderName != null ? senderName : "Unknown") +
                             ":" + groupName + ":" + audioDataStr;
 
         int sentCount = 0;
@@ -138,7 +138,7 @@ public class UDPMessageHandler implements Runnable {
         // de la llamada activa y se reenviaría el audio a cada uno
         String senderName = udpClients.get(senderAddress);
         System.out.println("Audio de llamada recibido de: " + (senderName != null ? senderName : senderAddress));
-        
+
         // TODO: Implementar relay de audio a participantes de la llamada activa
         // Esto requeriría acceso al CallManager para obtener la lista de participantes
     }
@@ -183,7 +183,7 @@ public class UDPMessageHandler implements Runnable {
     /**
      * Registra un cliente UDP en el mapa de clientes.
      * Útil para asociar direcciones UDP con nombres de usuario.
-     * 
+     *
      * @param address Dirección del cliente UDP
      * @param username Nombre del usuario
      */
@@ -194,7 +194,7 @@ public class UDPMessageHandler implements Runnable {
 
     /**
      * Desregistra un cliente UDP del mapa de clientes.
-     * 
+     *
      * @param address Dirección del cliente UDP a desregistrar
      */
     public static void unregisterUdpClient(SocketAddress address, Map<SocketAddress, String> udpClients) {

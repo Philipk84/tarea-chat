@@ -3,6 +3,7 @@ package service;
 import interfaces.GroupManager;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import model.ChatGroup;
 
 /**
  * Implementación concreta del gestor de grupos para el sistema de chat.
@@ -61,4 +62,5 @@ public class GroupManagerImpl implements GroupManager {
     public Set<String> getGroups() {
         return groups.keySet();
     }
+
 }

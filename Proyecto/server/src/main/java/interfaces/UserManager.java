@@ -1,43 +1,57 @@
 package interfaces;
 
+import model.ClientHandler;
+
 /**
- * Interface para manejo de usuarios
+ * Interfaz para la gestión de usuarios en el servidor de chat.
+ * Define las operaciones básicas para registrar, eliminar y consultar usuarios.
  */
 public interface UserManager {
-    
-    /** Registra un nuevo usuario en el sistema.
-     * 
-     * @param name Nombre del usuario a registrar
-     * @param handler Manejador del cliente asociado al usuario
-     */
-    void registerUser(String name, Object handler);
 
     /**
-     * Elimina un usuario del sistema.
-     * 
-     * @param name Nombre del usuario a eliminar
+     * Registra un nuevo usuario en el servidor.
+     *
+     * @param username nombre del usuario.
+     * @param handler instancia de ClientHandler asociada.
      */
-    void removeUser(String name);
-    
-    /** Registra la información de conexión UDP del usuario.
-     * 
-     * @param name Nombre del usuario
-     * @param ipPort Información de IP y puerto en formato "IP:PUERTO"
+    void registerUser(String username, ClientHandler handler);
+
+    /**
+     * Elimina un usuario del servidor.
+     *
+     * @param username nombre del usuario a eliminar.
      */
-    void registerUdpInfo(String name, String ipPort);
-    
-    /** Obtiene la información de conexión UDP del usuario.
-     * 
-     * @param name Nombre del usuario
-     * @return Información de IP y puerto en formato "IP:PUERTO" o null si no está registrada
-     */
-    String getUdpInfo(String name);
+    void removeUser(String username);
 
     /**
      * Verifica si un usuario está en línea.
-     * 
-     * @param name Nombre del usuario a verificar
-     * @return true si el usuario está en línea, false en caso contrario
+     *
+     * @param username nombre del usuario.
+     * @return true si el usuario está conectado, false si no.
      */
-    boolean isUserOnline(String name);
+    boolean isUserOnline(String username);
+
+    /**
+     * Obtiene el manejador de cliente asociado a un usuario.
+     *
+     * @param username nombre del usuario.
+     * @return instancia de ClientHandler o null si no está conectado.
+     */
+    ClientHandler getClientHandler(String username);
+
+    /**
+     * Registra la información UDP (IP:puerto) de un usuario.
+     *
+     * @param username nombre del usuario.
+     * @param ipPort información en formato "IP:puerto".
+     */
+    void registerUdpInfo(String username, String ipPort);
+
+    /**
+     * Obtiene la información UDP de un usuario.
+     *
+     * @param username nombre del usuario.
+     * @return información en formato "IP:puerto", o null si no existe.
+     */
+    String getUdpInfo(String username);
 }

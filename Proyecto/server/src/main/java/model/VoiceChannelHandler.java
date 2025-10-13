@@ -40,7 +40,7 @@ public class VoiceChannelHandler extends Thread {
             while (running) {
                 Object obj = in.readObject();
                 if (obj instanceof VoiceNote note) {
-                    System.out.println("🎤 Nota de voz recibida de " + note.getSender());
+                    System.out.println("🎤 Nota de voz recibida de " + note.getFromUser());
                     ChatServer.forwardVoiceNote(note);
                 }
             }

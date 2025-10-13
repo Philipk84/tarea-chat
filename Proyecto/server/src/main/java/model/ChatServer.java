@@ -6,7 +6,6 @@ import interfaces.GroupManager;
 import service.UserManagerImpl;
 import service.CallManagerImpl;
 import service.GroupManagerImpl;
-
 import java.io.IOException;
 import java.net.*;
 import java.util.*;
@@ -32,6 +31,7 @@ public class ChatServer implements ServerService {
     private boolean running = false;
 
     private static final Map<String, Integer> udpPorts = new ConcurrentHashMap<>();
+    private final Map<SocketAddress, String> udpClients = new ConcurrentHashMap<>();
 
     public ChatServer(Config config) {
         this.config = config;
@@ -76,7 +76,7 @@ public class ChatServer implements ServerService {
                     try {
                         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                         udpSocket.receive(packet);
-                        threadPool.submit(new UDPMessageHandler(packet, udpSocket));
+                        threadPool.submit(new UDPMessageHandler(packet, udpSocket, udpClients));
                     } catch (Exception e) {
                         if (running) e.printStackTrace();
                     }
@@ -111,7 +111,7 @@ public class ChatServer implements ServerService {
     }
 
     // ======================
-    // GETTERS / SINGLETONS
+    // MÉTODOS ESTÁTICOS
     // ======================
     public static synchronized ChatServer getInstance() {
         return instance;
@@ -172,10 +172,6 @@ public class ChatServer implements ServerService {
 
     public static synchronized Set<String> getGroups() {
         return instance.groupManager.getGroups();
-    }
-
-    public static ChatGroup getGroup(String groupName) {
-        return instance.groupManager.getGroup(groupName);
     }
 
     // ===========================================
@@ -245,23 +241,47 @@ public class ChatServer implements ServerService {
         instance.callManager.endCall(callId);
     }
 
+    public static void registerUdpPort(String username, InetAddress address, int port) {
+        udpPorts.put(username, port);
+        System.out.println("[UDP] Registrado " + username + " en puerto " + port);
+    }
+
+    public static int getUserUdpPort(String username) {
+        return udpPorts.getOrDefault(username, -1);
+    }
+
     // ===========================
-    // MANEJO DE NOTAS DE VOZ
+    // 🎤 NOTAS DE VOZ
     // ===========================
+
+    public static void handleVoiceNote(String from, String to, byte[] audioData, boolean isGroup) {
+        VoiceNote note = new VoiceNote(from, to, audioData, isGroup);
+        instance.forwardVoiceNote(note);
+    }
+
     public static synchronized void forwardVoiceNote(VoiceNote note) {
+        System.out.println("🎤 Reenviando nota de voz de " + note.getFromUser() +
+                (note.isGroup() ? " para grupo " + note.getTarget() : " para usuario " + note.getTarget()));
+
         if (note.isGroup()) {
             Set<String> members = instance.groupManager.getGroupMembers(note.getTarget());
             for (String member : members) {
-                if (!member.equals(note.getSender())) {
+                if (!member.equals(note.getFromUser())) {
                     ClientHandler ch = getClientHandler(member);
-                    if (ch != null) ch.sendVoiceNote(note.getSender(), note.getAudioData());
+                    if (ch != null) {
+                        ch.sendVoiceNote(note.getFromUser(), note.getAudioData());
+                    }
                 }
             }
         } else {
             ClientHandler recipient = getClientHandler(note.getTarget());
             if (recipient != null) {
-                recipient.sendVoiceNote(note.getSender(), note.getAudioData());
+                recipient.sendVoiceNote(note.getFromUser(), note.getAudioData());
+            } else {
+                System.out.println("⚠️ Usuario destino no encontrado o desconectado: " + note.getTarget());
             }
         }
     }
+
+
 }

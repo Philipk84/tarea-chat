@@ -36,4 +36,5 @@ public interface GroupManager {
      * @return Conjunto de nombres de todos los grupos
      */
     Set<String> getGroups();
+
 }

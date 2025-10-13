@@ -1,83 +1,47 @@
 package command;
 
 import interfaces.CommandHandler;
-import model.*;
-import java.net.*;
+import model.ChatServer;
+import model.ClientHandler;
+import model.VoiceNote;
 import java.util.Set;
 
-/**
- * Comando /voicegroup <grupo>
- * Envía una nota de voz por UDP a todos los miembros del grupo.
- */
 public class VoiceGroupCommandHandler implements CommandHandler {
 
     @Override
-    public String getCommandName() {
-        return "/voicegroup";
+    public boolean canHandle(String command) {
+        return command.startsWith("/voicegroup");
     }
 
     @Override
-    public boolean execute(String[] args, String sender, ClientHandler clientHandler) {
+    public void execute(String command, String sender, ClientHandler clientHandler) {
+        String[] args = command.trim().split("\\s+");
         if (args.length < 2) {
-            clientHandler.sendMessage("Uso correcto: /voicegroup <grupo>");
-            return true;
+            clientHandler.sendMessage("Uso correcto: /voicegroup <nombre_grupo>");
+            return;
         }
 
         String groupName = args[1].trim();
         Set<String> members = ChatServer.getGroupMembers(groupName);
 
         if (members == null || members.isEmpty()) {
-            clientHandler.sendMessage("Error: El grupo '" + groupName + "' no existe o está vacío.");
-            return true;
-        }
-
-        int senderPort = ChatServer.getUserUdpPort(sender);
-        if (senderPort == -1) {
-            clientHandler.sendMessage("Error: No has registrado tu puerto UDP (/udpport <puerto>).");
-            return true;
+            clientHandler.sendMessage("❌ El grupo '" + groupName + "' no existe o está vacío.");
+            return;
         }
 
         try {
-            DatagramSocket socket = new DatagramSocket();
-            InetAddress senderAddress = clientHandler.getClientSocket().getInetAddress();
+            clientHandler.sendMessage("🎤 Grabando nota de voz para el grupo '" + groupName + "'...");
 
-            clientHandler.sendMessage("🎤 Listo para enviar audio al grupo " + groupName + "...");
+            byte[] fakeAudio = "AUDIO_GROUP_DATA".getBytes(); // Simulación temporal
 
-            byte[] buffer = new byte[4096];
-            DatagramPacket incoming = new DatagramPacket(buffer, buffer.length);
+            VoiceNote note = new VoiceNote(sender, groupName, fakeAudio, true);
+            ChatServer.forwardVoiceNote(note);
 
-            // Recibir un único paquete de audio del emisor
-            socket.receive(incoming);
-            System.out.println("[VoiceGroup] Audio recibido desde " + sender);
-
-            // Reenviar a todos los miembros del grupo (menos el emisor)
-            for (String member : members) {
-                if (!member.equals(sender)) {
-                    String info = ChatServer.getUdpInfo(member);
-                    if (info == null) continue;
-
-                    String[] parts = info.split(":");
-                    InetAddress targetAddress = InetAddress.getByName(parts[0]);
-                    int targetPort = Integer.parseInt(parts[1]);
-
-                    DatagramPacket packetToSend = new DatagramPacket(
-                            incoming.getData(),
-                            incoming.getLength(),
-                            targetAddress,
-                            targetPort
-                    );
-                    socket.send(packetToSend);
-                }
-            }
-
-            socket.close();
-            clientHandler.sendMessage("✅ Nota de voz enviada al grupo " + groupName + ".");
-
+            clientHandler.sendMessage("✅ Nota de voz enviada al grupo '" + groupName + "'.");
+            System.out.println("[VoiceGroup] " + sender + " → grupo " + groupName);
         } catch (Exception e) {
             clientHandler.sendMessage("Error al enviar nota de voz grupal: " + e.getMessage());
             e.printStackTrace();
         }
-
-        return true;
     }
 }
