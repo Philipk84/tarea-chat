@@ -44,7 +44,7 @@ public class VoiceGroupCommandHandler implements CommandHandler {
         String groupName = parts[1].trim();
         
         if (groupName.isEmpty()) {
-            clientHandler.sendMessage("Error: Debes especificar un nombre de grupo vÃ¡lido");
+            clientHandler.sendMessage("Error: Debes especificar un nombre de grupo válido");
             return;
         }
         
@@ -66,7 +66,7 @@ public class VoiceGroupCommandHandler implements CommandHandler {
         String senderUdpInfo = ChatServer.getUdpInfo(userName);
         
         if (senderUdpInfo == null) {
-            clientHandler.sendMessage("Error: Tu informaciÃ³n UDP no estÃ¡ registrada");
+            clientHandler.sendMessage("Error: Tu información UDP no está registrada");
             return;
         }
         

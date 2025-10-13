@@ -34,13 +34,13 @@ public class CallGroupCommandHandler implements CommandHandler {
         String groupName = parts[1].trim();
         
         if (groupName.isEmpty()) {
-            clientHandler.sendMessage("Error: Debes especificar un nombre de grupo vÃ¡lido");
+            clientHandler.sendMessage("Error: Debes especificar un nombre de grupo válido");
             return;
         }
         
         String callId = ChatServer.startGroupCall(userName, groupName);
         if (callId == null) {
-            clientHandler.sendMessage("No se pudo iniciar la llamada grupal (pocos miembros en lÃ­nea/udp).");
+            clientHandler.sendMessage("No se pudo iniciar la llamada grupal (pocos miembros en línea/udp).");
         } else {
             clientHandler.sendMessage("Llamada grupal iniciada: " + callId);
         }

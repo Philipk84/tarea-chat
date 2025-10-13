@@ -194,6 +194,7 @@ public class MessageHandlerImpl implements MessageHandler {
             String payload = message.substring("VOICE_NOTE_INCOMING from ".length()).trim();
             String[] parts = payload.split(" ", 2);
             String sender = parts[0];
+            @SuppressWarnings("unused")
             String senderUdpInfo = parts.length > 1 ? parts[1] : "";
             
             System.out.println("⏹️ Recibiendo nota de voz de " + sender + "...");
@@ -284,14 +285,15 @@ public class MessageHandlerImpl implements MessageHandler {
             String sender = parts[1];
             String audioDataStr = parts[2];
             
-            System.out.println("📢 Reproduciendo nota de voz de " + sender + "...");
+            System.out.println("Reproduciendo nota de voz de " + sender + "...");
             
             // En una implementación completa, aquí se convertiría audioDataStr a bytes
             // y se reproduciría usando AudioServiceImpl.playReceivedVoiceNote()
+            @SuppressWarnings("unused")
             byte[] audioData = audioDataStr.getBytes(); // Conversión simplificada
             
             // Reproducir la nota de voz (esto requeriría acceso al AudioService)
-            System.out.println("🔊 [AUDIO] Nota de voz de " + sender + " (simulada)");
+            System.out.println("[AUDIO] Nota de voz de " + sender + " (simulada)");
             
         } catch (Exception e) {
             System.err.println("Error procesando nota de voz recibida: " + e.getMessage());
@@ -313,14 +315,15 @@ public class MessageHandlerImpl implements MessageHandler {
             String groupName = parts[2];
             String audioDataStr = parts[3];
             
-            System.out.println("📢 Reproduciendo nota de voz de " + sender + " en grupo [" + groupName + "]...");
+            System.out.println("Reproduciendo nota de voz de " + sender + " en grupo [" + groupName + "]...");
             
             // En una implementación completa, aquí se convertiría audioDataStr a bytes
             // y se reproduciría usando AudioServiceImpl.playReceivedVoiceNote()
+            @SuppressWarnings("unused")
             byte[] audioData = audioDataStr.getBytes(); // Conversión simplificada
             
             // Reproducir la nota de voz grupal
-            System.out.println("🔊 [GRUPO " + groupName + "] Nota de voz de " + sender + " (simulada)");
+            System.out.println("[GRUPO " + groupName + "] Nota de voz de " + sender + " (simulada)");
             
         } catch (Exception e) {
             System.err.println("Error procesando nota de voz grupal recibida: " + e.getMessage());

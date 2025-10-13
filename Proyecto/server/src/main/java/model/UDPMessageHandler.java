@@ -128,6 +128,7 @@ public class UDPMessageHandler implements Runnable {
      * Maneja audio de llamadas en tiempo real.
      * Simplemente reenvía el audio a todos los participantes de la llamada.
      */
+    @SuppressWarnings("unused")
     private void handleCallAudio(String message, SocketAddress senderAddress) throws Exception {
         // Para llamadas, el audio se reenvía directamente entre participantes
         // El servidor actúa como relay usando la misma lógica de DatagramPacket

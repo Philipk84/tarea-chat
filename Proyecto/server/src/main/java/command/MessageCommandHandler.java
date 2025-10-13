@@ -42,7 +42,7 @@ public class MessageCommandHandler implements CommandHandler {
         String message = parts[2].trim();
         
         if (targetUser.isEmpty() || message.isEmpty()) {
-            clientHandler.sendMessage("Error: Usuario y mensaje no pueden estar vacÃ­os");
+            clientHandler.sendMessage("Error: Usuario y mensaje no pueden estar vacíos");
             return;
         }
         
@@ -55,7 +55,7 @@ public class MessageCommandHandler implements CommandHandler {
         ClientHandler targetHandler = getUserHandler(targetUser);
         
         if (targetHandler == null) {
-            clientHandler.sendMessage("Error: Usuario '" + targetUser + "' no estÃ¡ conectado");
+            clientHandler.sendMessage("Error: Usuario '" + targetUser + "' no está conectado");
             return;
         }
         

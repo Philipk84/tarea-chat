@@ -45,7 +45,7 @@ public class UdpPortCommandHandler implements CommandHandler {
             ChatServer.registerUdpInfo(userName, ipPort);
             clientHandler.sendMessage("UDP registrado: " + ipPort);
         } catch (NumberFormatException e) {
-            clientHandler.sendMessage("Error: El puerto debe ser un nÃºmero vÃ¡lido");
+            clientHandler.sendMessage("Error: El puerto debe ser un número válido");
         }
     }
 }

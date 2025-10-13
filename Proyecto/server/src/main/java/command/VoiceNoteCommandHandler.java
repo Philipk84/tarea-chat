@@ -41,7 +41,7 @@ public class VoiceNoteCommandHandler implements CommandHandler {
         String targetUser = parts[1].trim();
         
         if (targetUser.isEmpty()) {
-            clientHandler.sendMessage("Error: Debes especificar un nombre de usuario vÃ¡lido");
+            clientHandler.sendMessage("Error: Debes especificar un nombre de usuario válido");
             return;
         }
         
@@ -54,7 +54,7 @@ public class VoiceNoteCommandHandler implements CommandHandler {
         String targetUdpInfo = ChatServer.getUdpInfo(targetUser);
         
         if (targetUdpInfo == null) {
-            clientHandler.sendMessage("Error: Usuario '" + targetUser + "' no estÃ¡ disponible o sin UDP");
+            clientHandler.sendMessage("Error: Usuario '" + targetUser + "' no está disponible o sin UDP");
             return;
         }
         
@@ -62,7 +62,7 @@ public class VoiceNoteCommandHandler implements CommandHandler {
         String senderUdpInfo = ChatServer.getUdpInfo(userName);
         
         if (senderUdpInfo == null) {
-            clientHandler.sendMessage("Error: Tu informaciÃ³n UDP no estÃ¡ registrada");
+            clientHandler.sendMessage("Error: Tu información UDP no está registrada");
             return;
         }
         

@@ -43,7 +43,7 @@ public class MessageGroupCommandHandler implements CommandHandler {
         String message = parts[2].trim();
         
         if (groupName.isEmpty() || message.isEmpty()) {
-            clientHandler.sendMessage("Error: Grupo y mensaje no pueden estar vacÃ­os");
+            clientHandler.sendMessage("Error: Grupo y mensaje no pueden estar vacíos");
             return;
         }
         

@@ -45,7 +45,7 @@ public class EndCallCommandHandler implements CommandHandler {
         }
         
         if (callId == null || callId.isEmpty()) {
-            clientHandler.sendMessage("No estÃ¡s en ninguna llamada.");
+            clientHandler.sendMessage("No estás en ninguna llamada.");
             return;
         }
         

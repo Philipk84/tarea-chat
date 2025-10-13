@@ -34,7 +34,7 @@ public class CreateGroupCommandHandler implements CommandHandler {
         String groupName = parts[1].trim();
         
         if (groupName.isEmpty()) {
-            clientHandler.sendMessage("Error: El nombre del grupo no puede estar vacÃ­o");
+            clientHandler.sendMessage("Error: El nombre del grupo no puede estar vacío");
             return;
         }
         
@@ -44,7 +44,7 @@ public class CreateGroupCommandHandler implements CommandHandler {
         }
         
         if (!isValidGroupName(groupName)) {
-            clientHandler.sendMessage("Error: El nombre del grupo contiene caracteres no vÃ¡lidos. Use solo letras, nÃºmeros, guiones y guiones bajos");
+            clientHandler.sendMessage("Error: El nombre del grupo contiene caracteres no válidos. Use solo letras, números, guiones y guiones bajos");
             return;
         }
         
