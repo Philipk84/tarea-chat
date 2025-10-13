@@ -4,37 +4,35 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-/**
- * Maneja el canal de voz de un usuario (notas de voz, llamadas).
- * Se ejecuta en un hilo separado del canal de texto.
- */
 public class VoiceChannelHandler extends Thread {
+
     private final String username;
+    private final int port; // ← nuevo atributo
     private ServerSocket serverSocket;
-    private boolean running = true;
     private Socket voiceSocket;
     private ObjectInputStream in;
     private ObjectOutputStream out;
+    private volatile boolean running = true;
 
-    public VoiceChannelHandler(String username) {
+    public VoiceChannelHandler(String username, int port) {
         this.username = username;
+        this.port = port;
     }
 
     @Override
     public void run() {
         try {
-            // cada cliente tiene su propio puerto de voz
-            int port = findAvailablePort();
             serverSocket = new ServerSocket(port);
-            System.out.println("🎧 Canal de voz para " + username + " en puerto " + port);
 
-            ChatServer.registerUdpPort(username,
-                    serverSocket.getInetAddress() == null ?
-                            java.net.InetAddress.getLocalHost() :
-                            serverSocket.getInetAddress(), port);
+            System.out.println("🎧 Canal de voz para " + username + " escuchando en puerto fijo " + port);
+
+            // Ya no registramos puertos UDP aquí
+            // porque ahora el puerto es fijo y global
 
             voiceSocket = serverSocket.accept();
+
             out = new ObjectOutputStream(voiceSocket.getOutputStream());
+            out.flush();
             in = new ObjectInputStream(voiceSocket.getInputStream());
 
             while (running) {
@@ -44,12 +42,15 @@ public class VoiceChannelHandler extends Thread {
                     ChatServer.forwardVoiceNote(note);
                 }
             }
+
         } catch (Exception e) {
-            if (running) System.err.println("Error en canal de voz de " + username + ": " + e.getMessage());
+            if (running)
+                System.err.println("Error en canal de voz de " + username + ": " + e.getMessage());
         } finally {
             shutdown();
         }
     }
+
 
     public synchronized void sendVoice(VoiceNote note) {
         try {
@@ -62,17 +63,19 @@ public class VoiceChannelHandler extends Thread {
         }
     }
 
+    public void shutdown() {
+        running = false;
+        try {
+            if (in != null) in.close();
+            if (out != null) out.close();
+            if (voiceSocket != null && !voiceSocket.isClosed()) voiceSocket.close();
+            if (serverSocket != null && !serverSocket.isClosed()) serverSocket.close();
+        } catch (IOException ignored) {}
+    }
+
     private int findAvailablePort() throws IOException {
         try (ServerSocket tmp = new ServerSocket(0)) {
             return tmp.getLocalPort();
         }
-    }
-
-    public void shutdown() {
-        running = false;
-        try {
-            if (serverSocket != null) serverSocket.close();
-            if (voiceSocket != null) voiceSocket.close();
-        } catch (IOException ignored) {}
     }
 }

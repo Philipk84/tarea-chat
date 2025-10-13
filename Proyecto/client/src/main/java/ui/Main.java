@@ -286,11 +286,14 @@ public class Main {
     private void sendVoiceToUser() {
         System.out.println("Ingresa el nombre del usuario:");
         String targetUser = sc.nextLine();
-        
+
         if (!targetUser.isEmpty()) {
-            controller.sendVoiceNote(targetUser);
-            System.out.println("🎤 Iniciando nota de voz para " + targetUser + "...");
-            System.out.println("(La grabación se maneja automáticamente por UDP)");
+            System.out.print("Duración de la nota de voz (segundos): ");
+            int seconds = sc.nextInt();
+            sc.nextLine();
+
+            controller.sendVoiceNote(targetUser, seconds);
+            System.out.println("🎤 Nota de voz enviada a " + targetUser);
         } else {
             System.out.println("❌ El nombre de usuario no puede estar vacío.");
         }
@@ -299,11 +302,14 @@ public class Main {
     private void sendVoiceToGroup() {
         System.out.println("Ingresa el nombre del grupo:");
         String groupName = sc.nextLine();
-        
+
         if (!groupName.isEmpty()) {
-            controller.sendGroupVoiceNote(groupName);
-            System.out.println("🎤 Iniciando nota de voz para grupo " + groupName + "...");
-            System.out.println("(La grabación se maneja automáticamente por UDP)");
+            System.out.print("Duración de la nota de voz (segundos): ");
+            int seconds = sc.nextInt();
+            sc.nextLine();
+
+            controller.sendGroupVoiceNote(groupName, seconds);
+            System.out.println("🎤 Nota de voz enviada al grupo " + groupName);
         } else {
             System.out.println("❌ El nombre del grupo no puede estar vacío.");
         }

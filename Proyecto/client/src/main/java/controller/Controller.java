@@ -139,22 +139,27 @@ public class Controller {
     }
 
     /**
-     * Inicia el envÃ­o de una nota de voz a un usuario especÃ­fico.
-     * La nota de voz se transmite vÃ­a UDP para eficiencia.
-     * 
+     * Envía una nota de voz real a un usuario.
+     * Graba audio y lo envía al servidor por el canal de voz.
+     *
      * @param username Nombre del usuario destinatario
+     * @param durationSeconds Duración de la grabación en segundos
      */
-    public void sendVoiceNote(String username) {
-        chatClient.sendCommand("/voice " + username);
+    public void sendVoiceNote(String username, int durationSeconds) {
+        chatClient.setVoiceTarget(username);
+        chatClient.sendVoiceNote(durationSeconds);
     }
 
     /**
-     * Inicia el envÃ­o de una nota de voz a todos los miembros de un grupo.
-     * La nota de voz se transmite vÃ­a UDP para eficiencia.
-     * 
+     * Envía una nota de voz real a todos los miembros de un grupo.
+     * Por ahora simplemente usa el nombre del grupo como destino.
+     *
      * @param groupName Nombre del grupo destinatario
+     * @param durationSeconds Duración de la grabación en segundos
      */
-    public void sendGroupVoiceNote(String groupName) {
-        chatClient.sendCommand("/voicegroup " + groupName);
+    public void sendGroupVoiceNote(String groupName, int durationSeconds) {
+        chatClient.setVoiceTarget(groupName);
+        chatClient.sendVoiceNote(durationSeconds);
     }
+
 }

@@ -3,7 +3,7 @@ package model;
 public class Config {
     private String host;
     private int port;
-    private int voicePort;
+    private int voicePort = 5001;
 
     public Config(String host, int port, int voicePort) {
         this.host = host;

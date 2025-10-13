@@ -148,11 +148,14 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    /** Inicia el canal de voz independiente. */
+    /** Inicia el canal de voz en un puerto fijo (5555). */
     private void startVoiceChannel() {
-        voiceChannel = new VoiceChannelHandler(name);
+        int voicePort = 5001; // 🔹 Puerto fijo
+        voiceChannel = new VoiceChannelHandler(name, voicePort);
         voiceChannel.start();
+        System.out.println("🎧 Canal de voz del servidor iniciado en puerto " + voicePort);
     }
+
 
     /** Limpia los recursos al finalizar. */
     private void cleanup() {

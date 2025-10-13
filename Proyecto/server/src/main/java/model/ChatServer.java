@@ -1,5 +1,8 @@
 package model;
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.IOException;
 import interfaces.ServerService;
 import interfaces.UserManager;
 import interfaces.GroupManager;
@@ -68,6 +71,29 @@ public class ChatServer implements ServerService {
             tcpThread.setDaemon(true);
             tcpThread.start();
 
+            // --- VOICE Listener ---
+            Thread voiceThread = new Thread(() -> {
+                int voicePort = config.getVoicePort();
+                try (ServerSocket voiceServerSocket = new ServerSocket(voicePort)) {
+                    System.out.println("🎧 Servidor de voz escuchando en puerto " + voicePort);
+
+                    while (running) {
+                        try {
+                            Socket clientVoiceSocket = voiceServerSocket.accept();
+                            threadPool.submit(() -> handleVoiceConnection(clientVoiceSocket));
+                        } catch (IOException e) {
+                            if (running) e.printStackTrace();
+                        }
+                    }
+
+                } catch (IOException e) {
+                    System.err.println("❌ Error en servidor de voz: " + e.getMessage());
+                }
+            });
+            voiceThread.setDaemon(true);
+            voiceThread.start();
+
+
             // --- UDP Listener ---
             Thread udpThread = new Thread(() -> {
                 System.out.println("🔵 Servidor UDP escuchando en puerto " + (config.getPort() + 1));
@@ -85,7 +111,9 @@ public class ChatServer implements ServerService {
             udpThread.setDaemon(true);
             udpThread.start();
 
-            return "Servidor iniciado correctamente (TCP:" + config.getPort() + ", UDP:" + (config.getPort() + 1) + ")";
+            return "Servidor iniciado correctamente (TCP:" + config.getPort() +
+                    ", UDP:" + (config.getPort() + 1) +
+                    ", VOICE:" + config.getVoicePort() + ")";
         } catch (IOException e) {
             e.printStackTrace();
             return "Error al iniciar servidor: " + e.getMessage();
@@ -104,6 +132,25 @@ public class ChatServer implements ServerService {
             return "Error cerrando servidor: " + e.getMessage();
         }
     }
+
+    private void handleVoiceConnection(Socket clientSocket) {
+        try (ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
+             ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream())) {
+
+            while (true) {
+                Object obj = in.readObject();
+                if (obj instanceof VoiceNote note) {
+                    System.out.println("🎤 Nota de voz recibida de " + note.getFromUser() +
+                            " → " + note.getTarget());
+                    forwardVoiceNote(note); // reenvía a otro usuario
+                }
+            }
+
+        } catch (Exception e) {
+            System.err.println("❌ Error manejando conexión de voz: " + e.getMessage());
+        }
+    }
+
 
     @Override
     public boolean isRunning() {
@@ -261,6 +308,8 @@ public class ChatServer implements ServerService {
 
     public static synchronized void forwardVoiceNote(VoiceNote note) {
         System.out.println("🎤 Reenviando nota de voz de " + note.getFromUser() +
+
+
                 (note.isGroup() ? " para grupo " + note.getTarget() : " para usuario " + note.getTarget()));
 
         if (note.isGroup()) {

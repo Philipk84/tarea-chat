@@ -48,7 +48,7 @@ public class ChatClient {
                 networkService.sendCommand("/udpport " + udpPort);
                 System.out.println("Puerto UDP local: " + udpPort + " (registrado con servidor)");
                 // 🔹 Iniciar canal de voz (TCP separado)
-                startVoiceChannel(config.getHost(), config.getVoicePort());
+                startVoiceChannel(config.getHost());
             }
 
             return result;
@@ -58,7 +58,8 @@ public class ChatClient {
     }
 
     /** Inicia conexión TCP separada para notas de voz. */
-    private void startVoiceChannel(String host, int voicePort) {
+    private void startVoiceChannel(String host) {
+        int voicePort = 5001; // debe ser el mismo del servidor
         try {
             voiceSocket = new Socket(host, voicePort);
             voiceOut = new ObjectOutputStream(voiceSocket.getOutputStream());

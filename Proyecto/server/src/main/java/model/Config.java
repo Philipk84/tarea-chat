@@ -7,6 +7,7 @@ package model;
 public class Config {
     private String host;
     private int port;
+    private int voicePort = 5001;
 
     /**
      * Constructor para crear una configuración con host y puerto específicos.
@@ -53,5 +54,13 @@ public class Config {
      */
     public void setPort(int port) {
         this.port = port;
+    }
+
+    public int getVoicePort() {
+        return voicePort;
+    }
+
+    public void setVoicePort(int voicePort) {
+        this.voicePort = voicePort;
     }
 }
