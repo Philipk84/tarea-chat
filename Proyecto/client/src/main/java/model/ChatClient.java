@@ -21,6 +21,8 @@ public class ChatClient {
     private ObjectInputStream voiceIn;
     private Thread voiceListenerThread;
     private volatile boolean running = false;
+    private boolean isGroupTarget = false;
+
 
     private String username;
     private String currentTargetUser = null;
@@ -47,8 +49,9 @@ public class ChatClient {
             if (networkService.isConnected()) {
                 networkService.sendCommand("/udpport " + udpPort);
                 System.out.println("Puerto UDP local: " + udpPort + " (registrado con servidor)");
-                // 🔹 Iniciar canal de voz (TCP separado)
-                startVoiceChannel(config.getHost());
+
+                // 🔹 Iniciar canal de voz en un hilo separado (no bloquea)
+                new Thread(() -> startVoiceChannel(config.getHost()), "VoiceChannelStarter").start();
             }
 
             return result;
@@ -57,41 +60,66 @@ public class ChatClient {
         }
     }
 
-    /** Inicia conexión TCP separada para notas de voz. */
+
+    /** Inicia conexión TCP separada para notas de voz (en segundo plano). */
     private void startVoiceChannel(String host) {
-        int voicePort = 5001; // debe ser el mismo del servidor
-        try {
-            voiceSocket = new Socket(host, voicePort);
-            voiceOut = new ObjectOutputStream(voiceSocket.getOutputStream());
-            voiceOut.flush();
-            voiceIn = new ObjectInputStream(voiceSocket.getInputStream());
-            running = true;
+        int voicePort = config.getPort() + 2; // coincide con el puerto de voz del servidor
+        int maxRetries = 10;
+        int attempt = 0;
 
-            // 🔹 Hilo que escucha notas de voz entrantes
-            voiceListenerThread = new Thread(() -> {
-                try {
-                    while (running) {
-                        Object obj = voiceIn.readObject();
-                        if (obj instanceof VoiceNote note) {
-                            System.out.println("\n🔔 Nota de voz recibida de " + note.getSender());
-                            AudioUtils.playAudio(note.getAudioData());
+        while (attempt < maxRetries) {
+            try {
+                voiceSocket = new Socket(host, voicePort);
+
+                voiceOut = new ObjectOutputStream(voiceSocket.getOutputStream());
+                voiceOut.flush();
+
+                // 🔹 Enviar username al servidor de voz al conectarse
+                voiceOut.writeObject(username);
+                voiceOut.flush();
+
+                voiceIn = new ObjectInputStream(voiceSocket.getInputStream());
+                running = true;
+
+                // 🔹 Hilo que escucha notas de voz entrantes
+                voiceListenerThread = new Thread(() -> {
+                    try {
+                        while (running) {
+                            Object obj = voiceIn.readObject();
+                            if (obj instanceof VoiceNote note) {
+                                System.out.println("\n🔔 Nota de voz recibida de " + note.getFromUser());
+                                AudioUtils.playAudio(note.getAudioData());
+                            }
                         }
+                    } catch (EOFException ignored) {
+                    } catch (Exception e) {
+                        if (running)
+                            System.err.println("Error recibiendo nota de voz: " + e.getMessage());
                     }
-                } catch (EOFException ignored) {
-                } catch (Exception e) {
-                    if (running)
-                        System.err.println("Error recibiendo nota de voz: " + e.getMessage());
+                }, "VoiceListener");
+
+                voiceListenerThread.setDaemon(true);
+                voiceListenerThread.start();
+
+                System.out.println("🎧 Canal de voz conectado en puerto " + voicePort);
+                return; // conexión exitosa
+
+            } catch (IOException e) {
+                attempt++;
+                System.err.println("Intento " + attempt + " fallido conectando canal de voz: " + e.getMessage());
+                try {
+                    Thread.sleep(200); // espera 200 ms antes de reintentar
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return;
                 }
-            }, "VoiceListener");
-
-            voiceListenerThread.setDaemon(true);
-            voiceListenerThread.start();
-            System.out.println("🎧 Canal de voz conectado en puerto " + voicePort);
-
-        } catch (IOException e) {
-            System.err.println("Error iniciando canal de voz: " + e.getMessage());
+            }
         }
+
+        System.err.println("❌ No se pudo conectar al servidor de voz tras " + maxRetries + " intentos.");
     }
+
+
 
     /** Envía un comando normal de texto al servidor. */
     public void sendCommand(String command) {
@@ -104,29 +132,42 @@ public class ChatClient {
      */
     public void setVoiceTarget(String username) {
         this.currentTargetUser = username;
-        System.out.println("🎯 Destinatario de nota de voz establecido: " + username);
+        this.isGroupTarget = false;
+        System.out.println("🎯 Destinatario de nota de voz establecido (usuario): " + username);
     }
+
+    public void setGroupVoiceTarget(String groupName) {
+        this.currentTargetUser = groupName;
+        this.isGroupTarget = true;
+        System.out.println("🎯 Destinatario de nota de voz establecido (grupo): " + groupName);
+    }
+
 
     /** Graba y envía una nota de voz al usuario actual. */
     public void sendVoiceNote(int seconds) {
         if (currentTargetUser == null) {
-            System.err.println("⚠️ No hay destinatario definido. Usa /voice <usuario> primero.");
+            System.err.println("⚠ No hay destinatario definido.");
             return;
         }
 
-        try {
-            System.out.println("🎙 Grabando nota de voz (" + seconds + "s)...");
-            byte[] audioData = AudioUtils.recordAudio(seconds);
-            VoiceNote note = new VoiceNote(username, currentTargetUser, audioData);
+        new Thread(() -> {
+            try {
+                System.out.println("🎙 Grabando nota de voz (" + seconds + "s)...");
+                byte[] audioData = AudioUtils.recordAudio(seconds);
+                VoiceNote note = new VoiceNote(username, currentTargetUser, audioData, isGroupTarget);
 
-            voiceOut.writeObject(note);
-            voiceOut.flush();
-            System.out.println("✅ Nota de voz enviada a " + currentTargetUser);
-
-        } catch (IOException e) {
-            System.err.println("Error enviando nota de voz: " + e.getMessage());
-        }
+                synchronized (voiceOut) {
+                    voiceOut.writeObject(note);
+                    voiceOut.flush();
+                }
+                System.out.println("✅ Nota de voz enviada a " + currentTargetUser);
+            } catch (IOException e) {
+                System.err.println("Error enviando nota de voz: " + e.getMessage());
+            }
+        }, "VoiceSender-" + currentTargetUser).start();
     }
+
+
 
     /** Cierra todos los recursos abiertos. */
     public void disconnect() {

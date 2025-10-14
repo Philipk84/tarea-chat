@@ -2,17 +2,21 @@ package model;
 import java.io.Serializable;
 
 public class VoiceNote implements Serializable {
-    private String sender;
-    private String recipient;
-    private byte[] audioData;
+    private static final long serialVersionUID = 1L;
+    private final String fromUser;
+    private final String target;
+    private final byte[] audioData;
+    private final boolean isGroup;
 
-    public VoiceNote(String sender, String recipient, byte[] audioData) {
-        this.sender = sender;
-        this.recipient = recipient;
+    public VoiceNote(String fromUser, String target, byte[] audioData, boolean isGroup) {
+        this.fromUser = fromUser;
+        this.target = target;
         this.audioData = audioData;
+        this.isGroup = isGroup;
     }
 
-    public String getSender() { return sender; }
-    public String getRecipient() { return recipient; }
+    public String getFromUser() { return fromUser; }
+    public String getTarget() { return target; }
     public byte[] getAudioData() { return audioData; }
+    public boolean isGroup() { return isGroup; }
 }

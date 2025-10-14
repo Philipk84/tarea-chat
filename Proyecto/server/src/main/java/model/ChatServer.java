@@ -1,23 +1,16 @@
 package model;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.*;
 import interfaces.ServerService;
 import interfaces.UserManager;
 import interfaces.GroupManager;
 import service.UserManagerImpl;
 import service.CallManagerImpl;
 import service.GroupManagerImpl;
-import java.io.IOException;
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.*;
 
-/**
- * Servidor principal del sistema de chat.
- * Coordina gestión de usuarios, grupos, llamadas y mensajes UDP/TCP.
- */
 public class ChatServer implements ServerService {
 
     private static ChatServer instance;
@@ -30,11 +23,12 @@ public class ChatServer implements ServerService {
 
     private ServerSocket serverSocket;
     private DatagramSocket udpSocket;
+    private ServerSocket voiceServerSocket;
     private ExecutorService threadPool;
     private boolean running = false;
 
-    private static final Map<String, Integer> udpPorts = new ConcurrentHashMap<>();
     private final Map<SocketAddress, String> udpClients = new ConcurrentHashMap<>();
+    private final Map<String, VoiceChannelHandler> voiceClients = new ConcurrentHashMap<>();
 
     public ChatServer(Config config) {
         this.config = config;
@@ -52,72 +46,109 @@ public class ChatServer implements ServerService {
         try {
             serverSocket = new ServerSocket(config.getPort());
             udpSocket = new DatagramSocket(config.getPort() + 1);
+            voiceServerSocket = new ServerSocket(config.getPort() + 2);
             threadPool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
             running = true;
 
-            // --- TCP Listener ---
-            Thread tcpThread = new Thread(() -> {
-                System.out.println("🟢 Servidor TCP escuchando en puerto " + config.getPort());
-                while (running) {
-                    try {
-                        Socket clientSocket = serverSocket.accept();
-                        ClientHandler handler = new ClientHandler(clientSocket);
-                        threadPool.submit(handler);
-                    } catch (IOException e) {
-                        if (running) e.printStackTrace();
-                    }
-                }
-            });
-            tcpThread.setDaemon(true);
-            tcpThread.start();
-
-            // --- VOICE Listener ---
-            Thread voiceThread = new Thread(() -> {
-                int voicePort = config.getVoicePort();
-                try (ServerSocket voiceServerSocket = new ServerSocket(voicePort)) {
-                    System.out.println("🎧 Servidor de voz escuchando en puerto " + voicePort);
-
-                    while (running) {
-                        try {
-                            Socket clientVoiceSocket = voiceServerSocket.accept();
-                            threadPool.submit(() -> handleVoiceConnection(clientVoiceSocket));
-                        } catch (IOException e) {
-                            if (running) e.printStackTrace();
-                        }
-                    }
-
-                } catch (IOException e) {
-                    System.err.println("❌ Error en servidor de voz: " + e.getMessage());
-                }
-            });
-            voiceThread.setDaemon(true);
-            voiceThread.start();
-
-
-            // --- UDP Listener ---
-            Thread udpThread = new Thread(() -> {
-                System.out.println("🔵 Servidor UDP escuchando en puerto " + (config.getPort() + 1));
-                byte[] buffer = new byte[4096];
-                while (running) {
-                    try {
-                        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                        udpSocket.receive(packet);
-                        threadPool.submit(new UDPMessageHandler(packet, udpSocket, udpClients));
-                    } catch (Exception e) {
-                        if (running) e.printStackTrace();
-                    }
-                }
-            });
-            udpThread.setDaemon(true);
-            udpThread.start();
+            startTCPListener();
+            startUDPListener();
+            startVoiceServer(); // 🔹 nuevo manejo de voz
 
             return "Servidor iniciado correctamente (TCP:" + config.getPort() +
                     ", UDP:" + (config.getPort() + 1) +
-                    ", VOICE:" + config.getVoicePort() + ")";
+                    ", VOICE:" + (config.getPort() + 2) + ")";
         } catch (IOException e) {
             e.printStackTrace();
             return "Error al iniciar servidor: " + e.getMessage();
         }
+    }
+
+    private void startTCPListener() {
+        Thread tcpThread = new Thread(() -> {
+            System.out.println("🟢 Servidor TCP escuchando en puerto " + config.getPort());
+            while (running) {
+                try {
+                    Socket clientSocket = serverSocket.accept();
+                    ClientHandler handler = new ClientHandler(clientSocket);
+                    threadPool.submit(handler);
+                } catch (IOException e) {
+                    if (running) e.printStackTrace();
+                }
+            }
+        });
+        tcpThread.setDaemon(true);
+        tcpThread.start();
+    }
+
+    private void startUDPListener() {
+        Thread udpThread = new Thread(() -> {
+            System.out.println("🔵 Servidor UDP escuchando en puerto " + (config.getPort() + 1));
+            byte[] buffer = new byte[4096];
+            while (running) {
+                try {
+                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                    udpSocket.receive(packet);
+                    threadPool.submit(new UDPMessageHandler(packet, udpSocket, udpClients));
+                } catch (Exception e) {
+                    if (running) e.printStackTrace();
+                }
+            }
+        });
+        udpThread.setDaemon(true);
+        udpThread.start();
+    }
+
+    private void startVoiceServer() {
+        Thread voiceThread = new Thread(() -> {
+            try {
+                System.out.println("🎧 Servidor de voz escuchando en puerto " + (config.getPort() + 2));
+
+                while (running) {
+                    Socket clientSocket = voiceServerSocket.accept();
+
+                    // Creamos el ObjectOutputStream antes de usar
+                    ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
+                    out.flush();
+
+                    // Se recibe el username del cliente al conectar
+                    ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
+                    String username = (String) in.readObject();
+
+                    VoiceChannelHandler handler = new VoiceChannelHandler(clientSocket, username, in, out);
+                    voiceClients.put(username, handler);
+                    new Thread(handler, "VoiceHandler-" + username).start();
+
+                    System.out.println("🎧 Usuario de voz conectado: " + username);
+                }
+            } catch (IOException | ClassNotFoundException e) {
+                if (running)
+                    System.err.println("❌ Error en servidor de voz: " + e.getMessage());
+            }
+        }, "VoiceServerThread");
+
+        voiceThread.setDaemon(true);
+        voiceThread.start();
+    }
+
+    public static synchronized void forwardVoiceNote(VoiceNote note) {
+        if (note.isGroup()) {
+            Set<String> members = instance.groupManager.getGroupMembers(note.getTarget());
+            for (String member : members) {
+                if (!member.equals(note.getFromUser())) {
+                    VoiceChannelHandler handler = instance.voiceClients.get(member);
+                    if (handler != null) handler.sendVoice(note);
+                }
+            }
+        } else {
+            VoiceChannelHandler handler = instance.voiceClients.get(note.getTarget());
+            if (handler != null) handler.sendVoice(note);
+            else System.out.println("⚠️ Usuario destino no encontrado o desconectado: " + note.getTarget());
+        }
+    }
+
+    public synchronized void removeVoiceClient(String username) {
+        VoiceChannelHandler handler = voiceClients.remove(username);
+        if (handler != null) handler.shutdown();
     }
 
     @Override
@@ -126,11 +157,17 @@ public class ChatServer implements ServerService {
         try {
             if (serverSocket != null) serverSocket.close();
             if (udpSocket != null) udpSocket.close();
+            if (voiceServerSocket != null) voiceServerSocket.close();
             if (threadPool != null) threadPool.shutdown();
             return "Servidor detenido correctamente.";
         } catch (IOException e) {
             return "Error cerrando servidor: " + e.getMessage();
         }
+    }
+
+    @Override
+    public boolean isRunning() {
+        return running;
     }
 
     private void handleVoiceConnection(Socket clientSocket) {
@@ -149,12 +186,6 @@ public class ChatServer implements ServerService {
         } catch (Exception e) {
             System.err.println("❌ Error manejando conexión de voz: " + e.getMessage());
         }
-    }
-
-
-    @Override
-    public boolean isRunning() {
-        return running;
     }
 
     // ======================
@@ -288,14 +319,6 @@ public class ChatServer implements ServerService {
         instance.callManager.endCall(callId);
     }
 
-    public static void registerUdpPort(String username, InetAddress address, int port) {
-        udpPorts.put(username, port);
-        System.out.println("[UDP] Registrado " + username + " en puerto " + port);
-    }
-
-    public static int getUserUdpPort(String username) {
-        return udpPorts.getOrDefault(username, -1);
-    }
 
     // ===========================
     // 🎤 NOTAS DE VOZ
@@ -306,31 +329,7 @@ public class ChatServer implements ServerService {
         instance.forwardVoiceNote(note);
     }
 
-    public static synchronized void forwardVoiceNote(VoiceNote note) {
-        System.out.println("🎤 Reenviando nota de voz de " + note.getFromUser() +
-
-
-                (note.isGroup() ? " para grupo " + note.getTarget() : " para usuario " + note.getTarget()));
-
-        if (note.isGroup()) {
-            Set<String> members = instance.groupManager.getGroupMembers(note.getTarget());
-            for (String member : members) {
-                if (!member.equals(note.getFromUser())) {
-                    ClientHandler ch = getClientHandler(member);
-                    if (ch != null) {
-                        ch.sendVoiceNote(note.getFromUser(), note.getAudioData());
-                    }
-                }
-            }
-        } else {
-            ClientHandler recipient = getClientHandler(note.getTarget());
-            if (recipient != null) {
-                recipient.sendVoiceNote(note.getFromUser(), note.getAudioData());
-            } else {
-                System.out.println("⚠️ Usuario destino no encontrado o desconectado: " + note.getTarget());
-            }
-        }
+    public Config getConfig() {
+        return config;
     }
-
-
 }

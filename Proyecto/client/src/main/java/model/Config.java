@@ -3,9 +3,9 @@ package model;
 public class Config {
     private String host;
     private int port;
-    private int voicePort = 5001;
+    private int voicePort;
 
-    public Config(String host, int port, int voicePort) {
+    public Config(String host, int port) {
         this.host = host;
         this.port = port;
         this.voicePort = voicePort;

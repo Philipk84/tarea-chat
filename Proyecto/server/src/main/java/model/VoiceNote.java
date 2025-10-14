@@ -1,8 +1,8 @@
 package model;
-
 import java.io.Serializable;
 
 public class VoiceNote implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final String fromUser;
     private final String target;
     private final byte[] audioData;
@@ -15,19 +15,8 @@ public class VoiceNote implements Serializable {
         this.isGroup = isGroup;
     }
 
-    public String getFromUser() {
-        return fromUser;
-    }
-
-    public String getTarget() {
-        return target;
-    }
-
-    public byte[] getAudioData() {
-        return audioData;
-    }
-
-    public boolean isGroup() {
-        return isGroup;
-    }
+    public String getFromUser() { return fromUser; }
+    public String getTarget() { return target; }
+    public byte[] getAudioData() { return audioData; }
+    public boolean isGroup() { return isGroup; }
 }
