@@ -3,6 +3,7 @@ package command;
 import interfaces.CommandHandler;
 import model.ClientHandler;
 import model.ChatServer;
+import service.HistoryService;
 
 /**
  * Manejador del comando /msg que permite enviar mensajes de texto privados
@@ -64,6 +65,9 @@ public class MessageCommandHandler implements CommandHandler {
         
         // Confirmar al remitente
         clientHandler.sendMessage("Mensaje enviado a " + targetUser);
+
+        // Registrar en historial
+        HistoryService.logTextPrivate(userName, targetUser, message);
     }
     
     /**

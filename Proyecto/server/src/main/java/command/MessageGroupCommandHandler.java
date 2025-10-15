@@ -4,6 +4,7 @@ import interfaces.CommandHandler;
 import model.ClientHandler;
 import model.ChatServer;
 import java.util.Set;
+import service.HistoryService;
 
 /**
  * Manejador del comando /msggroup que permite enviar mensajes de texto
@@ -75,5 +76,8 @@ public class MessageGroupCommandHandler implements CommandHandler {
         
         // Confirmar al remitente
         clientHandler.sendMessage("Mensaje enviado al grupo '" + groupName + "' (enviado a " + sentCount + " miembros)");
+        
+        // Registrar en historial
+        HistoryService.logTextGroup(userName, groupName, message);
     }
 }

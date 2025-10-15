@@ -6,6 +6,8 @@ import java.net.SocketAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Set;
+import service.HistoryService;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Manejador de mensajes UDP para el servidor.
@@ -82,6 +84,11 @@ public class UDPMessageHandler implements Runnable {
         socket.send(forwardPacket);
 
         System.out.println("Nota de voz reenviada de " + senderName + " a " + targetUser);
+
+        // Guardar audio en disco y registrar historial
+        byte[] audioBytes = audioDataStr.getBytes(StandardCharsets.ISO_8859_1);
+        HistoryService.SavedAudio saved = HistoryService.saveVoiceBytes(audioBytes);
+        HistoryService.logVoiceNote(senderName != null ? senderName : "Unknown", targetUser, saved.relativePath(), saved.sizeBytes());
     }
 
     /**
@@ -122,6 +129,11 @@ public class UDPMessageHandler implements Runnable {
         }
 
         System.out.println("Nota de voz grupal de " + senderName + " enviada a " + sentCount + " miembros del grupo [" + groupName + "]");
+
+        // Guardar audio en disco y registrar historial (una sola copia)
+        byte[] audioBytes = audioDataStr.getBytes(StandardCharsets.ISO_8859_1);
+        HistoryService.SavedAudio saved = HistoryService.saveVoiceBytes(audioBytes);
+        HistoryService.logVoiceGroup(senderName != null ? senderName : "Unknown", groupName, saved.relativePath(), saved.sizeBytes());
     }
 
     /**

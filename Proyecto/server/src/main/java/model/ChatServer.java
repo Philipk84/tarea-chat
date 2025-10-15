@@ -18,6 +18,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ConcurrentHashMap;
+import service.HistoryService;
 
 /**
  * Servidor principal del sistema de chat que coordina todas las operaciones
@@ -183,6 +184,19 @@ public class ChatServer implements ServerService {
     }
 
     /**
+     * Registra un mapeo directo de dirección UDP -> usuario para facilitar
+     * la identificación del emisor en mensajes UDP.
+     *
+     * @param address Dirección UDP del cliente (ip:puerto)
+     * @param username Nombre de usuario
+     */
+    public static synchronized void registerUdpClientAddress(SocketAddress address, String username) {
+        if (instance != null && instance.udpClients != null && address != null && username != null) {
+            instance.udpClients.put(address, username);
+        }
+    }
+
+    /**
      * Obtiene la informaciÃ³n UDP de un usuario.
      * 
      * @param name Nombre del usuario
@@ -245,6 +259,9 @@ public class ChatServer implements ServerService {
         participants.add(to);
         String callId = instance.CallManagerImpl.createCall(participants);
         notifyCallStarted(callId);
+        try {
+            HistoryService.logCallStarted(callId, participants);
+        } catch (Exception ignored) {}
         return callId;
     }
 
@@ -268,6 +285,9 @@ public class ChatServer implements ServerService {
         if (participants.size() < 2) return null;
         String callId = instance.CallManagerImpl.createCall(participants);
         notifyCallStarted(callId);
+        try {
+            HistoryService.logCallStarted(callId, participants);
+        } catch (Exception ignored) {}
         return callId;
     }
 
@@ -315,6 +335,9 @@ public class ChatServer implements ServerService {
             if (ch != null) ch.sendMessage("LLAMADA_TERMINADA: " + callId + " por " + requester);
         }
         instance.CallManagerImpl.endCall(callId);
+        try {
+            HistoryService.logCallEnded(callId, participants, requester);
+        } catch (Exception ignored) {}
     }
 
     /**

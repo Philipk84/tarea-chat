@@ -3,6 +3,7 @@ package command;
 import interfaces.CommandHandler;
 import model.ClientHandler;
 import model.ChatServer;
+import java.net.InetSocketAddress;
 
 /**
  * Manejador del comando /udpport que permite a los clientes registrar
@@ -44,6 +45,10 @@ public class UdpPortCommandHandler implements CommandHandler {
             String ipPort = clientIp + ":" + port;
             ChatServer.registerUdpInfo(userName, ipPort);
             clientHandler.sendMessage("UDP registrado: " + ipPort);
+
+            // Registrar mapeo de dirección UDP -> usuario para identificar remitentes por UDP
+            InetSocketAddress udpAddr = new InetSocketAddress(clientIp, port);
+            ChatServer.registerUdpClientAddress(udpAddr, userName);
         } catch (NumberFormatException e) {
             clientHandler.sendMessage("Error: El puerto debe ser un número válido");
         }
