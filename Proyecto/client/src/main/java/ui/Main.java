@@ -22,9 +22,7 @@ public class Main {
     private void login() {
         System.out.println("Ingresa tu nombre de usuario:");
         username = sc.nextLine();
-
-        String result = controller.connectToServer(username);
-        System.out.println(result);
+        System.out.println(controller.connectToServer(username));
 
         if (controller.isConnected()) {
             showMainMenu();
@@ -51,7 +49,7 @@ public class Main {
 
             try {
                 int option = sc.nextInt();
-                
+                sc.nextLine(); // consume trailing newline
                 switch (option) {
                     case 1 -> showGroupMenu();
                     case 2 -> showUserMenu();
@@ -64,7 +62,7 @@ public class Main {
                 }
             } catch (InputMismatchException e) {
                 System.out.println("Opción inválida.");
-                sc.nextLine();
+                sc.nextLine(); // clear invalid input
             }
         } while (!exit);
     }
@@ -87,7 +85,7 @@ public class Main {
 
         try {
             int option = sc.nextInt();
-            
+            sc.nextLine(); // consume trailing newline
             switch (option) {
                 case 1 -> listGroups();
                 case 2 -> createGroup();
@@ -101,7 +99,7 @@ public class Main {
             }
         } catch (InputMismatchException e) {
             System.out.println("Opción inválida.");
-            sc.nextLine();
+            sc.nextLine(); // clear invalid input
         }
     }
 
@@ -111,22 +109,19 @@ public class Main {
 
     private void createGroup() {
         System.out.println("Ingresa el nombre del grupo:");
-        String groupName = sc.nextLine();
-        controller.createGroup(groupName);
+        controller.createGroup(sc.nextLine());
     }
 
     private void joinGroup() {
         listGroups();
         System.out.println("Ingresa el nombre del grupo al que unirse:");
-        String groupName = sc.nextLine();
-        controller.joinGroup(groupName);
+        controller.joinGroup(sc.nextLine());
     }
 
     private void callGroup() {
         listGroups();
         System.out.println("Ingresa el nombre del grupo a llamar:");
-        String groupName = sc.nextLine();
-        controller.callGroup(groupName);
+        controller.callGroup(sc.nextLine());
     }
 
     private void sendMessageToGroup() {
@@ -174,7 +169,7 @@ public class Main {
 
         try {
             int option = sc.nextInt();
-            
+            sc.nextLine(); // consume trailing newline
             switch (option) {
                 case 1 -> listUsers();
                 case 2 -> callUser();
@@ -186,7 +181,7 @@ public class Main {
             }
         } catch (InputMismatchException e) {
             System.out.println("Opción inválida.");
-            sc.nextLine();
+            sc.nextLine(); // clear invalid input
         }
     }
 

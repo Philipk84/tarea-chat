@@ -37,13 +37,12 @@ public class ListGroupsCommandHandler implements CommandHandler {
             clientHandler.sendMessage("No hay grupos disponibles.");
             return;
         }
-        
+
         StringBuilder response = new StringBuilder("Grupos disponibles (");
-        response.append(groups.size()).append("):\n");
-        
+        response.append(groups.size()).append("):");
         for (String group : groups) {
             Set<String> members = ChatServer.getGroupMembers(group);
-            response.append("• ").append(group)
+            response.append("\n * ").append(group)
                 .append(" (").append(members.size()).append(" miembros)");
             
             if (members.contains(userName)) {

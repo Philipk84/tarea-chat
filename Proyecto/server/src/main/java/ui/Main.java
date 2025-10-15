@@ -60,7 +60,6 @@ public class Main {
      * Inicia el servidor de chat a través del controlador.
      */
     private void startServer() {
-        sc.nextLine();
         System.out.println("\n" + controller.startServer());
     }
 
@@ -68,7 +67,6 @@ public class Main {
      * Cierra el servidor de chat a través del controlador.
      */
     private void closeServer() {
-        sc.nextLine();
         if (!controller.isServerRunning()) System.out.println("\n El servidor no está en ejecución.");
         else System.out.println("\n" + controller.closeServer());
     }

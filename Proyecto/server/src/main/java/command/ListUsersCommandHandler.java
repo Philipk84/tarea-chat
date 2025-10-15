@@ -35,11 +35,10 @@ public class ListUsersCommandHandler implements CommandHandler {
             return;
         }
 
-        StringBuilder response = new StringBuilder("Usuarios conectados (");
-        response.append(users.size()).append("):\n");
-        
+        StringBuilder response = new StringBuilder("Usuarios conectados (");        
+        response.append(users.size()).append("):");
         for (String user : users) {
-            response.append("• ").append(user);
+            response.append("\n * ").append(user);
         }
 
         clientHandler.sendMessage(response.toString().trim());

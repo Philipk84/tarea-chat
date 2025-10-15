@@ -74,6 +74,6 @@ public class MessageGroupCommandHandler implements CommandHandler {
         }
         
         // Confirmar al remitente
-        clientHandler.sendMessage("Mensaje enviado al grupo '" + groupName + "' (" + sentCount + " miembros)");
+        clientHandler.sendMessage("Mensaje enviado al grupo '" + groupName + "' (enviado a " + sentCount + " miembros)");
     }
 }
