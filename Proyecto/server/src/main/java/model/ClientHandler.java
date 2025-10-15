@@ -29,22 +29,23 @@ public class ClientHandler implements Runnable {
      * Inicializa todos los comandos disponibles en el sistema.
      */
     private void initializeCommands() {
-        commandRegistry.registerHandler(new UdpPortCommandHandler());
         commandRegistry.registerHandler(new CallCommandHandler());
         commandRegistry.registerHandler(new CallGroupCommandHandler());
-        commandRegistry.registerHandler(new EndCallCommandHandler());
         commandRegistry.registerHandler(new CreateGroupCommandHandler());
+        commandRegistry.registerHandler(new EndCallCommandHandler());
         commandRegistry.registerHandler(new JoinGroupCommandHandler());
         commandRegistry.registerHandler(new ListGroupsCommandHandler());
+        commandRegistry.registerHandler(new ListUsersCommandHandler());
         commandRegistry.registerHandler(new MessageCommandHandler());
         commandRegistry.registerHandler(new MessageGroupCommandHandler());
-        commandRegistry.registerHandler(new VoiceNoteCommandHandler());
-        commandRegistry.registerHandler(new VoiceGroupCommandHandler());
         commandRegistry.registerHandler(new QuitCommandHandler());
+        commandRegistry.registerHandler(new UdpPortCommandHandler());
+        commandRegistry.registerHandler(new VoiceGroupCommandHandler());
+        commandRegistry.registerHandler(new VoiceNoteCommandHandler());
     }
 
     /**
-     * EnvÃ­a un mensaje al cliente a travÃ©s del socket TCP.
+     * Envía un mensaje al cliente a través del socket TCP.
      * 
      * @param message El mensaje a enviar
      */

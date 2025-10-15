@@ -72,7 +72,7 @@ public class Main {
     private void showGroupMenu() {
         System.out.println(
                 "\n============================="
-            + "\n         MENÚ GRUPOS         "
+            + "\n         MENU GRUPOS         "
             + "\n============================="
             + "\nSelecciona una opción:"
             + "\n   1. Listar Grupos"
@@ -161,7 +161,7 @@ public class Main {
     private void showUserMenu() {
         System.out.println(
                 "\n============================="
-            + "\n        MENÚ USUARIOS        "
+            + "\n        MENU USUARIOS        "
             + "\n============================="
             + "\nSelecciona una opción:"
             + "\n   1. Listar Usuarios"
@@ -235,5 +235,4 @@ public class Main {
     private void endCall() {
         controller.endCall();
     }
-
 }
