@@ -68,7 +68,9 @@ public class ChatServer {
         Set<ClientHandler> miembros = gruposChat.get(nombreGrupo);
         if (miembros != null) {
             for (ClientHandler miembro : miembros) {
-                miembro.enviarMensaje("[Grupos: " + nombreGrupo + "] " + remitente.getNombre() + ": " + mensaje);
+                if(remitente != miembro){
+                    miembro.enviarMensaje("[Grupos: " + nombreGrupo + "] " + remitente.getNombre() + ": " + mensaje);
+                } 
             }
         }
     }
