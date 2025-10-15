@@ -18,7 +18,9 @@ public class CallCommandHandler implements CommandHandler {
      */
     @Override
     public boolean canHandle(String command) {
-        return command.startsWith("/call");
+        // Asegurar que NO capture "/callgroup ..." ni otros prefijos
+        // Solo valido si comienza exactamente con "/call " (con espacio)
+        return command.startsWith("/call ");
     }
 
     /**
@@ -34,7 +36,7 @@ public class CallCommandHandler implements CommandHandler {
         String targetUser = parts[1].trim();
         
         if (targetUser.isEmpty()) {
-            clientHandler.sendMessage("Error: Debes especificar un nombre de usuario vÃ¡lido");
+            clientHandler.sendMessage("Error: Debes especificar un nombre de usuario valido");
             return;
         }
         

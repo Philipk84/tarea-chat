@@ -39,8 +39,6 @@ public class NetworkServiceImpl implements NetworkService {
             tcpIn = new BufferedReader(new InputStreamReader(tcpSocket.getInputStream()));
             tcpOut = new PrintWriter(tcpSocket.getOutputStream(), true);
 
-            // Leer prompt del servidor y enviar nombre de usuario
-            tcpIn.readLine(); // "Enter your name:" (ignorado)
             tcpOut.println(username);
             String welcomeMessage = tcpIn.readLine(); // mensaje de bienvenida
 

@@ -18,7 +18,9 @@ public class CallGroupCommandHandler implements CommandHandler {
      */
     @Override
     public boolean canHandle(String command) {
-        return command.startsWith("/callgroup");
+        // Exigir espacio para indicar que viene el nombre del grupo y evitar
+        // coincidir con otros comandos que pudieran empezar similar.
+        return command.startsWith("/callgroup ");
     }
 
     /**
@@ -31,6 +33,10 @@ public class CallGroupCommandHandler implements CommandHandler {
     @Override
     public void execute(String command, String userName, ClientHandler clientHandler) {
         String[] parts = command.split(" ", 2);
+        if (parts.length < 2) {
+            clientHandler.sendMessage("Error: Formato correcto -> /callgroup <grupo>");
+            return;
+        }
         String groupName = parts[1].trim();
         
         if (groupName.isEmpty()) {

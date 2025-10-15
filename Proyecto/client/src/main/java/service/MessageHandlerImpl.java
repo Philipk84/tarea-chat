@@ -27,9 +27,10 @@ public class MessageHandlerImpl implements MessageHandler {
     public void handleMessage(String message) {
         System.out.println("[SERVER] " + message);
 
-        if (message.startsWith("CALL_STARTED")) {
+        // Señalización de llamadas (coincidir con el servidor)
+        if (message.startsWith("LLAMADA_INICIADA")) {
             handleCallStartedMessage(message);
-        } else if (message.startsWith("CALL_ENDED")) {
+        } else if (message.startsWith("LLAMADA_TERMINADA")) {
             handleCallEndedMessage(message);
         } else if (message.startsWith("MENSAJE_PRIVADO")) {
             handlePrivateMessage(message);
@@ -92,31 +93,48 @@ public class MessageHandlerImpl implements MessageHandler {
 
     /**
      * Maneja el mensaje de inicio de llamada del servidor.
-     * 
-     * @param message Mensaje completo "CALL_STARTED <callId> <participants>"
+     * Formato enviado por el servidor: "LLAMADA_INICIADA: <callId> <participants>"
+     * donde participants = "user1:ip:port,user2:ip:port,..."
      */
     private void handleCallStartedMessage(String message) {
         try {
-            String payload = message.substring("LLAMADA_INICIADA".length()).trim();
+            String prefix = "LLAMADA_INICIADA: ";
+            String payload;
+            if (message.startsWith(prefix)) {
+                payload = message.substring(prefix.length()).trim();
+            } else {
+                // Respaldo por si no hay espacio tras los dos puntos
+                payload = message.substring("LLAMADA_INICIADA".length()).replaceFirst("^:\\s*", "").trim();
+            }
+
             String[] parts = payload.split(" ", 2);
             String callId = parts[0];
             String participants = parts.length > 1 ? parts[1] : "";
             
             handleCallStarted(callId, participants);
         } catch (Exception e) {
-            System.err.println("Error procesando LLAMADA_TERMINADA: " + e.getMessage());
+            System.err.println("Error procesando LLAMADA_INICIADA: " + e.getMessage());
         }
     }
 
     /**
      * Maneja el mensaje de finalización de llamada del servidor.
-     * 
-     * @param message Mensaje completo "CALL_ENDED <callId>"
+     * Formato enviado por el servidor: "LLAMADA_TERMINADA: <callId> por <usuario>"
      */
     private void handleCallEndedMessage(String message) {
         try {
-            String[] parts = message.split(" ", 2);
-            String callId = parts.length > 1 ? parts[1].trim() : null;
+            String callId = null;
+            String prefix = "LLAMADA_TERMINADA: ";
+            if (message.startsWith(prefix)) {
+                String payload = message.substring(prefix.length());
+                // payload esperado: "<callId> por <usuario>" o solo "<callId>"
+                String[] tokens = payload.split(" ", 2);
+                callId = tokens.length > 0 ? tokens[0].trim() : null;
+            } else {
+                // Respaldo: intentar tomar el segundo token como callId
+                String[] parts = message.split(" ", 3);
+                if (parts.length > 1) callId = parts[1].trim();
+            }
             handleCallEnded(callId);
         } catch (Exception e) {
             System.err.println("Error procesando LLAMADA_TERMINADA: " + e.getMessage());

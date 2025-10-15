@@ -3,6 +3,7 @@ package service;
 import interfaces.UserManager;
 import model.ClientHandler;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -89,5 +90,10 @@ public class UserManagerImpl implements UserManager {
      */
     public ClientHandler getClientHandler(String name) {
         return users.get(name);
+    }
+
+    @Override
+    public Set<String> getUsers() {
+        return users.keySet();
     }
 }

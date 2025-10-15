@@ -157,4 +157,8 @@ public class Controller {
     public void sendGroupVoiceNote(String groupName) {
         chatClient.sendCommand("/voicegroup " + groupName);
     }
+
+    public void listUsers() {
+        chatClient.sendCommand("/listusers");
+    }
 }

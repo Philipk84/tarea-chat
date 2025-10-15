@@ -31,7 +31,7 @@ public class Main {
 
         do {
             System.out.println(
-                "============================="
+            "\n============================="
             + "\n     SERVIDOR SISTEMA CHAT    "
             + "\n============================="
             + "\nSelecciona una opción:"
@@ -61,7 +61,7 @@ public class Main {
      */
     private void startServer() {
         sc.nextLine();
-        System.out.println(controller.startServer());
+        System.out.println("\n" + controller.startServer());
     }
 
     /**
@@ -69,7 +69,7 @@ public class Main {
      */
     private void closeServer() {
         sc.nextLine();
-        if (!controller.isServerRunning()) System.out.println("El servidor no está en ejecución.");
-        else System.out.println(controller.closeServer());
+        if (!controller.isServerRunning()) System.out.println("\n El servidor no está en ejecución.");
+        else System.out.println("\n" + controller.closeServer());
     }
 }

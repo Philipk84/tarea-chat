@@ -1,5 +1,7 @@
 package interfaces;
 
+import java.util.Set;
+
 /**
  * Interface para manejo de usuarios
  */
@@ -40,4 +42,11 @@ public interface UserManager {
      * @return true si el usuario está en línea, false en caso contrario
      */
     boolean isUserOnline(String name);
+
+    /**
+     * Obtiene la lista de todos los usuarios registrados.
+     * 
+     * @return Conjunto de nombres de usuarios
+     */
+    Set<String> getUsers();
 }

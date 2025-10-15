@@ -341,4 +341,13 @@ public class ChatServer implements ServerService {
     public static CallManagerImpl getCallManagerImpl() {
         return instance != null ? instance.CallManagerImpl : null;
     }
+
+    /**
+     * Obtiene la lista de todos los usuarios disponibles.
+     * 
+     * @return Conjunto de nombres de usuarios
+     */
+    public static synchronized Set<String> getUsers() {
+        return instance.userManager.getUsers();
+    }
 }

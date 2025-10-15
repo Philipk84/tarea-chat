@@ -73,7 +73,7 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Hilo principal que maneja la comunicaciÃ³n con el cliente.
+     * Hilo principal que maneja la comunicación con el cliente.
      * Procesa el registro del usuario y ejecuta comandos de manera continua.
      */
     @Override
@@ -102,27 +102,26 @@ public class ClientHandler implements Runnable {
     /**
      * Maneja el proceso de registro del usuario.
      * 
-     * @throws IOException Si hay problemas de comunicaciÃ³n
+     * @throws IOException Si hay problemas de comunicación
      */
     private void handleUserRegistration() throws IOException {
-        out.println("Ingresa tu nombre:");
         name = in.readLine();
         
         if (name == null || name.trim().isEmpty()) {
-            out.println("Error: Nombre invÃ¡lido");
+            out.println("Error: Nombre inválido");
             active = false;
             return;
         }
         
         name = name.trim();
         ChatServer.registerUser(name, this);
-        out.println("Â¡Bienvenido, " + name + "!");        
+        out.println("¡Bienvenido, " + name + "!");        
     }
 
     /**
      * Procesa los comandos enviados por el usuario de manera continua.
      * 
-     * @throws IOException Si hay problemas de comunicaciÃ³n
+     * @throws IOException Si hay problemas de comunicación
      */
     private void processUserCommands() throws IOException {
         String line;
@@ -138,13 +137,13 @@ public class ClientHandler implements Runnable {
             }
             
             if (!commandRegistry.executeCommand(line, name, this)) {
-                out.println("OpciÃ³n invÃ¡lida.");
+                out.println("Opción inválida.");
             }
         }
     }
 
     /**
-     * Limpia los recursos al finalizar la conexiÃ³n del cliente.
+     * Limpia los recursos al finalizar la conexión del cliente.
      */
     private void cleanup() {
         if (name != null) {
