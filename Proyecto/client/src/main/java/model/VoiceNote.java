@@ -17,7 +17,7 @@ public class VoiceNote {
      * Formato de audio para notas de voz: PCM 16000 Hz, 16 bits, mono.
      * Similar a class/MicCapture.java pero optimizado para red.
      */
-    public static final AudioFormat VOICE_FORMAT = new AudioFormat(16000.0f, 16, 1, true, false);
+    public static final AudioFormat VOICE_FORMAT = new AudioFormat(44100, 16, 1, true, false);
     
     /**
      * Tamaño del buffer para captura de audio (como en class/MicCapture.java).

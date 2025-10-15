@@ -2,14 +2,12 @@ package model;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Base64;
 import command.*;
 
 /**
  * Manejador de cliente que procesa conexiones TCP y ejecuta comandos
- * de seÃ±alizaciÃ³n para llamadas y gestiÃ³n de grupos.
- * 
- * Cada cliente conectado tiene su propio hilo de ejecuciÃ³n que procesa
- * los comandos de manera asÃ­ncrona.
+ * de señalización para llamadas, grupos y notas de voz.
  */
 public class ClientHandler implements Runnable {
     private final Socket socket;
@@ -45,9 +43,7 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Envía un mensaje al cliente a través del socket TCP.
-     * 
-     * @param message El mensaje a enviar
+     * Envía un mensaje de texto al cliente.
      */
     public void sendMessage(String message) {
         if (out != null) {
@@ -56,27 +52,40 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Obtiene el nombre del usuario asociado a este cliente.
-     * 
-     * @return El nombre del usuario
+     * Envía una nota de voz (archivo binario) al cliente destino.
      */
+    public void sendVoiceNote(String sender, File audioFile) {
+        try {
+            OutputStream outputStream = socket.getOutputStream();
+            PrintWriter writer = new PrintWriter(outputStream, true);
+
+            long fileSize = audioFile.length();
+            writer.println("VOICE_NOTE_START " + sender + " " + fileSize);
+
+            try (FileInputStream fis = new FileInputStream(audioFile)) {
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+                while ((bytesRead = fis.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+            }
+
+            writer.println(); // Asegurar separación
+            writer.println("VOICE_NOTE_END");
+            writer.flush();
+        } catch (IOException e) {
+            System.err.println("Error enviando nota de voz a " + name + ": " + e.getMessage());
+        }
+    }
+
     public String getName() {
         return name;
     }
 
-    /**
-     * Obtiene el socket TCP del cliente.
-     * 
-     * @return El socket del cliente
-     */
     public Socket getClientSocket() {
         return socket;
     }
 
-    /**
-     * Hilo principal que maneja la comunicación con el cliente.
-     * Procesa el registro del usuario y ejecuta comandos de manera continua.
-     */
     @Override
     public void run() {
         try {
@@ -90,53 +99,41 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    /**
-     * Configura las conexiones de entrada y salida con el cliente.
-     * 
-     * @throws IOException Si hay problemas con los streams
-     */
     private void setupClientConnection() throws IOException {
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream(), true);
     }
 
-    /**
-     * Maneja el proceso de registro del usuario.
-     * 
-     * @throws IOException Si hay problemas de comunicación
-     */
     private void handleUserRegistration() throws IOException {
         name = in.readLine();
-        
         if (name == null || name.trim().isEmpty()) {
             out.println("Error: Nombre inválido");
             active = false;
             return;
         }
-        
         name = name.trim();
         ChatServer.registerUser(name, this);
-        out.println("¡Bienvenido, " + name + "!");        
+        out.println("¡Bienvenido, " + name + "!");
     }
 
-    /**
-     * Procesa los comandos enviados por el usuario de manera continua.
-     * 
-     * @throws IOException Si hay problemas de comunicación
-     */
     private void processUserCommands() throws IOException {
         String line;
         while (active && (line = in.readLine()) != null) {
-            if (line.trim().isEmpty()) {
+
+            // Detección de inicio de nota de voz TCP
+            if (line.startsWith("VOICE_NOTE_START")) {
+                processVoiceNote(socket.getInputStream(), line);
                 continue;
             }
-            
+
+            if (line.trim().isEmpty()) continue;
+
             if (line.equals("/quit")) {
                 commandRegistry.executeCommand(line, name, this);
                 active = false;
                 break;
             }
-            
+
             if (!commandRegistry.executeCommand(line, name, this)) {
                 out.println("Opción inválida.");
             }
@@ -144,8 +141,41 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * Limpia los recursos al finalizar la conexión del cliente.
+     * Procesa una nota de voz entrante (modo binario).
+     * @param inputStream Flujo de entrada del socket
+     * @param header Línea de encabezado "VOICE_NOTE_START <sender> <size>"
      */
+    private void processVoiceNote(InputStream inputStream, String header) {
+        try {
+            String[] parts = header.split(" ");
+            if (parts.length < 3) {
+                sendMessage("Error: encabezado de nota de voz inválido");
+                return;
+            }
+
+            String sender = parts[1];
+            long fileSize = Long.parseLong(parts[2]);
+
+            File receivedFile = new File("voice_from_" + sender + ".wav");
+            try (FileOutputStream fos = new FileOutputStream(receivedFile)) {
+                byte[] buffer = new byte[4096];
+                long remaining = fileSize;
+                while (remaining > 0) {
+                    int bytesRead = inputStream.read(buffer, 0, (int) Math.min(buffer.length, remaining));
+                    if (bytesRead == -1) break;
+                    fos.write(buffer, 0, bytesRead);
+                    remaining -= bytesRead;
+                }
+            }
+
+            System.out.println("Nota de voz recibida de " + sender + " (" + fileSize + " bytes)");
+            sendMessage("Nota de voz recibida de " + sender + " (" + fileSize + " bytes)");
+
+        } catch (Exception e) {
+            System.err.println("Error procesando nota de voz: " + e.getMessage());
+        }
+    }
+
     private void cleanup() {
         if (name != null) {
             ChatServer.removeUser(name);

@@ -3,108 +3,132 @@ package command;
 import interfaces.CommandHandler;
 import model.ClientHandler;
 import model.ChatServer;
+
+import java.io.*;
 import java.util.Set;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
- * Manejador del comando /voicegroup que notifica a todos los miembros
- * de un grupo que estÃ¡n por recibir una nota de voz vÃ­a UDP.
+ * Manejador del comando /voicegroup que reenvía notas de voz por TCP
+ * a todos los miembros de un grupo, usando el protocolo con encabezados.
+ *
+ * Protocolo:
+ * CLIENTE → SERVIDOR:
+ *   VOICE_NOTE_GROUP_START <grupo> <tamaño>
+ *   [bytes del archivo]
+ *   VOICE_NOTE_GROUP_END
+ *
+ * SERVIDOR → MIEMBROS DEL GRUPO:
+ *   VOICE_NOTE_GROUP_START <remitente> <grupo> <tamaño>
+ *   [bytes del archivo]
+ *   VOICE_NOTE_GROUP_END
  */
 public class VoiceGroupCommandHandler implements CommandHandler {
 
-    /**
-     * Verifica si este manejador puede procesar el comando dado.
-     * 
-     * @param command El comando a verificar
-     * @return true si el comando inicia con "/voicegroup "
-     */
     @Override
     public boolean canHandle(String command) {
         return command.startsWith("/voicegroup ");
     }
 
-    /**
-     * Ejecuta el comando de nota de voz grupal.
-     * Formato: /voicegroup <grupo>
-     * 
-     * @param command El comando completo
-     * @param userName El nombre del usuario que envÃ­a la nota
-     * @param clientHandler El manejador del cliente
-     */
     @Override
-    public void execute(String command, String userName, ClientHandler clientHandler) {
+    public void execute(String command, String sender, ClientHandler senderHandler) {
         String[] parts = command.split(" ", 2);
-        
         if (parts.length < 2) {
-            clientHandler.sendMessage("Error: Formato correcto -> /voicegroup <grupo>");
+            senderHandler.sendMessage("Error: Formato correcto -> /voicegroup <grupo>");
             return;
         }
-        
+
         String groupName = parts[1].trim();
-        
         if (groupName.isEmpty()) {
-            clientHandler.sendMessage("Error: Debes especificar un nombre de grupo válido");
+            senderHandler.sendMessage("Error: Debes especificar un nombre de grupo válido");
             return;
         }
-        
-        // Obtener miembros del grupo
+
         Set<String> members = ChatServer.getGroupMembers(groupName);
-        
         if (members == null || members.isEmpty()) {
-            clientHandler.sendMessage("Error: El grupo '" + groupName + "' no existe o no tiene miembros");
+            senderHandler.sendMessage("Error: El grupo '" + groupName + "' no existe o está vacío");
             return;
         }
-        
-        // Verificar que el usuario es miembro del grupo
-        if (!members.contains(userName)) {
-            clientHandler.sendMessage("Error: No eres miembro del grupo '" + groupName + "'");
+
+        if (!members.contains(sender)) {
+            senderHandler.sendMessage("Error: No eres miembro del grupo '" + groupName + "'");
             return;
         }
-        
-        // Obtener informaciÃ³n UDP del remitente
-        String senderUdpInfo = ChatServer.getUdpInfo(userName);
-        
-        if (senderUdpInfo == null) {
-            clientHandler.sendMessage("Error: Tu información UDP no está registrada");
-            return;
-        }
-        
-        // Recopilar informaciÃ³n UDP de los miembros disponibles
-        Map<String, String> membersUdpInfo = new HashMap<>();
-        for (String member : members) {
-            if (!member.equals(userName)) {
-                String udpInfo = ChatServer.getUdpInfo(member);
-                if (udpInfo != null) {
-                    membersUdpInfo.put(member, udpInfo);
+
+        try {
+            BufferedReader senderReader = new BufferedReader(new InputStreamReader(senderHandler.getClientSocket().getInputStream()));
+            InputStream senderRawIn = senderHandler.getClientSocket().getInputStream();
+
+            // 📥 Esperar encabezado VOICE_NOTE_GROUP_START
+            String startLine = senderReader.readLine();
+            if (startLine == null || !startLine.startsWith("VOICE_NOTE_GROUP_START")) {
+                senderHandler.sendMessage("Error: No se recibió encabezado válido de nota de voz grupal.");
+                return;
+            }
+
+            String[] headerParts = startLine.split(" ");
+            if (headerParts.length < 3) {
+                senderHandler.sendMessage("Error: Encabezado de grupo incompleto.");
+                return;
+            }
+
+            long fileSize = Long.parseLong(headerParts[2]);
+
+            // 📢 Reenviar a todos los miembros del grupo excepto el remitente
+            for (String member : members) {
+                if (member.equals(sender)) continue;
+
+                ClientHandler memberHandler = ChatServer.getClientHandler(member);
+                if (memberHandler != null) {
+                    PrintWriter out = new PrintWriter(memberHandler.getClientSocket().getOutputStream(), true);
+                    OutputStream rawOut = memberHandler.getClientSocket().getOutputStream();
+
+                    // Encabezado de inicio hacia el miembro
+                    out.println("VOICE_NOTE_GROUP_START " + sender + " " + groupName + " " + fileSize);
+                    out.flush();
                 }
             }
-        }
-        
-        if (membersUdpInfo.isEmpty()) {
-            clientHandler.sendMessage("Error: No hay miembros disponibles con UDP en el grupo");
-            return;
-        }
-        
-        // Notificar a cada miembro del grupo
-        for (Map.Entry<String, String> entry : membersUdpInfo.entrySet()) {
-            String member = entry.getKey();
-            ClientHandler memberHandler = ChatServer.getClientHandler(member);
-            if (memberHandler != null) {
-                memberHandler.sendMessage("VOICE_NOTE_GROUP_INCOMING from " + userName + " in " + groupName + " " + senderUdpInfo);
+
+            // 🔄 Transferencia binaria del archivo a todos los miembros
+            byte[] buffer = new byte[4096];
+            long remaining = fileSize;
+            while (remaining > 0) {
+                int bytesRead = senderRawIn.read(buffer, 0, (int) Math.min(buffer.length, remaining));
+                if (bytesRead == -1) break;
+
+                for (String member : members) {
+                    if (member.equals(sender)) continue;
+                    ClientHandler memberHandler = ChatServer.getClientHandler(member);
+                    if (memberHandler != null) {
+                        OutputStream memberOut = memberHandler.getClientSocket().getOutputStream();
+                        memberOut.write(buffer, 0, bytesRead);
+                    }
+                }
+                remaining -= bytesRead;
             }
+
+            // Flush final
+            for (String member : members) {
+                if (member.equals(sender)) continue;
+                ClientHandler memberHandler = ChatServer.getClientHandler(member);
+                if (memberHandler != null) {
+                    memberHandler.getClientSocket().getOutputStream().flush();
+
+                    // Señal de fin
+                    PrintWriter out = new PrintWriter(memberHandler.getClientSocket().getOutputStream(), true);
+                    out.println("VOICE_NOTE_GROUP_END");
+                    out.flush();
+
+                    memberHandler.sendMessage("📥 Nota de voz grupal recibida de " + sender + " en " + groupName);
+                }
+            }
+
+            // 📤 Confirmación al remitente
+            senderHandler.sendMessage("✅ Nota de voz grupal enviada correctamente al grupo '" + groupName + "'");
+
+        } catch (IOException e) {
+            senderHandler.sendMessage("Error al enviar nota de voz grupal: " + e.getMessage());
+        } catch (NumberFormatException e) {
+            senderHandler.sendMessage("Error: Tamaño de archivo inválido.");
         }
-        
-        // Enviar lista de destinatarios al remitente
-        StringBuilder targets = new StringBuilder();
-        targets.append("VOICE_NOTE_GROUP_TARGETS ").append(groupName).append(" ");
-        boolean first = true;
-        for (Map.Entry<String, String> entry : membersUdpInfo.entrySet()) {
-            if (!first) targets.append(",");
-            targets.append(entry.getKey()).append(":").append(entry.getValue());
-            first = false;
-        }
-        
-        clientHandler.sendMessage(targets.toString());
     }
 }

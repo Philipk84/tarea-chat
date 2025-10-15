@@ -27,7 +27,7 @@ public class Controller {
 
     /**
      * Establece conexiÃ³n con el servidor de chat usando el nombre de usuario especificado.
-     * 
+     *
      * @param username Nombre de usuario para la conexiÃ³n
      * @return Mensaje de estado del resultado de la conexiÃ³n
      */
@@ -37,7 +37,7 @@ public class Controller {
 
     /**
      * EnvÃ­a un comando genÃ©rico al servidor de chat.
-     * 
+     *
      * @param command Comando completo a enviar al servidor
      */
     public void sendCommand(String command) {
@@ -54,7 +54,7 @@ public class Controller {
 
     /**
      * Verifica si el cliente estÃ¡ actualmente conectado al servidor.
-     * 
+     *
      * @return true si estÃ¡ conectado, false en caso contrario
      */
     public boolean isConnected() {
@@ -64,7 +64,7 @@ public class Controller {
     /**
      * Crea un nuevo grupo de chat con el nombre especificado.
      * El usuario actual se convierte automÃ¡ticamente en miembro del grupo.
-     * 
+     *
      * @param groupName Nombre del grupo a crear
      */
     public void createGroup(String groupName) {
@@ -73,7 +73,7 @@ public class Controller {
 
     /**
      * Se une a un grupo de chat existente.
-     * 
+     *
      * @param groupName Nombre del grupo al que unirse
      */
     public void joinGroup(String groupName) {
@@ -91,7 +91,7 @@ public class Controller {
     /**
      * Inicia una llamada individual con otro usuario.
      * Ambos usuarios deben estar conectados y tener informaciÃ³n UDP registrada.
-     * 
+     *
      * @param username Nombre del usuario a llamar
      */
     public void callUser(String username) {
@@ -101,7 +101,7 @@ public class Controller {
     /**
      * Inicia una llamada grupal con todos los miembros conectados de un grupo.
      * Solo los miembros con informaciÃ³n UDP registrada participarÃ¡n en la llamada.
-     * 
+     *
      * @param groupName Nombre del grupo a llamar
      */
     public void callGroup(String groupName) {
@@ -119,7 +119,7 @@ public class Controller {
     /**
      * EnvÃ­a un mensaje de texto privado a un usuario especÃ­fico usando TCP.
      * El mensaje se entrega de manera confiable al destinatario.
-     * 
+     *
      * @param username Nombre del usuario destinatario
      * @param message Contenido del mensaje a enviar
      */
@@ -130,7 +130,7 @@ public class Controller {
     /**
      * EnvÃ­a un mensaje de texto a todos los miembros de un grupo usando TCP.
      * El mensaje se entrega de manera confiable a todos los miembros conectados.
-     * 
+     *
      * @param groupName Nombre del grupo destinatario
      * @param message Contenido del mensaje a enviar
      */
@@ -141,7 +141,7 @@ public class Controller {
     /**
      * Inicia el envÃ­o de una nota de voz a un usuario especÃ­fico.
      * La nota de voz se transmite vÃ­a UDP para eficiencia.
-     * 
+     *
      * @param username Nombre del usuario destinatario
      */
     public void sendVoiceNote(String username) {
@@ -151,7 +151,7 @@ public class Controller {
     /**
      * Inicia el envÃ­o de una nota de voz a todos los miembros de un grupo.
      * La nota de voz se transmite vÃ­a UDP para eficiencia.
-     * 
+     *
      * @param groupName Nombre del grupo destinatario
      */
     public void sendGroupVoiceNote(String groupName) {
