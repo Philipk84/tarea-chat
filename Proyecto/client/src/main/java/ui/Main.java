@@ -219,7 +219,7 @@ public class Main {
         if (!targetUser.isEmpty()) {
             controller.sendVoiceNote(targetUser);
             System.out.println("Iniciando nota de voz para " + targetUser + "...");
-            System.out.println("(La grabación se maneja automáticamente por UDP)");
+            System.out.println("(La grabación se maneja automáticamente por TCP)");
         } else {
             System.out.println("El nombre de usuario no puede estar vacío.");
         }

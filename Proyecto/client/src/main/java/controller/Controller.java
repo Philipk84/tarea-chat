@@ -26,17 +26,17 @@ public class Controller {
     }
 
     /**
-     * Establece conexión con el servidor de chat usando el nombre de usuario especificado.
+     * Establece conexiÃ³n con el servidor de chat usando el nombre de usuario especificado.
      * 
-     * @param username Nombre de usuario para la conexión
-     * @return Mensaje de estado del resultado de la conexión
+     * @param username Nombre de usuario para la conexiÃ³n
+     * @return Mensaje de estado del resultado de la conexiÃ³n
      */
     public String connectToServer(String username) {
         return chatClient.connect(username);
     }
 
     /**
-     * Envía un comando genérico al servidor de chat.
+     * EnvÃ­a un comando genÃ©rico al servidor de chat.
      * 
      * @param command Comando completo a enviar al servidor
      */
@@ -53,9 +53,9 @@ public class Controller {
     }
 
     /**
-     * Verifica si el cliente está actualmente conectado al servidor.
+     * Verifica si el cliente estÃ¡ actualmente conectado al servidor.
      * 
-     * @return true si está conectado, false en caso contrario
+     * @return true si estÃ¡ conectado, false en caso contrario
      */
     public boolean isConnected() {
         return chatClient.isConnected();
@@ -63,7 +63,7 @@ public class Controller {
 
     /**
      * Crea un nuevo grupo de chat con el nombre especificado.
-     * El usuario actual se convierte automáticamente en miembro del grupo.
+     * El usuario actual se convierte automÃ¡ticamente en miembro del grupo.
      * 
      * @param groupName Nombre del grupo a crear
      */
@@ -73,7 +73,7 @@ public class Controller {
 
     /**
      * Se une a un grupo de chat existente.
-     * 
+     *
      * @param groupName Nombre del grupo al que unirse
      */
     public void joinGroup(String groupName) {
@@ -90,7 +90,7 @@ public class Controller {
 
     /**
      * Inicia una llamada individual con otro usuario.
-     * Ambos usuarios deben estar conectados y tener información UDP registrada.
+     * Ambos usuarios deben estar conectados y tener informaciÃ³n UDP registrada.
      * 
      * @param username Nombre del usuario a llamar
      */
@@ -100,7 +100,7 @@ public class Controller {
 
     /**
      * Inicia una llamada grupal con todos los miembros conectados de un grupo.
-     * Solo los miembros con información UDP registrada participarán en la llamada.
+     * Solo los miembros con informaciÃ³n UDP registrada participarÃ¡n en la llamada.
      * 
      * @param groupName Nombre del grupo a llamar
      */
@@ -119,7 +119,7 @@ public class Controller {
     /**
      * Envía un mensaje de texto privado a un usuario específico usando TCP.
      * El mensaje se entrega de manera confiable al destinatario.
-     * 
+     *
      * @param username Nombre del usuario destinatario
      * @param message Contenido del mensaje a enviar
      */
@@ -130,7 +130,7 @@ public class Controller {
     /**
      * Envía un mensaje de texto a todos los miembros de un grupo usando TCP.
      * El mensaje se entrega de manera confiable a todos los miembros conectados.
-     * 
+     *
      * @param groupName Nombre del grupo destinatario
      * @param message Contenido del mensaje a enviar
      */
@@ -139,8 +139,8 @@ public class Controller {
     }
 
     /**
-     * Inicia el envío de una nota de voz a un usuario específico.
-     * La nota de voz se transmite vía UDP para eficiencia.
+     * Inicia el envÃ­o de una nota de voz a un usuario especÃ­fico.
+     * La nota de voz se transmite vÃ­a UDP para eficiencia.
      * 
      * @param username Nombre del usuario destinatario
      */
@@ -149,8 +149,8 @@ public class Controller {
     }
 
     /**
-     * Inicia el envío de una nota de voz a todos los miembros de un grupo.
-     * La nota de voz se transmite vía UDP para eficiencia.
+     * Inicia el envÃ­o de una nota de voz a todos los miembros de un grupo.
+     * La nota de voz se transmite vÃ­a UDP para eficiencia.
      * 
      * @param groupName Nombre del grupo destinatario
      */

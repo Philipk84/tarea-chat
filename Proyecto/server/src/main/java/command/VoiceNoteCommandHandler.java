@@ -4,71 +4,45 @@ import interfaces.CommandHandler;
 import model.ClientHandler;
 import model.ChatServer;
 
+import java.io.*;
+
 /**
- * Manejador del comando /voice que notifica al usuario destino que 
- * estÃ¡ por recibir una nota de voz vÃ­a UDP (apropiado para audio).
+ * Manejador del comando /voice que envía una nota de voz por TCP entre dos usuarios.
+ *
+ * Formato del protocolo:
+ * CLIENTE → SERVIDOR:
+ *   VOICE_NOTE_START <usuarioDestino> <tamaño>
+ *   [bytes del archivo]
+ *   VOICE_NOTE_END
+ *
+ * SERVIDOR → DESTINATARIO:
+ *   VOICE_NOTE_START <remitente> <tamaño>
+ *   [bytes del archivo]
+ *   VOICE_NOTE_END
  */
 public class VoiceNoteCommandHandler implements CommandHandler {
 
-    /**
-     * Verifica si este manejador puede procesar el comando dado.
-     * 
-     * @param command El comando a verificar
-     * @return true si el comando inicia con "/voice "
-     */
     @Override
     public boolean canHandle(String command) {
         return command.startsWith("/voice ");
     }
 
-    /**
-     * Ejecuta el comando de nota de voz privada.
-     * Formato: /voice <usuario>
-     * 
-     * @param command El comando completo
-     * @param userName El nombre del usuario que envÃ­a la nota
-     * @param clientHandler El manejador del cliente
-     */
     @Override
-    public void execute(String command, String userName, ClientHandler clientHandler) {
+    public void execute(String command, String sender, ClientHandler senderHandler) {
         String[] parts = command.split(" ", 2);
-        
         if (parts.length < 2) {
-            clientHandler.sendMessage("Error: Formato correcto -> /voice <usuario>");
+            senderHandler.sendMessage("Error: Formato correcto -> /voice <usuario>");
             return;
         }
-        
+
         String targetUser = parts[1].trim();
-        
         if (targetUser.isEmpty()) {
-            clientHandler.sendMessage("Error: Debes especificar un nombre de usuario válido");
+            senderHandler.sendMessage("Error: Debes especificar un nombre de usuario válido");
             return;
         }
-        
-        if (targetUser.equals(userName)) {
-            clientHandler.sendMessage("Error: No puedes enviarte notas de voz a ti mismo");
+        if (targetUser.equals(sender)) {
+            senderHandler.sendMessage("Error: No puedes enviarte notas de voz a ti mismo");
             return;
         }
-        
-        String targetUdpInfo = ChatServer.getUdpInfo(targetUser);
-        
-        if (targetUdpInfo == null) {
-            clientHandler.sendMessage("Error: Usuario '" + targetUser + "' no está disponible o sin UDP");
-            return;
-        }
-        
-        String senderUdpInfo = ChatServer.getUdpInfo(userName);
-        
-        if (senderUdpInfo == null) {
-            clientHandler.sendMessage("Error: Tu información UDP no está registrada");
-            return;
-        }
-        
-        ClientHandler targetHandler = ChatServer.getClientHandler(targetUser);
-        if (targetHandler != null) {
-            targetHandler.sendMessage("VOICE_NOTE_INCOMING from " + userName + " " + senderUdpInfo);
-        }
-        
-        clientHandler.sendMessage("VOICE_NOTE_TARGET " + targetUser + " " + targetUdpInfo);
     }
 }
