@@ -38,13 +38,11 @@ public class JoinGroupCommandHandler implements CommandHandler {
             return;
         }
         
-        // Verificar si el grupo existe
         if (!ChatServer.getGroups().contains(groupName)) {
             clientHandler.sendMessage("Error: El grupo '" + groupName + "' no existe.");
             return;
         }
         
-        // Verificar si el usuario ya es miembro del grupo
         if (ChatServer.getGroupMembers(groupName).contains(userName)) {
             clientHandler.sendMessage("Ya eres miembro del grupo: " + groupName);
             return;

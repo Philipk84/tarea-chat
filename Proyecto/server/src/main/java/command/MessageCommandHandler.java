@@ -52,7 +52,6 @@ public class MessageCommandHandler implements CommandHandler {
             return;
         }
         
-        // Obtener el handler del usuario destino
         ClientHandler targetHandler = getUserHandler(targetUser);
         
         if (targetHandler == null) {
@@ -60,13 +59,10 @@ public class MessageCommandHandler implements CommandHandler {
             return;
         }
         
-        // Enviar mensaje al destinatario
         targetHandler.sendMessage("MENSAJE_PRIVADO de " + userName + ": " + message);
         
-        // Confirmar al remitente
         clientHandler.sendMessage("Mensaje enviado a " + targetUser);
 
-        // Registrar en historial
         HistoryService.logTextPrivate(userName, targetUser, message);
     }
     
@@ -78,7 +74,6 @@ public class MessageCommandHandler implements CommandHandler {
      */
     private ClientHandler getUserHandler(String username) {
         try {
-            // Acceder al UserManager a travÃ©s del ChatServer
             return ChatServer.getClientHandler(username);
         } catch (Exception e) {
             return null;

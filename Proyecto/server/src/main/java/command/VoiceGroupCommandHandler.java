@@ -48,7 +48,6 @@ public class VoiceGroupCommandHandler implements CommandHandler {
             return;
         }
         
-        // Obtener miembros del grupo
         Set<String> members = ChatServer.getGroupMembers(groupName);
         
         if (members == null || members.isEmpty()) {
@@ -56,13 +55,11 @@ public class VoiceGroupCommandHandler implements CommandHandler {
             return;
         }
         
-        // Verificar que el usuario es miembro del grupo
         if (!members.contains(userName)) {
             clientHandler.sendMessage("Error: No eres miembro del grupo '" + groupName + "'");
             return;
         }
         
-        // Obtener informaciÃ³n UDP del remitente
         String senderUdpInfo = ChatServer.getUdpInfo(userName);
         
         if (senderUdpInfo == null) {
@@ -70,7 +67,6 @@ public class VoiceGroupCommandHandler implements CommandHandler {
             return;
         }
         
-        // Recopilar informaciÃ³n UDP de los miembros disponibles
         Map<String, String> membersUdpInfo = new HashMap<>();
         for (String member : members) {
             if (!member.equals(userName)) {
@@ -86,7 +82,6 @@ public class VoiceGroupCommandHandler implements CommandHandler {
             return;
         }
         
-        // Notificar a cada miembro del grupo
         for (Map.Entry<String, String> entry : membersUdpInfo.entrySet()) {
             String member = entry.getKey();
             ClientHandler memberHandler = ChatServer.getClientHandler(member);
@@ -95,7 +90,6 @@ public class VoiceGroupCommandHandler implements CommandHandler {
             }
         }
         
-        // Enviar lista de destinatarios al remitente
         StringBuilder targets = new StringBuilder();
         targets.append("VOICE_NOTE_GROUP_TARGETS ").append(groupName).append(" ");
         boolean first = true;

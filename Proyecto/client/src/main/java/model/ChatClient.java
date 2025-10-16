@@ -19,15 +19,12 @@ public class ChatClient {
     private DatagramSocket udpSocket;
 
     public ChatClient(Config config) {
-        // Crear servicios con inyección de dependencias
         this.serverHost = config.getHost();
         this.serverPort = config.getPort();
         this.networkService = new NetworkServiceImpl(serverHost, serverPort);
         this.CallManagerImpl = new CallManagerImpl();
         this.audioService = new AudioServiceImpl();
-        this.messageHandler = new MessageHandlerImpl(""); // username se establece en connect()
-        
-        // Configurar relaciones entre servicios
+        this.messageHandler = new MessageHandlerImpl("");        
         setupServiceDependencies();
     }
 
@@ -39,25 +36,20 @@ public class ChatClient {
      */
     public String connect(String username) {        
         try {
-            // Configurar socket UDP
-            udpSocket = new DatagramSocket(); // Sistema selecciona puerto libre
+            udpSocket = new DatagramSocket();
             int udpPort = udpSocket.getLocalPort();
             audioService.setUdpSocket(udpSocket);
             
-            // Crear nuevo messageHandler con username correcto
             MessageHandlerImpl newMessageHandler = new MessageHandlerImpl(username);
             newMessageHandler.setCallManagerImpl(CallManagerImpl);
             networkService.setMessageHandler(newMessageHandler);
             
-            // Conectar vía TCP
             String result = networkService.connect(username);
             
             if (networkService.isConnected()) {
-                // Registrar puerto UDP con el servidor
                 networkService.sendCommand("/udpport " + udpPort);
                 System.out.println("Puerto UDP local: " + udpPort + " (registrado con servidor)");
 
-                // Enviar paquete UDP de registro al servidor para que detecte IP:puerto reales
                 try {
                     byte[] payload = username.getBytes();
                     DatagramPacket hello = new DatagramPacket(
@@ -84,7 +76,6 @@ public class ChatClient {
      * @param command Comando a enviar
      */
     public void sendCommand(String command) {
-        // Asegurar que el socket UDP esté listo antes de comandos que inician llamadas
         if (command.startsWith("/call ") || command.startsWith("/callgroup ")) {
             ensureUdpReadyAndRegistered();
         }

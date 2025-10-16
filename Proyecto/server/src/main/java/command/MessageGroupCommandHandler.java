@@ -48,7 +48,6 @@ public class MessageGroupCommandHandler implements CommandHandler {
             return;
         }
         
-        // Obtener miembros del grupo
         Set<String> members = ChatServer.getGroupMembers(groupName);
         
         if (members == null || members.isEmpty()) {
@@ -56,13 +55,11 @@ public class MessageGroupCommandHandler implements CommandHandler {
             return;
         }
         
-        // Verificar que el usuario es miembro del grupo
         if (!members.contains(userName)) {
             clientHandler.sendMessage("Error: No eres miembro del grupo '" + groupName + "'");
             return;
         }
         
-        // Enviar mensaje a todos los miembros del grupo excepto al remitente
         int sentCount = 0;
         for (String member : members) {
             if (!member.equals(userName)) {
@@ -74,10 +71,8 @@ public class MessageGroupCommandHandler implements CommandHandler {
             }
         }
         
-        // Confirmar al remitente
         clientHandler.sendMessage("Mensaje enviado al grupo '" + groupName + "' (enviado a " + sentCount + " miembros)");
         
-        // Registrar en historial
         HistoryService.logTextGroup(userName, groupName, message);
     }
 }

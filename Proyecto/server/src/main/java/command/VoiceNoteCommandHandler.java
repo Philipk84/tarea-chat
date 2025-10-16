@@ -50,7 +50,6 @@ public class VoiceNoteCommandHandler implements CommandHandler {
             return;
         }
         
-        // Obtener informaciÃ³n UDP del usuario destino
         String targetUdpInfo = ChatServer.getUdpInfo(targetUser);
         
         if (targetUdpInfo == null) {
@@ -58,7 +57,6 @@ public class VoiceNoteCommandHandler implements CommandHandler {
             return;
         }
         
-        // Obtener informaciÃ³n UDP del remitente
         String senderUdpInfo = ChatServer.getUdpInfo(userName);
         
         if (senderUdpInfo == null) {
@@ -66,13 +64,11 @@ public class VoiceNoteCommandHandler implements CommandHandler {
             return;
         }
         
-        // Notificar al destinatario
         ClientHandler targetHandler = ChatServer.getClientHandler(targetUser);
         if (targetHandler != null) {
             targetHandler.sendMessage("VOICE_NOTE_INCOMING from " + userName + " " + senderUdpInfo);
         }
         
-        // Enviar informaciÃ³n UDP del destinatario al remitente
         clientHandler.sendMessage("VOICE_NOTE_TARGET " + targetUser + " " + targetUdpInfo);
     }
 }

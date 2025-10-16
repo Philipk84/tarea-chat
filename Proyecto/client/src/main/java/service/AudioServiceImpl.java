@@ -21,13 +21,6 @@ public class AudioServiceImpl implements AudioService {
     
     private volatile boolean active = false;
 
-    /**
-     * Constructor por defecto que inicializa el servicio de audio.
-     */
-    public AudioServiceImpl() {
-        // Constructor vacío - la configuración se hace vía setUdpSocket
-    }
-
     @Override
     public void setUdpSocket(DatagramSocket udpSocket) {
         this.udpSocket = udpSocket;
@@ -39,7 +32,7 @@ public class AudioServiceImpl implements AudioService {
             throw new IllegalStateException("UDP socket no configurado");
         }
 
-        stopSending(); // Detener envío anterior si existe
+        stopSending();
         
         sender = new CallAudio.CallSender(udpSocket, peers);
         senderFuture = audioThreads.submit(sender);
@@ -52,7 +45,7 @@ public class AudioServiceImpl implements AudioService {
             throw new IllegalStateException("UDP socket no configurado");
         }
 
-        stopReceiving(); // Detener recepción anterior si existe
+        stopReceiving();
         
         receiver = new CallAudio.CallReceiver(udpSocket);
         receiverFuture = audioThreads.submit(receiver);

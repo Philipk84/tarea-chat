@@ -18,8 +18,6 @@ public class CallCommandHandler implements CommandHandler {
      */
     @Override
     public boolean canHandle(String command) {
-        // Asegurar que NO capture "/callgroup ..." ni otros prefijos
-        // Solo valido si comienza exactamente con "/call " (con espacio)
         return command.startsWith("/call ");
     }
 

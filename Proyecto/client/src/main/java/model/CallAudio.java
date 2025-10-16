@@ -58,20 +58,18 @@ public class CallAudio {
                     return;
                 }
 
-                int bufferSize = 512; // bytes
+                int bufferSize = 512;
                 byte[] buffer = new byte[bufferSize];
 
                 while (running.get()) {
                     int read = microphone.read(buffer, 0, buffer.length);
                     if (read <= 0) continue;
                     DatagramPacket packet = new DatagramPacket(buffer, read);
-                    // enviar a cada peer
                     for (InetSocketAddress peer : peers) {
                         try {
                             packet.setSocketAddress(peer);
                             socket.send(packet);
                         } catch (SocketException se) {
-                            // probablemente socket cerrado al detenerse; salir
                             running.set(false);
                             break;
                         }
@@ -97,7 +95,6 @@ public class CallAudio {
          */
         private TargetDataLine openMicrophoneWithFallback() throws LineUnavailableException {
             DataLine.Info info = new DataLine.Info(TargetDataLine.class, AUDIO_FORMAT);
-            // 1) Intentar con el mixer por defecto
             try {
                 TargetDataLine line = (TargetDataLine) AudioSystem.getLine(info);
                 line.open(AUDIO_FORMAT);
@@ -108,7 +105,6 @@ public class CallAudio {
                 System.err.println("[Audio] No se pudo abrir mic en mixer por defecto: " + ex.getMessage());
             }
 
-            // 2) Intentar con mixers alternativos
             Mixer.Info[] mixers = AudioSystem.getMixerInfo();
             for (Mixer.Info mi : mixers) {
                 try {
@@ -120,9 +116,7 @@ public class CallAudio {
                         System.out.println("[Audio] Mic abierto en mixer: " + mi.getName());
                         return line;
                     }
-                } catch (Exception ignored) {
-                    // probar siguiente mixer
-                }
+                } catch (Exception ignored) {}
             }
             return null;
         }
@@ -149,7 +143,6 @@ public class CallAudio {
          * Detiene la recepción y reproducción de audio.
          */
         public void stop() {
-            // No cerrar el socket UDP compartido aquí; solo detener el bucle.
             running.set(false);
         }
 
@@ -168,7 +161,6 @@ public class CallAudio {
                 byte[] buffer = new byte[512];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
-                // usar timeout para poder salir al detenerse
                 try {
                     socket.setSoTimeout(300);
                 } catch (SocketException ignored) {}
@@ -178,10 +170,8 @@ public class CallAudio {
                         socket.receive(packet);
                         speakers.write(packet.getData(), 0, packet.getLength());
                     } catch (SocketTimeoutException ste) {
-                        // despertar periódico para comprobar bandera
                         continue;
                     } catch (SocketException se) {
-                        // socket closed
                         break;
                     }
                 }
