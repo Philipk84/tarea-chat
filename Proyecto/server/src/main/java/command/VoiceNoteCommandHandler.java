@@ -53,11 +53,10 @@ public class VoiceNoteCommandHandler implements CommandHandler {
 
         // Esperar encabezado VOICE_NOTE_START ... proveniente del cliente
         try {
-            BufferedReader in = new BufferedReader(new InputStreamReader(senderHandler.getClientSocket().getInputStream()));
             InputStream rawIn = senderHandler.getClientSocket().getInputStream();
             OutputStream rawOut = targetHandler.getClientSocket().getOutputStream();
 
-            String header = in.readLine(); // debería ser VOICE_NOTE_START <destino> <tamaño>
+            String header = readLine(rawIn); // debería ser VOICE_NOTE_START <destino> <tamaño>
             if (header == null || !header.startsWith("VOICE_NOTE_START ")) {
                 senderHandler.sendMessage("Error: No se recibió encabezado VOICE_NOTE_START");
                 return;
@@ -84,11 +83,11 @@ public class VoiceNoteCommandHandler implements CommandHandler {
             }
 
             // Leer VOICE_NOTE_END del remitente y reenviarlo
-            String end = in.readLine();
+            String end = readLine(rawIn);
             if (end == null || !end.equals("VOICE_NOTE_END")) {
                 senderHandler.sendMessage("Advertencia: no se detectó VOICE_NOTE_END correctamente");
             }
-            rawOut.write("\nVOICE_NOTE_END\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            rawOut.write("VOICE_NOTE_END\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
             rawOut.flush();
 
             senderHandler.sendMessage("Nota de voz enviada a " + targetUser);
@@ -96,5 +95,16 @@ public class VoiceNoteCommandHandler implements CommandHandler {
         } catch (Exception e) {
             senderHandler.sendMessage("Error reenviando nota de voz: " + e.getMessage());
         }
+    }
+
+    private String readLine(InputStream in) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        int b;
+        while ((b = in.read()) != -1) {
+            if (b == '\n') break;
+            if (b != '\r') sb.append((char) b);
+        }
+        if (sb.length() == 0 && b == -1) return null;
+        return sb.toString();
     }
 }

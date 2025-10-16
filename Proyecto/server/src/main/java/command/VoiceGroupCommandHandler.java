@@ -56,10 +56,8 @@ public class VoiceGroupCommandHandler implements CommandHandler {
         }
 
         try {
-            BufferedReader in = new BufferedReader(new InputStreamReader(senderHandler.getClientSocket().getInputStream()));
             InputStream rawIn = senderHandler.getClientSocket().getInputStream();
-
-            String header = in.readLine(); // VOICE_NOTE_GROUP_START <grupo> <tamaño>
+            String header = readLine(rawIn); // VOICE_NOTE_GROUP_START <grupo> <tamaño>
             if (header == null || !header.startsWith("VOICE_NOTE_GROUP_START ")) {
                 senderHandler.sendMessage("Error: No se recibió encabezado VOICE_NOTE_GROUP_START");
                 return;
@@ -98,7 +96,7 @@ public class VoiceGroupCommandHandler implements CommandHandler {
                 remaining -= n;
             }
 
-            String end = in.readLine();
+            String end = readLine(rawIn);
             if (end == null || !end.equals("VOICE_NOTE_GROUP_END")) {
                 senderHandler.sendMessage("Advertencia: no se detectó VOICE_NOTE_GROUP_END correctamente");
             }
@@ -111,5 +109,16 @@ public class VoiceGroupCommandHandler implements CommandHandler {
         } catch (Exception e) {
             senderHandler.sendMessage("Error reenviando nota de voz grupal: " + e.getMessage());
         }
+    }
+
+    private String readLine(InputStream in) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        int b;
+        while ((b = in.read()) != -1) {
+            if (b == '\n') break;
+            if (b != '\r') sb.append((char) b);
+        }
+        if (sb.length() == 0 && b == -1) return null;
+        return sb.toString();
     }
 }

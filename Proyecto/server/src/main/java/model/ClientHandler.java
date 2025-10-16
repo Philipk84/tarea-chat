@@ -13,7 +13,6 @@ import command.*;
 public class ClientHandler implements Runnable {
     private final Socket socket;
     private final CommandRegistry commandRegistry;
-    private BufferedReader in;
     private PrintWriter out;
     private String name;
     private boolean active = true;
@@ -74,7 +73,7 @@ public class ClientHandler implements Runnable {
             }
 
             // Enviar finalización
-            out.write("\nVOICE_NOTE_END\n".getBytes(StandardCharsets.UTF_8));
+            out.write("VOICE_NOTE_END\n".getBytes(StandardCharsets.UTF_8));
             out.flush();
 
         } catch (IOException e) {
@@ -105,12 +104,11 @@ public class ClientHandler implements Runnable {
     }
 
     private void setupClientConnection() throws IOException {
-        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream(), true);
     }
 
     private void handleUserRegistration() throws IOException {
-        name = in.readLine();
+        name = readLineFromInputStream(socket.getInputStream());
         if (name == null || name.trim().isEmpty()) {
             out.println("Error: Nombre inválido");
             active = false;
@@ -122,8 +120,8 @@ public class ClientHandler implements Runnable {
     }
 
     private void processUserCommands() throws IOException {
-        String line;
-        while (active && (line = in.readLine()) != null) {
+    String line;
+    while (active && (line = readLineFromInputStream(socket.getInputStream())) != null) {
 
             // Detección de inicio de nota de voz TCP
             if (line.startsWith("VOICE_NOTE_START")) {
@@ -282,7 +280,7 @@ public class ClientHandler implements Runnable {
     private void skipLine() {
         // Intentar consumir una línea residual si existe
         try {
-            in.readLine();
+            readLineFromInputStream(socket.getInputStream());
         } catch (IOException ignored) {}
     }
 
@@ -294,6 +292,7 @@ public class ClientHandler implements Runnable {
             if (b == '\n') break;
             if (b != '\r') baos.write(b);
         }
+        if (baos.size() == 0 && b == -1) return null;
         return baos.toString(java.nio.charset.StandardCharsets.UTF_8);
     }
 

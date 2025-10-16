@@ -149,7 +149,7 @@ public class Main {
         if (!groupName.isEmpty()) {
             controller.sendGroupVoiceNote(groupName);
             System.out.println("Iniciando nota de voz para grupo " + groupName + "...");
-            System.out.println("(La grabación se maneja automáticamente por UDP)");
+            System.out.println("(La grabación se maneja automáticamente por TCP)");
         } else {
             System.out.println("El nombre del grupo no puede estar vacío.");
         }

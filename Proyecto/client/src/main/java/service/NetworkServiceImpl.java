@@ -18,7 +18,7 @@ public class NetworkServiceImpl implements NetworkService {
     private final int serverPort;
 
     private Socket tcpSocket;
-    private BufferedReader tcpIn;
+    // Eliminamos el uso de BufferedReader para evitar mezclar buffers con binarios
     private PrintWriter tcpOut;
     private InputStream rawIn;
     private boolean connected = false;
@@ -45,12 +45,11 @@ public class NetworkServiceImpl implements NetworkService {
     public String connect(String username) {
         try {
             tcpSocket = new Socket(serverHost, serverPort);
-            tcpIn = new BufferedReader(new InputStreamReader(tcpSocket.getInputStream()));
             tcpOut = new PrintWriter(tcpSocket.getOutputStream(), true);
             rawIn = tcpSocket.getInputStream();
-
+            // Registrar usuario leyendo/escribiendo líneas manualmente
             tcpOut.println(username);
-            String welcomeMessage = tcpIn.readLine();
+            String welcomeMessage = readLine(rawIn);
 
             connected = true;
             startMessageListener();
@@ -100,8 +99,9 @@ public class NetworkServiceImpl implements NetworkService {
      */
     private void listenServer() {
         try {
-            String line;
-            while (connected && (line = tcpIn.readLine()) != null) {
+            while (connected) {
+                String line = readLine(rawIn);
+                if (line == null) break;
 
                 // ======= 📢 Nota de voz entrante =======
                 if (line.startsWith("VOICE_NOTE_START") || line.startsWith("VOICE_NOTE_GROUP_START")) {
@@ -167,7 +167,7 @@ public class NetworkServiceImpl implements NetworkService {
             }
 
             // Leer la línea de cierre
-            String endLine = tcpIn.readLine();
+            String endLine = readLine(rawIn);
             if (!("VOICE_NOTE_END".equals(endLine) || "VOICE_NOTE_GROUP_END".equals(endLine))) {
                 System.err.println("⚠️ Fin de nota de voz no detectado correctamente (recibido: " + endLine + ")");
             }
@@ -185,6 +185,18 @@ public class NetworkServiceImpl implements NetworkService {
         } catch (Exception e) {
             System.err.println("Error procesando nota de voz: " + e.getMessage());
         }
+    }
+
+    // Lee una línea (terminada en \n) desde el InputStream sin usar BufferedReader
+    private String readLine(InputStream in) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        int b;
+        while ((b = in.read()) != -1) {
+            if (b == '\n') break;
+            if (b != '\r') sb.append((char) b);
+        }
+        if (sb.length() == 0 && b == -1) return null;
+        return sb.toString();
     }
 
     // ===================
