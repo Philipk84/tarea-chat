@@ -52,10 +52,11 @@ public class CallAudio {
         public void run() {
             TargetDataLine microphone = null;
             try {
-                DataLine.Info info = new DataLine.Info(TargetDataLine.class, AUDIO_FORMAT);
-                microphone = (TargetDataLine) AudioSystem.getLine(info);
-                microphone.open(AUDIO_FORMAT);
-                microphone.start();
+                microphone = openMicrophoneWithFallback();
+                if (microphone == null) {
+                    System.err.println("CallSender error: no se pudo abrir el micrófono en ningún mixer.");
+                    return;
+                }
 
                 int bufferSize = 512; // bytes
                 byte[] buffer = new byte[bufferSize];
@@ -77,7 +78,7 @@ public class CallAudio {
                     }
                 }
             } catch (LineUnavailableException e) {
-                System.err.println("CallSender error: audio line unavailable - " + e.getMessage());
+                System.err.println("CallSender error: línea de audio no disponible - " + e.getMessage());
             } catch (IOException e) {
                 if (running.get()) {
                     System.err.println("CallSender error: " + e.getMessage());
@@ -88,6 +89,42 @@ public class CallAudio {
                     microphone.close();
                 }
             }
+        }
+
+        /**
+         * Intenta abrir el micrófono en el mixer por defecto y, si falla,
+         * recorre todos los mixers disponibles hasta encontrar uno compatible.
+         */
+        private TargetDataLine openMicrophoneWithFallback() throws LineUnavailableException {
+            DataLine.Info info = new DataLine.Info(TargetDataLine.class, AUDIO_FORMAT);
+            // 1) Intentar con el mixer por defecto
+            try {
+                TargetDataLine line = (TargetDataLine) AudioSystem.getLine(info);
+                line.open(AUDIO_FORMAT);
+                line.start();
+                System.out.println("[Audio] Mic abierto en mixer por defecto.");
+                return line;
+            } catch (Exception ex) {
+                System.err.println("[Audio] No se pudo abrir mic en mixer por defecto: " + ex.getMessage());
+            }
+
+            // 2) Intentar con mixers alternativos
+            Mixer.Info[] mixers = AudioSystem.getMixerInfo();
+            for (Mixer.Info mi : mixers) {
+                try {
+                    Mixer m = AudioSystem.getMixer(mi);
+                    if (m.isLineSupported(info)) {
+                        TargetDataLine line = (TargetDataLine) m.getLine(info);
+                        line.open(AUDIO_FORMAT);
+                        line.start();
+                        System.out.println("[Audio] Mic abierto en mixer: " + mi.getName());
+                        return line;
+                    }
+                } catch (Exception ignored) {
+                    // probar siguiente mixer
+                }
+            }
+            return null;
         }
     }
 

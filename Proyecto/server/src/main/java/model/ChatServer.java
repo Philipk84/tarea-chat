@@ -253,7 +253,9 @@ public class ChatServer implements ServerService {
      * @return ID de la llamada creada o null si no se pudo crear
      */
     public static synchronized String startIndividualCall(String from, String to) {
+        // Ambos participantes deben estar en línea y tener UDP registrado
         if (!instance.userManager.isUserOnline(to) || instance.userManager.getUdpInfo(to) == null) return null;
+        if (!instance.userManager.isUserOnline(from) || instance.userManager.getUdpInfo(from) == null) return null;
         Set<String> participants = new HashSet<>();
         participants.add(from);
         participants.add(to);
@@ -281,7 +283,10 @@ public class ChatServer implements ServerService {
                 participants.add(u);
             }
         }
-        participants.add(from);
+        // Agregar también al iniciador solo si tiene UDP registrado y está en línea
+        if (instance.userManager.isUserOnline(from) && instance.userManager.getUdpInfo(from) != null) {
+            participants.add(from);
+        }
         if (participants.size() < 2) return null;
         String callId = instance.CallManagerImpl.createCall(participants);
         notifyCallStarted(callId);
