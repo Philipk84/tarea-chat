@@ -170,6 +170,15 @@ public class UDPMessageHandler implements Runnable {
             );
             socket.send(welcomePacket);
             System.out.println("Cliente UDP registrado: " + message.trim() + " desde " + clientAddress);
+
+            // Además, actualizar el mapeo de UDP info en ChatServer con la IP:puerto observados
+            if (clientAddress instanceof InetSocketAddress isa) {
+                String ipPort = isa.getAddress().getHostAddress() + ":" + isa.getPort();
+                try {
+                    ChatServer.registerUdpInfo(message.trim(), ipPort);
+                    System.out.println("[UDP] Actualizado UDP info de " + message.trim() + " -> " + ipPort);
+                } catch (Exception ignored) {}
+            }
             return;
         }
 

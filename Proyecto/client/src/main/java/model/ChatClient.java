@@ -13,12 +13,16 @@ public class ChatClient {
     private final CallManager CallManagerImpl;
     private final AudioService audioService;
     private final MessageHandler messageHandler;
+    private final String serverHost;
+    private final int serverPort;
     
     private DatagramSocket udpSocket;
 
     public ChatClient(Config config) {
         // Crear servicios con inyección de dependencias
-        this.networkService = new NetworkServiceImpl(config.getHost(), config.getPort());
+        this.serverHost = config.getHost();
+        this.serverPort = config.getPort();
+        this.networkService = new NetworkServiceImpl(serverHost, serverPort);
         this.CallManagerImpl = new CallManagerImpl();
         this.audioService = new AudioServiceImpl();
         this.messageHandler = new MessageHandlerImpl(""); // username se establece en connect()
@@ -52,6 +56,19 @@ public class ChatClient {
                 // Registrar puerto UDP con el servidor
                 networkService.sendCommand("/udpport " + udpPort);
                 System.out.println("Puerto UDP local: " + udpPort + " (registrado con servidor)");
+
+                // Enviar paquete UDP de registro al servidor para que detecte IP:puerto reales
+                try {
+                    byte[] payload = username.getBytes();
+                    DatagramPacket hello = new DatagramPacket(
+                        payload, payload.length,
+                        InetAddress.getByName(serverHost), serverPort + 1
+                    );
+                    udpSocket.send(hello);
+                    System.out.println("[INFO] Enviado HELLO UDP al servidor para auto-registro IP:PUERTO");
+                } catch (Exception ex) {
+                    System.err.println("[WARN] No se pudo enviar HELLO UDP al servidor: " + ex.getMessage());
+                }
             }
             
             return result;
