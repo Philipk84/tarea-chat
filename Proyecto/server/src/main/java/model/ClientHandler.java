@@ -130,6 +130,12 @@ public class ClientHandler implements Runnable {
                 processVoiceNote(socket.getInputStream(), line);
                 continue;
             }
+            // Detección de inicio de nota de voz grupal TCP (para clientes que suben directamente, generalmente tratado por comando)
+            if (line.startsWith("VOICE_NOTE_GROUP_START")) {
+                // Este flujo suele manejarse en VoiceGroupCommandHandler, aquí solo consumimos si llega de forma directa
+                processVoiceNote(socket.getInputStream(), line);
+                continue;
+            }
 
             if (line.trim().isEmpty()) continue;
 
@@ -148,7 +154,7 @@ public class ClientHandler implements Runnable {
     /**
      * Procesa una nota de voz entrante (modo binario).
      * @param inputStream Flujo de entrada del socket
-     * @param header Línea de encabezado "VOICE_NOTE_START <sender> <size>"
+     * @param header Línea de encabezado "VOICE_NOTE_START <sender> <size>" o "VOICE_NOTE_GROUP_START <sender> <group> <size>"
      */
     private void processVoiceNote(InputStream inputStream, String header) {
         try {
@@ -158,27 +164,137 @@ public class ClientHandler implements Runnable {
                 return;
             }
 
-            String sender = parts[1];
-            long fileSize = Long.parseLong(parts[2]);
+            if (header.startsWith("VOICE_NOTE_GROUP_START")) {
+                // Cliente -> Servidor: VOICE_NOTE_GROUP_START <grupo> <tamaño>
+                String groupName = parts[1];
+                long size = Long.parseLong(parts[2]);
 
-            File receivedFile = new File("voice_from_" + sender + ".wav");
-            try (FileOutputStream fos = new FileOutputStream(receivedFile)) {
-                byte[] buffer = new byte[4096];
-                long remaining = fileSize;
-                while (remaining > 0) {
-                    int bytesRead = inputStream.read(buffer, 0, (int) Math.min(buffer.length, remaining));
-                    if (bytesRead == -1) break;
-                    fos.write(buffer, 0, bytesRead);
-                    remaining -= bytesRead;
+                java.util.Set<String> members = ChatServer.getGroupMembers(groupName);
+                if (members == null || members.isEmpty()) {
+                    sendMessage("Error: grupo '" + groupName + "' no existe o está vacío");
+                    skipBytes(inputStream, size);
+                    skipLine();
+                    return;
                 }
-            }
 
-            System.out.println("Nota de voz recibida de " + sender + " (" + fileSize + " bytes)");
-            sendMessage("Nota de voz recibida de " + sender + " (" + fileSize + " bytes)");
+                java.util.List<ClientHandler> recipients = new java.util.ArrayList<>();
+                for (String m : members) {
+                    if (!m.equals(name)) {
+                        ClientHandler ch = ChatServer.getClientHandler(m);
+                        if (ch != null) recipients.add(ch);
+                    }
+                }
+
+                // Enviar encabezado a todos: VOICE_NOTE_GROUP_START <remitente> <grupo> <tamaño>
+                String outHeader = "VOICE_NOTE_GROUP_START " + name + " " + groupName + " " + size + "\n";
+                byte[] outHeaderBytes = outHeader.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                for (ClientHandler ch : recipients) {
+                    ch.socket.getOutputStream().write(outHeaderBytes);
+                }
+
+                // Reenviar bytes
+                forwardBytesToRecipients(inputStream, size, recipients);
+
+                // Leer y reenviar fin
+                String end = readLineFromInputStream(inputStream);
+                if (end == null || !end.equals("VOICE_NOTE_GROUP_END")) {
+                    System.err.println("Advertencia: VOICE_NOTE_GROUP_END no detectado correctamente");
+                }
+                byte[] endBytes = "\nVOICE_NOTE_GROUP_END\n".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                for (ClientHandler ch : recipients) {
+                    ch.socket.getOutputStream().write(endBytes);
+                    ch.socket.getOutputStream().flush();
+                }
+                sendMessage("Nota de voz grupal enviada a '" + groupName + "'.");
+
+            } else if (header.startsWith("VOICE_NOTE_START")) {
+                // Cliente -> Servidor: VOICE_NOTE_START <destino> <tamaño>
+                String targetUser = parts[1];
+                long size = Long.parseLong(parts[2]);
+
+                ClientHandler target = ChatServer.getClientHandler(targetUser);
+                if (target == null) {
+                    sendMessage("Error: Usuario '" + targetUser + "' no está conectado");
+                    skipBytes(inputStream, size);
+                    skipLine();
+                    return;
+                }
+
+                // Encabezado para destinatario: VOICE_NOTE_START <remitente> <tamaño>
+                String outHeader = "VOICE_NOTE_START " + name + " " + size + "\n";
+                OutputStream out = target.socket.getOutputStream();
+                out.write(outHeader.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+
+                // Reenviar bytes
+                pipeBytes(inputStream, out, size);
+
+                // Leer end del emisor y reenviar
+                String end = readLineFromInputStream(inputStream);
+                if (end == null || !end.equals("VOICE_NOTE_END")) {
+                    System.err.println("Advertencia: VOICE_NOTE_END no detectado correctamente");
+                }
+                out.write("\nVOICE_NOTE_END\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                out.flush();
+                sendMessage("Nota de voz enviada a " + targetUser);
+            } else {
+                sendMessage("Error: encabezado de nota de voz no reconocido");
+            }
 
         } catch (Exception e) {
             System.err.println("Error procesando nota de voz: " + e.getMessage());
         }
+    }
+
+    private void pipeBytes(InputStream in, OutputStream out, long size) throws IOException {
+        byte[] buffer = new byte[4096];
+        long remaining = size;
+        while (remaining > 0) {
+            int n = in.read(buffer, 0, (int)Math.min(buffer.length, remaining));
+            if (n == -1) break;
+            out.write(buffer, 0, n);
+            remaining -= n;
+        }
+    }
+
+    private void forwardBytesToRecipients(InputStream in, long size, java.util.List<ClientHandler> recipients) throws IOException {
+        byte[] buffer = new byte[4096];
+        long remaining = size;
+        while (remaining > 0) {
+            int n = in.read(buffer, 0, (int)Math.min(buffer.length, remaining));
+            if (n == -1) break;
+            for (ClientHandler ch : recipients) {
+                ch.socket.getOutputStream().write(buffer, 0, n);
+            }
+            remaining -= n;
+        }
+    }
+
+    private void skipBytes(InputStream in, long size) throws IOException {
+        long remaining = size;
+        byte[] buffer = new byte[4096];
+        while (remaining > 0) {
+            int n = in.read(buffer, 0, (int)Math.min(buffer.length, remaining));
+            if (n == -1) break;
+            remaining -= n;
+        }
+    }
+
+    private void skipLine() {
+        // Intentar consumir una línea residual si existe
+        try {
+            in.readLine();
+        } catch (IOException ignored) {}
+    }
+
+    private String readLineFromInputStream(InputStream inputStream) throws IOException {
+        // Leer bytes hasta \n y construir String (UTF-8)
+        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+        int b;
+        while ((b = inputStream.read()) != -1) {
+            if (b == '\n') break;
+            if (b != '\r') baos.write(b);
+        }
+        return baos.toString(java.nio.charset.StandardCharsets.UTF_8);
     }
 
     private void cleanup() {

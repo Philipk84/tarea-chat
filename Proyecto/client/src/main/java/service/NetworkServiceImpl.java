@@ -27,6 +27,14 @@ public class NetworkServiceImpl implements NetworkService {
     private MessageHandler messageHandler;
     private Thread listenerThread;
 
+    // Estado para grabación de notas de voz
+    private volatile boolean recordingVoice = false;
+    private ByteArrayOutputStream voiceBuffer;
+    private javax.sound.sampled.TargetDataLine micLine;
+    private String pendingVoiceTargetUser;
+    private String pendingVoiceTargetGroup;
+    private Thread recordingThread;
+
     public NetworkServiceImpl(String serverHost, int serverPort) {
         this.serverHost = serverHost;
         this.serverPort = serverPort;
@@ -95,7 +103,7 @@ public class NetworkServiceImpl implements NetworkService {
             while (connected && (line = tcpIn.readLine()) != null) {
 
                 // ======= 📢 Nota de voz entrante =======
-                if (line.startsWith("VOICE_NOTE_START")) {
+                if (line.startsWith("VOICE_NOTE_START") || line.startsWith("VOICE_NOTE_GROUP_START")) {
                     processIncomingVoice(line);
                     continue;
                 }
@@ -115,7 +123,9 @@ public class NetworkServiceImpl implements NetworkService {
 
     /**
      * Procesa la recepción de una nota de voz según encabezado del servidor.
-     * Ejemplo: "VOICE_NOTE_START <sender> <fileSize>"
+     * Ejemplos:
+     *  - "VOICE_NOTE_START <sender> <fileSize>"
+     *  - "VOICE_NOTE_GROUP_START <sender> <group> <fileSize>"
      */
     private void processIncomingVoice(String header) {
         try {
@@ -126,7 +136,16 @@ public class NetworkServiceImpl implements NetworkService {
             }
 
             String sender = parts[1];
-            long fileSize = Long.parseLong(parts[2]);
+            long fileSize;
+            if (header.startsWith("VOICE_NOTE_GROUP_START")) {
+                if (parts.length < 4) {
+                    System.err.println("Encabezado grupal inválido: " + header);
+                    return;
+                }
+                fileSize = Long.parseLong(parts[3]);
+            } else {
+                fileSize = Long.parseLong(parts[2]);
+            }
 
             System.out.println("📥 Recibiendo nota de voz de " + sender + " (" + fileSize + " bytes)");
 
@@ -144,7 +163,7 @@ public class NetworkServiceImpl implements NetworkService {
 
             // Leer la línea de cierre
             String endLine = tcpIn.readLine();
-            if (!"VOICE_NOTE_END".equals(endLine)) {
+            if (!("VOICE_NOTE_END".equals(endLine) || "VOICE_NOTE_GROUP_END".equals(endLine))) {
                 System.err.println("⚠️ Fin de nota de voz no detectado correctamente (recibido: " + endLine + ")");
             }
 
@@ -155,6 +174,117 @@ public class NetworkServiceImpl implements NetworkService {
 
         } catch (Exception e) {
             System.err.println("Error procesando nota de voz: " + e.getMessage());
+        }
+    }
+
+    // ===================
+    // Notas de voz (TCP)
+    // ===================
+    @Override
+    public void startVoiceNoteToUser(String username) {
+        if (!connected || tcpSocket == null) {
+            System.out.println("No conectado al servidor.");
+            return;
+        }
+        if (recordingVoice) {
+            System.out.println("Ya hay una grabación en curso. Detenla antes de iniciar otra.");
+            return;
+        }
+        pendingVoiceTargetUser = username;
+        pendingVoiceTargetGroup = null;
+        beginRecording();
+    }
+
+    @Override
+    public void startVoiceNoteToGroup(String groupName) {
+        if (!connected || tcpSocket == null) {
+            System.out.println("No conectado al servidor.");
+            return;
+        }
+        if (recordingVoice) {
+            System.out.println("Ya hay una grabación en curso. Detenla antes de iniciar otra.");
+            return;
+        }
+        pendingVoiceTargetUser = null;
+        pendingVoiceTargetGroup = groupName;
+        beginRecording();
+    }
+
+    @Override
+    public void stopAndSendVoiceNote() {
+        if (!recordingVoice) {
+            System.out.println("No hay grabación activa.");
+            return;
+        }
+        // Detener captura
+        recordingVoice = false;
+        if (micLine != null) {
+            try { micLine.stop(); micLine.close(); } catch (Exception ignored) {}
+        }
+        if (recordingThread != null) {
+            try { recordingThread.join(500); } catch (InterruptedException ignored) {}
+        }
+
+        byte[] audioData = voiceBuffer != null ? voiceBuffer.toByteArray() : new byte[0];
+        voiceBuffer = null;
+
+        if (audioData.length == 0) {
+            System.out.println("No se capturó audio.");
+            return;
+        }
+
+        try {
+            DataOutputStream dos = new DataOutputStream(tcpSocket.getOutputStream());
+            if (pendingVoiceTargetUser != null) {
+                // Protocolo: VOICE_NOTE_START <destinatario> <tamaño> (usuario)
+                String header = "VOICE_NOTE_START " + pendingVoiceTargetUser + " " + audioData.length + "\n";
+                dos.write(header.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                dos.write(audioData);
+                dos.write("\nVOICE_NOTE_END\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                dos.flush();
+                System.out.println("📤 Nota de voz enviada a " + pendingVoiceTargetUser);
+            } else if (pendingVoiceTargetGroup != null) {
+                // Protocolo: VOICE_NOTE_GROUP_START <grupo> <tamaño>
+                String header = "VOICE_NOTE_GROUP_START " + pendingVoiceTargetGroup + " " + audioData.length + "\n";
+                dos.write(header.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                dos.write(audioData);
+                dos.write("\nVOICE_NOTE_GROUP_END\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                dos.flush();
+                System.out.println("📤 Nota de voz grupal enviada a '" + pendingVoiceTargetGroup + "'");
+            }
+        } catch (IOException e) {
+            System.err.println("Error enviando nota de voz: " + e.getMessage());
+        } finally {
+            pendingVoiceTargetUser = null;
+            pendingVoiceTargetGroup = null;
+        }
+    }
+
+    private void beginRecording() {
+        try {
+            javax.sound.sampled.AudioFormat fmt = new javax.sound.sampled.AudioFormat(44100, 16, 1, true, false);
+            javax.sound.sampled.DataLine.Info info = new javax.sound.sampled.DataLine.Info(javax.sound.sampled.TargetDataLine.class, fmt);
+            micLine = (javax.sound.sampled.TargetDataLine) javax.sound.sampled.AudioSystem.getLine(info);
+            micLine.open(fmt);
+            micLine.start();
+
+            voiceBuffer = new ByteArrayOutputStream();
+            recordingVoice = true;
+            recordingThread = new Thread(() -> {
+                byte[] buf = new byte[1024];
+                try {
+                    while (recordingVoice) {
+                        int n = micLine.read(buf, 0, buf.length);
+                        if (n > 0) voiceBuffer.write(buf, 0, n);
+                    }
+                } catch (Exception ignored) {
+                }
+            }, "voice-recorder");
+            recordingThread.setDaemon(true);
+            recordingThread.start();
+            System.out.println("🎙️ Grabación iniciada. Usa 'detener' para finalizar y enviar.");
+        } catch (Exception e) {
+            System.err.println("No se pudo iniciar la grabación: " + e.getMessage());
         }
     }
 

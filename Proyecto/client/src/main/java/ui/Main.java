@@ -68,20 +68,21 @@ public class Main {
     }
 
     private void showGroupMenu() {
-        System.out.println(
-                "\n============================="
-            + "\n         MENU GRUPOS         "
-            + "\n============================="
-            + "\nSelecciona una opción:"
-            + "\n   1. Listar Grupos"
-            + "\n   2. Crear Grupo"
-            + "\n   3. Unirse a Grupo"
-            + "\n   4. Llamar a Grupo"
-            + "\n   5. Finalizar Llamada"
-            + "\n   6. Enviar Mensaje a Grupo"
-            + "\n   7. Enviar Nota de Voz a Grupo"
-            + "\n   0. Volver"
-            + "\n=============================");
+    System.out.println(
+        "\n============================="
+        + "\n         MENU GRUPOS         "
+        + "\n============================="
+        + "\nSelecciona una opción:"
+        + "\n   1. Listar Grupos"
+        + "\n   2. Crear Grupo"
+        + "\n   3. Unirse a Grupo"
+        + "\n   4. Llamar a Grupo"
+        + "\n   5. Finalizar Llamada"
+        + "\n   6. Enviar Mensaje a Grupo"
+        + "\n   7. Enviar Nota de Voz a Grupo (iniciar)"
+        + "\n   8. Detener y Enviar Nota de Voz"
+        + "\n   0. Volver"
+        + "\n=============================");
 
         try {
             int option = sc.nextInt();
@@ -94,6 +95,7 @@ public class Main {
                 case 5 -> endCall();
                 case 6 -> sendMessageToGroup();
                 case 7 -> sendVoiceToGroup();
+                case 8 -> stopAndSendVoiceNote();
                 case 0 -> System.out.println("Volviendo al menú principal...");
                 default -> System.out.println("Opción inválida.");
             }
@@ -154,18 +156,19 @@ public class Main {
     }
 
     private void showUserMenu() {
-        System.out.println(
-                "\n============================="
-            + "\n        MENU USUARIOS        "
-            + "\n============================="
-            + "\nSelecciona una opción:"
-            + "\n   1. Listar Usuarios"
-            + "\n   2. Llamar a Usuario"
-            + "\n   3. Finalizar Llamada"
-            + "\n   4. Enviar Mensaje a Usuario"
-            + "\n   5. Enviar Nota de Voz a Usuario"
-            + "\n   0. Volver"
-            + "\n=============================");
+    System.out.println(
+        "\n============================="
+        + "\n        MENU USUARIOS        "
+        + "\n============================="
+        + "\nSelecciona una opción:"
+        + "\n   1. Listar Usuarios"
+        + "\n   2. Llamar a Usuario"
+        + "\n   3. Finalizar Llamada"
+        + "\n   4. Enviar Mensaje a Usuario"
+        + "\n   5. Enviar Nota de Voz a Usuario (iniciar)"
+        + "\n   6. Detener y Enviar Nota de Voz"
+        + "\n   0. Volver"
+        + "\n=============================");
 
         try {
             int option = sc.nextInt();
@@ -176,6 +179,7 @@ public class Main {
                 case 3 -> endCall();
                 case 4 -> sendMessageToUser();
                 case 5 -> sendVoiceToUser();
+                case 6 -> stopAndSendVoiceNote();
                 case 0 -> System.out.println("Volviendo al menú principal...");
                 default -> System.out.println("Opción inválida.");
             }
@@ -229,5 +233,11 @@ public class Main {
     // Metodo compartido para finalizar llamadas
     private void endCall() {
         controller.endCall();
+    }
+
+    // Opción para detener y enviar la nota de voz actual
+    private void stopAndSendVoiceNote() {
+        controller.stopAndSendVoiceNote();
+        System.out.println("Nota de voz detenida y enviada (si había una grabación activa).");
     }
 }

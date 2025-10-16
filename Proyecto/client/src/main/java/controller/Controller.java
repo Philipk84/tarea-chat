@@ -145,7 +145,7 @@ public class Controller {
      * @param username Nombre del usuario destinatario
      */
     public void sendVoiceNote(String username) {
-        chatClient.sendCommand("/voice " + username);
+        chatClient.startVoiceNoteToUser(username);
     }
 
     /**
@@ -155,7 +155,14 @@ public class Controller {
      * @param groupName Nombre del grupo destinatario
      */
     public void sendGroupVoiceNote(String groupName) {
-        chatClient.sendCommand("/voicegroup " + groupName);
+        chatClient.startVoiceNoteToGroup(groupName);
+    }
+
+    /**
+     * Detiene la grabación de nota de voz y la envía al destino configurado.
+     */
+    public void stopAndSendVoiceNote() {
+        chatClient.stopAndSendVoiceNote();
     }
 
     /**

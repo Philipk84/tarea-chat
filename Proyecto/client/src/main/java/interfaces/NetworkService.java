@@ -38,4 +38,25 @@ public interface NetworkService {
      * @param messageHandler Manejador que procesará los mensajes entrantes
      */
     void setMessageHandler(MessageHandler messageHandler);
+
+    /**
+     * Inicia la grabación de una nota de voz destinada a un usuario.
+     * La nota se enviará por TCP al detenerla.
+     *
+     * @param username usuario destino
+     */
+    default void startVoiceNoteToUser(String username) {}
+
+    /**
+     * Inicia la grabación de una nota de voz destinada a un grupo.
+     * La nota se enviará por TCP al detenerla.
+     *
+     * @param groupName grupo destino
+     */
+    default void startVoiceNoteToGroup(String groupName) {}
+
+    /**
+     * Detiene la grabación de la nota de voz (si está activa) y la envía por TCP.
+     */
+    default void stopAndSendVoiceNote() {}
 }

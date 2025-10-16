@@ -89,6 +89,27 @@ public class ChatClient {
     }
 
     /**
+     * Inicia grabación de nota de voz para un usuario.
+     */
+    public void startVoiceNoteToUser(String username) {
+        networkService.startVoiceNoteToUser(username);
+    }
+
+    /**
+     * Inicia grabación de nota de voz para un grupo.
+     */
+    public void startVoiceNoteToGroup(String groupName) {
+        networkService.startVoiceNoteToGroup(groupName);
+    }
+
+    /**
+     * Detiene grabación y envía la nota de voz.
+     */
+    public void stopAndSendVoiceNote() {
+        networkService.stopAndSendVoiceNote();
+    }
+
+    /**
      * Desconecta del servidor y libera recursos.
      */
     public void disconnect() {
