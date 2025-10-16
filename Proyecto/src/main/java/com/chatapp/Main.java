@@ -43,7 +43,7 @@ public class Main {
         System.out.print("Ingrese su nombre de usuario: ");
         String username = scanner.nextLine();
         
-        ChatClient client = new ChatClient("localhost", 5000, username);
+        ChatClient client = new ChatClient("172.20.10.3", 5000, username);
         client.start();
         scanner.close();
     }

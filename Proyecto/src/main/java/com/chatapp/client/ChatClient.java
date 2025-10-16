@@ -168,6 +168,17 @@ public class ChatClient {
 
         activeCallId = callId;
 
+        // Ensure UDP socket is open (it may have been closed previously)
+        if (udpSocket == null || udpSocket.isClosed()) {
+            udpSocket = new DatagramSocket();
+            // Re-register the new UDP port with server so peers know where to send
+            int udpPort = udpSocket.getLocalPort();
+            if (tcpOut != null) {
+                tcpOut.println("/udpport " + udpPort);
+            }
+            System.out.println("[INFO] Reabierto socket UDP en puerto " + udpPort + " y registrado con el servidor.");
+        }
+
         // Sender uses same UDP socket and sends audio frames to all peers
         sender = new CallAudio.CallSender(udpSocket, peers);
         senderFuture = callThreads.submit(sender);
