@@ -6,8 +6,8 @@ import java.io.FileReader;
 
 /**
  * Controlador principal del cliente de chat.
- * ActÃºa como intermediario entre la interfaz de usuario y el modelo del cliente.
- * Maneja la configuraciÃ³n, conexiÃ³n al servidor y ejecuciÃ³n de comandos de chat.
+ * Actua como intermediario entre la interfaz de usuario y el modelo del cliente.
+ * Maneja la configuración, conexión al servidor y ejecución de comandos de chat.
  * Proporciona una API simplificada para todas las operaciones del cliente.
  */
 public class Controller {
@@ -27,7 +27,7 @@ public class Controller {
 
     /**
      * Establece conexiÃ³n con el servidor de chat usando el nombre de usuario especificado.
-     *
+     * 
      * @param username Nombre de usuario para la conexiÃ³n
      * @return Mensaje de estado del resultado de la conexiÃ³n
      */
@@ -37,7 +37,7 @@ public class Controller {
 
     /**
      * EnvÃ­a un comando genÃ©rico al servidor de chat.
-     *
+     * 
      * @param command Comando completo a enviar al servidor
      */
     public void sendCommand(String command) {
@@ -54,7 +54,7 @@ public class Controller {
 
     /**
      * Verifica si el cliente estÃ¡ actualmente conectado al servidor.
-     *
+     * 
      * @return true si estÃ¡ conectado, false en caso contrario
      */
     public boolean isConnected() {
@@ -64,7 +64,7 @@ public class Controller {
     /**
      * Crea un nuevo grupo de chat con el nombre especificado.
      * El usuario actual se convierte automÃ¡ticamente en miembro del grupo.
-     *
+     * 
      * @param groupName Nombre del grupo a crear
      */
     public void createGroup(String groupName) {
@@ -82,7 +82,7 @@ public class Controller {
 
     /**
      * Solicita al servidor la lista de todos los grupos disponibles.
-     * La respuesta se mostrarÃ¡ a travÃ©s del manejador de mensajes del cliente.
+     * La respuesta se mostrará a través del manejador de mensajes del cliente.
      */
     public void listGroups() {
         chatClient.sendCommand("/listgroups");
@@ -91,7 +91,7 @@ public class Controller {
     /**
      * Inicia una llamada individual con otro usuario.
      * Ambos usuarios deben estar conectados y tener informaciÃ³n UDP registrada.
-     *
+     * 
      * @param username Nombre del usuario a llamar
      */
     public void callUser(String username) {
@@ -101,7 +101,7 @@ public class Controller {
     /**
      * Inicia una llamada grupal con todos los miembros conectados de un grupo.
      * Solo los miembros con informaciÃ³n UDP registrada participarÃ¡n en la llamada.
-     *
+     * 
      * @param groupName Nombre del grupo a llamar
      */
     public void callGroup(String groupName) {
@@ -117,7 +117,7 @@ public class Controller {
     }
 
     /**
-     * EnvÃ­a un mensaje de texto privado a un usuario especÃ­fico usando TCP.
+     * Envía un mensaje de texto privado a un usuario específico usando TCP.
      * El mensaje se entrega de manera confiable al destinatario.
      *
      * @param username Nombre del usuario destinatario
@@ -128,7 +128,7 @@ public class Controller {
     }
 
     /**
-     * EnvÃ­a un mensaje de texto a todos los miembros de un grupo usando TCP.
+     * Envía un mensaje de texto a todos los miembros de un grupo usando TCP.
      * El mensaje se entrega de manera confiable a todos los miembros conectados.
      *
      * @param groupName Nombre del grupo destinatario
@@ -141,7 +141,7 @@ public class Controller {
     /**
      * Inicia el envÃ­o de una nota de voz a un usuario especÃ­fico.
      * La nota de voz se transmite vÃ­a UDP para eficiencia.
-     *
+     * 
      * @param username Nombre del usuario destinatario
      */
     public void sendVoiceNote(String username) {
@@ -151,13 +151,17 @@ public class Controller {
     /**
      * Inicia el envÃ­o de una nota de voz a todos los miembros de un grupo.
      * La nota de voz se transmite vÃ­a UDP para eficiencia.
-     *
+     * 
      * @param groupName Nombre del grupo destinatario
      */
     public void sendGroupVoiceNote(String groupName) {
         chatClient.sendCommand("/voicegroup " + groupName);
     }
 
+    /**
+     * Solicita al servidor la lista de todos los usuarios actualmente conectados.
+     * La respuesta se mostrará a través del manejador de mensajes del cliente.
+     */
     public void listUsers() {
         chatClient.sendCommand("/listusers");
     }

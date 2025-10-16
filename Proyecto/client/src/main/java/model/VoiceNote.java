@@ -193,16 +193,13 @@ public class VoiceNote {
          */
         public void sendVoiceNote(byte[] audioData, String target, InetAddress serverAddress, int serverPort) {
             try {
-                // Formato: VOICE_NOTE:target:audioData
                 String header = "VOICE_NOTE:" + target + ":";
                 byte[] headerBytes = header.getBytes();
                 
-                // Combinar header y audio
                 byte[] fullMessage = new byte[headerBytes.length + audioData.length];
                 System.arraycopy(headerBytes, 0, fullMessage, 0, headerBytes.length);
                 System.arraycopy(audioData, 0, fullMessage, headerBytes.length, audioData.length);
 
-                // Enviar como DatagramPacket (como en class/UDPclient.java)
                 DatagramPacket packet = new DatagramPacket(
                     fullMessage, fullMessage.length, serverAddress, serverPort
                 );
@@ -223,16 +220,13 @@ public class VoiceNote {
          */
         public void sendVoiceNoteToGroup(byte[] audioData, String groupName, InetAddress serverAddress, int serverPort) {
             try {
-                // Formato: VOICE_GROUP:groupName:audioData
                 String header = "VOICE_GROUP:" + groupName + ":";
                 byte[] headerBytes = header.getBytes();
                 
-                // Combinar header y audio
                 byte[] fullMessage = new byte[headerBytes.length + audioData.length];
                 System.arraycopy(headerBytes, 0, fullMessage, 0, headerBytes.length);
                 System.arraycopy(audioData, 0, fullMessage, headerBytes.length, audioData.length);
 
-                // Enviar como DatagramPacket (como en class/UDPclient.java)
                 DatagramPacket packet = new DatagramPacket(
                     fullMessage, fullMessage.length, serverAddress, serverPort
                 );

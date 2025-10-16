@@ -35,10 +35,8 @@ public class EndCallCommandHandler implements CommandHandler {
         String callId = null;
         
         if (parts.length == 2) {
-            // ID de llamada especÃ­fico proporcionado
             callId = parts[1].trim();
         } else {
-            // Buscar la llamada actual del usuario
             if (ChatServer.getCallManagerImpl() != null) {
                 callId = ChatServer.getCallManagerImpl().getCallOfUser(userName);
             }

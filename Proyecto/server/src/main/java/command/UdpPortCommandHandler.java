@@ -46,7 +46,6 @@ public class UdpPortCommandHandler implements CommandHandler {
             ChatServer.registerUdpInfo(userName, ipPort);
             clientHandler.sendMessage("UDP registrado: " + ipPort);
 
-            // Registrar mapeo de dirección UDP -> usuario para identificar remitentes por UDP
             InetSocketAddress udpAddr = new InetSocketAddress(clientIp, port);
             ChatServer.registerUdpClientAddress(udpAddr, userName);
         } catch (NumberFormatException e) {

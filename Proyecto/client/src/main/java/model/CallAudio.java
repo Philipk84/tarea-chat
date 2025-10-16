@@ -52,33 +52,73 @@ public class CallAudio {
         public void run() {
             TargetDataLine microphone = null;
             try {
-                DataLine.Info info = new DataLine.Info(TargetDataLine.class, AUDIO_FORMAT);
-                microphone = (TargetDataLine) AudioSystem.getLine(info);
-                microphone.open(AUDIO_FORMAT);
-                microphone.start();
+                microphone = openMicrophoneWithFallback();
+                if (microphone == null) {
+                    System.err.println("CallSender error: no se pudo abrir el micrófono en ningún mixer.");
+                    return;
+                }
 
-                int bufferSize = 512; // bytes
+                int bufferSize = 512;
                 byte[] buffer = new byte[bufferSize];
 
                 while (running.get()) {
                     int read = microphone.read(buffer, 0, buffer.length);
-                    if (read > 0) {
-                        DatagramPacket packet = new DatagramPacket(buffer, read);
-                        // send to each peer
-                        for (InetSocketAddress peer : peers) {
+                    if (read <= 0) continue;
+                    DatagramPacket packet = new DatagramPacket(buffer, read);
+                    for (InetSocketAddress peer : peers) {
+                        try {
                             packet.setSocketAddress(peer);
                             socket.send(packet);
+                        } catch (SocketException se) {
+                            running.set(false);
+                            break;
                         }
                     }
                 }
-            } catch (LineUnavailableException | IOException e) {
-                System.err.println("CallSender error: " + e.getMessage());
+            } catch (LineUnavailableException e) {
+                System.err.println("CallSender error: línea de audio no disponible - " + e.getMessage());
+            } catch (IOException e) {
+                if (running.get()) {
+                    System.err.println("CallSender error: " + e.getMessage());
+                }
             } finally {
                 if (microphone != null) {
                     microphone.stop();
                     microphone.close();
                 }
             }
+        }
+
+        /**
+         * Intenta abrir el micrófono en el mixer por defecto y, si falla,
+         * recorre todos los mixers disponibles hasta encontrar uno compatible.
+         */
+        private TargetDataLine openMicrophoneWithFallback() throws LineUnavailableException {
+            DataLine.Info info = new DataLine.Info(TargetDataLine.class, AUDIO_FORMAT);
+            try {
+                TargetDataLine line = (TargetDataLine) AudioSystem.getLine(info);
+                line.open(AUDIO_FORMAT);
+                line.start();
+                System.out.println("[Audio] Mic abierto en mixer por defecto.");
+                return line;
+            } catch (Exception ex) {
+                System.err.println("[Audio] No se pudo abrir mic en mixer por defecto: " + ex.getMessage());
+            }
+
+            Mixer.Info[] mixers = AudioSystem.getMixerInfo();
+            for (Mixer.Info mi : mixers) {
+                try {
+                    Mixer m = AudioSystem.getMixer(mi);
+                    if (m.isLineSupported(info)) {
+                        TargetDataLine line = (TargetDataLine) m.getLine(info);
+                        line.open(AUDIO_FORMAT);
+                        line.start();
+                        System.out.println("[Audio] Mic abierto en mixer: " + mi.getName());
+                        return line;
+                    }
+                } catch (Exception ignored) {}
+            }
+            return null;
         }
     }
 
@@ -104,7 +144,6 @@ public class CallAudio {
          */
         public void stop() {
             running.set(false);
-            socket.close();
         }
 
         /**
@@ -122,12 +161,17 @@ public class CallAudio {
                 byte[] buffer = new byte[512];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
+                try {
+                    socket.setSoTimeout(300);
+                } catch (SocketException ignored) {}
+
                 while (running.get()) {
                     try {
                         socket.receive(packet);
                         speakers.write(packet.getData(), 0, packet.getLength());
+                    } catch (SocketTimeoutException ste) {
+                        continue;
                     } catch (SocketException se) {
-                        // socket closed
                         break;
                     }
                 }

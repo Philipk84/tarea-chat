@@ -12,7 +12,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.DatagramSocket;
 import java.net.DatagramPacket;
-import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -64,11 +63,10 @@ public class ChatServer implements ServerService {
         
         try {
             serverSocket = new ServerSocket(config.getPort());
-            udpSocket = new DatagramSocket(config.getPort() + 1, InetAddress.getByName(config.getHost())); // Puerto UDP+1 como en class/UDPserver.java
-            threadPool = Executors.newFixedThreadPool(THREAD_POOL_SIZE); // Como class/Server.java
+            udpSocket = new DatagramSocket(config.getPort() + 1);
+            threadPool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
             running = true;
             
-            // Hilo para conexiones TCP (como class/Server.java)
             Thread serverThread = new Thread(() -> {
                 System.out.println("Servidor TCP escuchando en puerto " + config.getPort() + "...");
                 
@@ -76,7 +74,7 @@ public class ChatServer implements ServerService {
                     try {
                         Socket socket = serverSocket.accept();
                         ClientHandler handler = new ClientHandler(socket);
-                        threadPool.submit(handler); // Usar threadPool en lugar de new Thread()
+                        threadPool.submit(handler);
                     } catch (IOException e) {
                         if (running) {
                             System.err.println("Error aceptando conexión TCP del cliente: " + e.getMessage());
@@ -87,16 +85,14 @@ public class ChatServer implements ServerService {
             serverThread.setDaemon(true);
             serverThread.start();
             
-            // Hilo para mensajes UDP (como class/UDPserver.java)
             Thread udpThread = new Thread(() -> {
-                System.out.println("Servidor UDP escuchando en puerto " + (config.getPort() + 1) + "...");
-                byte[] receiveData = new byte[4096]; // Buffer más grande para audio
+                System.out.println("Servidor UDP escuchando en puerto " + (config.getPort() + 1) + " (0.0.0.0)...");
+                byte[] receiveData = new byte[4096];
                 
                 while (running && !udpSocket.isClosed()) {
                     try {
                         DatagramPacket packet = new DatagramPacket(receiveData, receiveData.length);
                         udpSocket.receive(packet);
-                        // Usar UDPMessageHandler como ClientHandler en class/UDPserver.java
                         threadPool.submit(new UDPMessageHandler(packet, udpSocket, udpClients));
                     } catch (Exception e) {
                         if (running && !udpSocket.isClosed()) {
@@ -130,13 +126,13 @@ public class ChatServer implements ServerService {
         running = false;
         try {
             if (threadPool != null) {
-                threadPool.shutdown(); // Cerrar threadPool como en class/Server.java
+                threadPool.shutdown();
             }
             if (serverSocket != null && !serverSocket.isClosed()) {
                 serverSocket.close();
             }
             if (udpSocket != null && !udpSocket.isClosed()) {
-                udpSocket.close(); // Cerrar socket UDP como en class/UDPserver.java
+                udpSocket.close();
             }
             return "Servidor cerrado exitosamente";
         } catch (IOException e) {
@@ -254,6 +250,7 @@ public class ChatServer implements ServerService {
      */
     public static synchronized String startIndividualCall(String from, String to) {
         if (!instance.userManager.isUserOnline(to) || instance.userManager.getUdpInfo(to) == null) return null;
+        if (!instance.userManager.isUserOnline(from) || instance.userManager.getUdpInfo(from) == null) return null;
         Set<String> participants = new HashSet<>();
         participants.add(from);
         participants.add(to);
@@ -281,7 +278,9 @@ public class ChatServer implements ServerService {
                 participants.add(u);
             }
         }
-        participants.add(from);
+        if (instance.userManager.isUserOnline(from) && instance.userManager.getUdpInfo(from) != null) {
+            participants.add(from);
+        }
         if (participants.size() < 2) return null;
         String callId = instance.CallManagerImpl.createCall(participants);
         notifyCallStarted(callId);

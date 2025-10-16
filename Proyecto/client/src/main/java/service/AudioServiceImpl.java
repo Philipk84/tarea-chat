@@ -25,7 +25,9 @@ public class AudioServiceImpl implements AudioService {
     /**
      * Constructor por defecto que inicializa el servicio de audio.
      */
-    public AudioServiceImpl() {}
+    public AudioServiceImpl() {
+        // Constructor vacío - la configuración se hace vía setUdpSocket
+    }
 
     @Override
     public void setUdpSocket(DatagramSocket udpSocket) {
@@ -42,7 +44,7 @@ public class AudioServiceImpl implements AudioService {
         }
 
         stopSending(); // Detener envío anterior si existe
-
+        
         sender = new CallAudio.CallSender(udpSocket, peers);
         senderFuture = audioThreads.submit(sender);
         active = true;
@@ -55,7 +57,7 @@ public class AudioServiceImpl implements AudioService {
         }
 
         stopReceiving(); // Detener recepción anterior si existe
-
+        
         receiver = new CallAudio.CallReceiver(udpSocket);
         receiverFuture = audioThreads.submit(receiver);
         active = true;

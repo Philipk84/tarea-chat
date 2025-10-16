@@ -28,7 +28,7 @@ public class CallManagerImpl implements CallManager {
         }
 
         if (hasActiveCall()) {
-            endCall(); // Terminar llamada anterior
+            endCall();
         }
 
         try {

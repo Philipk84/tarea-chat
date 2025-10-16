@@ -39,7 +39,6 @@ public class UDPMessageHandler implements Runnable {
             String message = new String(packet.getData(), 0, packet.getLength());
             SocketAddress clientAddress = packet.getSocketAddress();
 
-            // Procesar diferentes tipos de mensajes UDP
             if (message.startsWith("VOICE_NOTE:")) {
                 handleVoiceNote(message, clientAddress);
             } else if (message.startsWith("VOICE_GROUP:")) {
@@ -47,7 +46,6 @@ public class UDPMessageHandler implements Runnable {
             } else if (message.startsWith("CALL_AUDIO:")) {
                 handleCallAudio(message, clientAddress);
             } else {
-                // Mensaje de chat UDP general (como en class/ClientHandler.java)
                 handleGeneralMessage(message, clientAddress);
             }
         } catch (Exception e) {
@@ -170,6 +168,15 @@ public class UDPMessageHandler implements Runnable {
             );
             socket.send(welcomePacket);
             System.out.println("Cliente UDP registrado: " + message.trim() + " desde " + clientAddress);
+
+            // Además, actualizar el mapeo de UDP info en ChatServer con la IP:puerto observados
+            if (clientAddress instanceof InetSocketAddress isa) {
+                String ipPort = isa.getAddress().getHostAddress() + ":" + isa.getPort();
+                try {
+                    ChatServer.registerUdpInfo(message.trim(), ipPort);
+                    System.out.println("[UDP] Actualizado UDP info de " + message.trim() + " -> " + ipPort);
+                } catch (Exception ignored) {}
+            }
             return;
         }
 

@@ -18,8 +18,6 @@ public class CallGroupCommandHandler implements CommandHandler {
      */
     @Override
     public boolean canHandle(String command) {
-        // Exigir espacio para indicar que viene el nombre del grupo y evitar
-        // coincidir con otros comandos que pudieran empezar similar.
         return command.startsWith("/callgroup ");
     }
 
