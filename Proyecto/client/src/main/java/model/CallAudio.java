@@ -62,17 +62,26 @@ public class CallAudio {
 
                 while (running.get()) {
                     int read = microphone.read(buffer, 0, buffer.length);
-                    if (read > 0) {
-                        DatagramPacket packet = new DatagramPacket(buffer, read);
-                        // send to each peer
-                        for (InetSocketAddress peer : peers) {
+                    if (read <= 0) continue;
+                    DatagramPacket packet = new DatagramPacket(buffer, read);
+                    // enviar a cada peer
+                    for (InetSocketAddress peer : peers) {
+                        try {
                             packet.setSocketAddress(peer);
                             socket.send(packet);
+                        } catch (SocketException se) {
+                            // probablemente socket cerrado al detenerse; salir
+                            running.set(false);
+                            break;
                         }
                     }
                 }
-            } catch (LineUnavailableException | IOException e) {
-                System.err.println("CallSender error: " + e.getMessage());
+            } catch (LineUnavailableException e) {
+                System.err.println("CallSender error: audio line unavailable - " + e.getMessage());
+            } catch (IOException e) {
+                if (running.get()) {
+                    System.err.println("CallSender error: " + e.getMessage());
+                }
             } finally {
                 if (microphone != null) {
                     microphone.stop();
@@ -103,8 +112,8 @@ public class CallAudio {
          * Detiene la recepción y reproducción de audio.
          */
         public void stop() {
+            // No cerrar el socket UDP compartido aquí; solo detener el bucle.
             running.set(false);
-            socket.close();
         }
 
         /**
@@ -122,10 +131,18 @@ public class CallAudio {
                 byte[] buffer = new byte[512];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
+                // usar timeout para poder salir al detenerse
+                try {
+                    socket.setSoTimeout(300);
+                } catch (SocketException ignored) {}
+
                 while (running.get()) {
                     try {
                         socket.receive(packet);
                         speakers.write(packet.getData(), 0, packet.getLength());
+                    } catch (SocketTimeoutException ste) {
+                        // despertar periódico para comprobar bandera
+                        continue;
                     } catch (SocketException se) {
                         // socket closed
                         break;

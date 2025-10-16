@@ -67,6 +67,11 @@ public class ChatClient {
      * @param command Comando a enviar
      */
     public void sendCommand(String command) {
+        // Asegurar que el socket UDP esté listo antes de comandos que inician llamadas
+        if (command.startsWith("/call ") || command.startsWith("/callgroup ")) {
+            ensureUdpReadyAndRegistered();
+        }
+
         if (command.startsWith("/endcall")) {
             networkService.sendCommand(command);
             CallManagerImpl.endCall();
@@ -104,5 +109,25 @@ public class ChatClient {
     private void setupServiceDependencies() {
         networkService.setMessageHandler(messageHandler);
         CallManagerImpl.setAudioService(audioService);
+    }
+
+    /**
+     * Garantiza que el socket UDP esté abierto y registrado con el servidor.
+     * Si se recrea, vuelve a enviar /udpport <puerto>.
+     */
+    private void ensureUdpReadyAndRegistered() {
+        try {
+            if (udpSocket == null || udpSocket.isClosed()) {
+                udpSocket = new DatagramSocket();
+                int udpPort = udpSocket.getLocalPort();
+                audioService.setUdpSocket(udpSocket);
+                if (networkService.isConnected()) {
+                    networkService.sendCommand("/udpport " + udpPort);
+                    System.out.println("[INFO] Reabierto socket UDP en puerto " + udpPort + " y registrado con el servidor.");
+                }
+            }
+        } catch (SocketException e) {
+            System.err.println("No se pudo preparar UDP: " + e.getMessage());
+        }
     }
 }
