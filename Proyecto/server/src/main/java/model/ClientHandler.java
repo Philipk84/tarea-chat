@@ -2,6 +2,7 @@ package model;
 
 import java.io.*;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import command.*;
 

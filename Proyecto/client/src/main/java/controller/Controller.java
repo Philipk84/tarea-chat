@@ -146,7 +146,6 @@ public class Controller {
      */
     public void sendVoiceNote(String username) {
         chatClient.sendCommand("/voice " + username);
-
     }
 
     /**
