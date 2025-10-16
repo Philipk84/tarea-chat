@@ -200,7 +200,7 @@ public class ClientHandler implements Runnable {
                 if (end == null || !end.equals("VOICE_NOTE_GROUP_END")) {
                     System.err.println("Advertencia: VOICE_NOTE_GROUP_END no detectado correctamente");
                 }
-                byte[] endBytes = "\nVOICE_NOTE_GROUP_END\n".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                byte[] endBytes = "VOICE_NOTE_GROUP_END\n".getBytes(java.nio.charset.StandardCharsets.UTF_8);
                 for (ClientHandler ch : recipients) {
                     ch.socket.getOutputStream().write(endBytes);
                     ch.socket.getOutputStream().flush();
@@ -233,7 +233,7 @@ public class ClientHandler implements Runnable {
                 if (end == null || !end.equals("VOICE_NOTE_END")) {
                     System.err.println("Advertencia: VOICE_NOTE_END no detectado correctamente");
                 }
-                out.write("\nVOICE_NOTE_END\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                out.write("VOICE_NOTE_END\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 out.flush();
                 sendMessage("Nota de voz enviada a " + targetUser);
             } else {

@@ -26,6 +26,7 @@ public class NetworkServiceImpl implements NetworkService {
 
     private MessageHandler messageHandler;
     private Thread listenerThread;
+    private final model.VoiceNote.VoicePlayer voicePlayer = new model.VoiceNote.VoicePlayer();
 
     // Estado para grabación de notas de voz
     private volatile boolean recordingVoice = false;
@@ -150,15 +151,19 @@ public class NetworkServiceImpl implements NetworkService {
             System.out.println("📥 Recibiendo nota de voz de " + sender + " (" + fileSize + " bytes)");
 
             File receivedFile = new File("voice_from_" + sender + ".wav");
-            try (FileOutputStream fos = new FileOutputStream(receivedFile)) {
+            byte[] audioData;
+            try (java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                 FileOutputStream fos = new FileOutputStream(receivedFile)) {
                 byte[] buffer = new byte[4096];
                 long remaining = fileSize;
                 while (remaining > 0) {
                     int bytesRead = rawIn.read(buffer, 0, (int) Math.min(buffer.length, remaining));
                     if (bytesRead == -1) break;
+                    baos.write(buffer, 0, bytesRead);
                     fos.write(buffer, 0, bytesRead);
                     remaining -= bytesRead;
                 }
+                audioData = baos.toByteArray();
             }
 
             // Leer la línea de cierre
@@ -170,6 +175,11 @@ public class NetworkServiceImpl implements NetworkService {
             System.out.println("✅ Nota de voz recibida de " + sender + ": " + receivedFile.getName());
             if (messageHandler != null) {
                 messageHandler.handleMessage("[Nota de voz recibida de " + sender + "]");
+            }
+
+            // Reproducción automática
+            if (audioData != null && audioData.length > 0) {
+                voicePlayer.playVoiceNote(audioData);
             }
 
         } catch (Exception e) {
@@ -240,7 +250,7 @@ public class NetworkServiceImpl implements NetworkService {
                 String header = "VOICE_NOTE_START " + pendingVoiceTargetUser + " " + audioData.length + "\n";
                 dos.write(header.getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 dos.write(audioData);
-                dos.write("\nVOICE_NOTE_END\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                dos.write("VOICE_NOTE_END\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 dos.flush();
                 System.out.println("📤 Nota de voz enviada a " + pendingVoiceTargetUser);
             } else if (pendingVoiceTargetGroup != null) {
@@ -248,7 +258,7 @@ public class NetworkServiceImpl implements NetworkService {
                 String header = "VOICE_NOTE_GROUP_START " + pendingVoiceTargetGroup + " " + audioData.length + "\n";
                 dos.write(header.getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 dos.write(audioData);
-                dos.write("\nVOICE_NOTE_GROUP_END\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                dos.write("VOICE_NOTE_GROUP_END\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 dos.flush();
                 System.out.println("📤 Nota de voz grupal enviada a '" + pendingVoiceTargetGroup + "'");
             }

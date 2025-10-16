@@ -20,3 +20,4 @@
 {"callId":"468aa221-2983-47bc-ad90-bbbb85cd3d5a","sender":"server","scope":"call","endedBy":"Alejandro","id":"6a9757a2-4adb-4302-88fa-0b8b5b8f2108","type":"call_ended","timestamp":"2025-10-16T03:32:33.974767Z","participants":["Alejandro","Felipe"]}
 {"callId":"db5ef140-1e48-4472-af7f-6ecf575393c5","sender":"server","scope":"call","id":"2cf1fd4f-4ef5-40af-8682-59e56a7a4429","type":"call_started","timestamp":"2025-10-16T03:34:25.879441Z","participants":["Alejandro","Felipe"]}
 {"callId":"4abe5786-54f8-458b-acc0-1a22a4af1b05","sender":"server","scope":"call","id":"6a9a33dd-321c-4448-9ca5-cb762e7efed6","type":"call_started","timestamp":"2025-10-16T03:37:27.218735900Z","participants":["Sebas","Alejandro","Felipe"]}
+{"sender":"Felipe","scope":"private","recipient":"Alejandro","id":"aabe9444-e2e8-458f-95fc-831b20cff1ca","type":"text","message":"s","timestamp":"2025-10-16T04:40:13.637425300Z"}

@@ -103,7 +103,7 @@ public class VoiceGroupCommandHandler implements CommandHandler {
                 senderHandler.sendMessage("Advertencia: no se detectó VOICE_NOTE_GROUP_END correctamente");
             }
             for (ClientHandler ch : recipients) {
-                ch.getClientSocket().getOutputStream().write("\nVOICE_NOTE_GROUP_END\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                ch.getClientSocket().getOutputStream().write("VOICE_NOTE_GROUP_END\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 ch.getClientSocket().getOutputStream().flush();
             }
             senderHandler.sendMessage("Nota de voz grupal enviada a '" + groupName + "'.");
