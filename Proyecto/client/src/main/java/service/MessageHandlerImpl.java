@@ -164,12 +164,19 @@ public class MessageHandlerImpl implements MessageHandler {
      */
     private InetSocketAddress parseParticipant(String participant) {
         try {
-            String[] tokens = participant.split(":");
-            if (tokens.length < 3) return null;
-            
-            String user = tokens[0];
-            String ip = tokens[1];
-            String portStr = tokens[2];
+            // Formato esperado: username:ip:port
+            // Donde ip puede ser IPv4 o IPv6 (con múltiples ':').
+            // No podemos usar split(":") de forma simple; en su lugar, tomamos
+            // el primer ':' como separador de usuario y el último ':' como separador de puerto.
+            int firstColon = participant.indexOf(':');
+            int lastColon = participant.lastIndexOf(':');
+            if (firstColon <= 0 || lastColon <= firstColon) {
+                return null; // formato inválido
+            }
+
+            String user = participant.substring(0, firstColon);
+            String ip = participant.substring(firstColon + 1, lastColon);
+            String portStr = participant.substring(lastColon + 1);
 
             if (user.equals(username)) return null; // No enviar a sí mismo
 

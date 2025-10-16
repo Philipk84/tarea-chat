@@ -1,3 +1,7 @@
 {"sender":"Alejandro","scope":"group","id":"bb9d4c42-ce8b-4d25-94f6-759dc9ecad92","type":"text","message":"Holaaa","timestamp":"2025-10-15T04:05:41.746971300Z","group":"Compunet"}
 {"sender":"Felipe","scope":"private","recipient":"Alejandro","id":"55bff82a-98d8-450b-9b71-7d79c79959c4","type":"text","message":"Holaaa","timestamp":"2025-10-15T04:06:55.429695700Z"}
 {"sender":"Ale","scope":"group","id":"941998de-ee29-431a-bc8d-a1b9c21efb0a","type":"text","message":"Holaaa","timestamp":"2025-10-15T04:12:56.051978700Z","group":"Alee"}
+{"callId":"0a0df1d9-9363-4a9c-b25b-92d917bc44ed","sender":"server","scope":"call","id":"719795a6-2643-41c7-b51c-7be76c3a5677","type":"call_started","timestamp":"2025-10-16T00:57:13.245250700Z","participants":["Alejandro","Felipe"]}
+{"callId":"0a0df1d9-9363-4a9c-b25b-92d917bc44ed","sender":"server","scope":"call","endedBy":"Alejandro","id":"d96239d2-a51d-4872-9fdc-d00e874c5dca","type":"call_ended","timestamp":"2025-10-16T00:58:02.719419Z","participants":["Alejandro","Felipe"]}
+{"callId":"272f8844-180b-461b-b129-4bbc620e2c89","sender":"server","scope":"call","id":"068cae3b-0a9b-4fc6-98f3-ccdbabd83c74","type":"call_started","timestamp":"2025-10-16T00:58:20.359223800Z","participants":["Alejandro","Felipe"]}
+{"callId":"272f8844-180b-461b-b129-4bbc620e2c89","sender":"server","scope":"call","endedBy":"Felipe","id":"1f759eeb-2432-4ba7-be47-4a97db3c34c2","type":"call_ended","timestamp":"2025-10-16T00:58:24.698557Z","participants":["Alejandro","Felipe"]}
