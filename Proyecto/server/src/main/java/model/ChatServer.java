@@ -12,7 +12,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.DatagramSocket;
 import java.net.DatagramPacket;
-import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -64,7 +63,9 @@ public class ChatServer implements ServerService {
         
         try {
             serverSocket = new ServerSocket(config.getPort());
-            udpSocket = new DatagramSocket(config.getPort() + 1, InetAddress.getByName(config.getHost())); // Puerto UDP+1 como en class/UDPserver.java
+            // Enlazar UDP a todas las interfaces para permitir tráfico desde/red local
+            // y evitar errores al enviar a IPs de la LAN cuando config.host es 'localhost'.
+            udpSocket = new DatagramSocket(config.getPort() + 1); // INADDR_ANY
             threadPool = Executors.newFixedThreadPool(THREAD_POOL_SIZE); // Como class/Server.java
             running = true;
             
@@ -89,7 +90,7 @@ public class ChatServer implements ServerService {
             
             // Hilo para mensajes UDP (como class/UDPserver.java)
             Thread udpThread = new Thread(() -> {
-                System.out.println("Servidor UDP escuchando en puerto " + (config.getPort() + 1) + "...");
+                System.out.println("Servidor UDP escuchando en puerto " + (config.getPort() + 1) + " (0.0.0.0)...");
                 byte[] receiveData = new byte[4096]; // Buffer más grande para audio
                 
                 while (running && !udpSocket.isClosed()) {
