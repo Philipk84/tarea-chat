@@ -21,6 +21,7 @@ public class NetworkServiceImpl implements NetworkService {
     private PrintWriter tcpOut;
     private InputStream rawIn;
     private boolean connected = false;
+    private AudioService audioService;
 
     private MessageHandler messageHandler;
     private Thread listenerThread;

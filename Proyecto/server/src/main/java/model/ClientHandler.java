@@ -56,27 +56,31 @@ public class ClientHandler implements Runnable {
      */
     public void sendVoiceNote(String sender, File audioFile) {
         try {
-            OutputStream outputStream = socket.getOutputStream();
-            PrintWriter writer = new PrintWriter(outputStream, true);
-
+            OutputStream out = socket.getOutputStream();
             long fileSize = audioFile.length();
-            writer.println("VOICE_NOTE_START " + sender + " " + fileSize);
 
+            // Enviar encabezado
+            String header = "VOICE_NOTE_START " + sender + " " + fileSize + "\n";
+            out.write(header.getBytes(StandardCharsets.UTF_8));
+
+            // Enviar el archivo binario
             try (FileInputStream fis = new FileInputStream(audioFile)) {
                 byte[] buffer = new byte[4096];
                 int bytesRead;
                 while ((bytesRead = fis.read(buffer)) != -1) {
-                    outputStream.write(buffer, 0, bytesRead);
+                    out.write(buffer, 0, bytesRead);
                 }
             }
 
-            writer.println(); // Asegurar separación
-            writer.println("VOICE_NOTE_END");
-            writer.flush();
+            // Enviar finalización
+            out.write("\nVOICE_NOTE_END\n".getBytes(StandardCharsets.UTF_8));
+            out.flush();
+
         } catch (IOException e) {
             System.err.println("Error enviando nota de voz a " + name + ": " + e.getMessage());
         }
     }
+
 
     public String getName() {
         return name;

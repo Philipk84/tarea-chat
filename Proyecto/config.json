@@ -1,5 +1,4 @@
 {
     "port": 5000,
-    "voiceport": 5002,
     "host": "localhost"
 }
