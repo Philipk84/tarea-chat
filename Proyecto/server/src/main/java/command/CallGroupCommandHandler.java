@@ -31,10 +31,6 @@ public class CallGroupCommandHandler implements CommandHandler {
     @Override
     public void execute(String command, String userName, ClientHandler clientHandler) {
         String[] parts = command.split(" ", 2);
-        if (parts.length < 2) {
-            clientHandler.sendMessage("Error: Formato correcto -> /callgroup <grupo>");
-            return;
-        }
         String groupName = parts[1].trim();
         
         if (groupName.isEmpty()) {

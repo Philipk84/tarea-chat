@@ -11,14 +11,12 @@ import java.io.FileReader;
  * Proporciona una API simplificada para todas las operaciones del cliente.
  */
 public class Controller {
-    private Gson gson;
-    private Config config;
-    private ChatClient chatClient;
+    private final ChatClient chatClient;
 
     public Controller() {
-        this.gson = new Gson();
+        Gson gson = new Gson();
         try {
-            this.config = gson.fromJson(new FileReader("Proyecto\\config.json"), Config.class);
+            Config config = gson.fromJson(new FileReader("Proyecto\\config.json"), Config.class);
             this.chatClient = new ChatClient(config);
         } catch (Exception e) {
             throw new RuntimeException("Error initializing controller", e);
@@ -33,15 +31,6 @@ public class Controller {
      */
     public String connectToServer(String username) {
         return chatClient.connect(username);
-    }
-
-    /**
-     * EnvÃ­a un comando genÃ©rico al servidor de chat.
-     * 
-     * @param command Comando completo a enviar al servidor
-     */
-    public void sendCommand(String command) {
-        chatClient.sendCommand(command);
     }
 
     /**

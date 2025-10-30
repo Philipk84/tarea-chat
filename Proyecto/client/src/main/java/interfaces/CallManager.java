@@ -10,12 +10,11 @@ import java.util.List;
 public interface CallManager {
     /**
      * Inicia una nueva llamada con los participantes especificados.
-     * 
+     *
      * @param callId ID único de la llamada
-     * @param peers Lista de direcciones UDP de los participantes
-     * @return true si la llamada se inició exitosamente
+     * @param peers  Lista de direcciones UDP de los participantes
      */
-    boolean startCall(String callId, List<InetSocketAddress> peers);
+    void startCall(String callId, List<InetSocketAddress> peers);
     
     /**
      * Finaliza la llamada activa actual.
@@ -28,13 +27,6 @@ public interface CallManager {
      * @return true si hay una llamada activa, false en caso contrario
      */
     boolean hasActiveCall();
-    
-    /**
-     * Obtiene el ID de la llamada activa.
-     * 
-     * @return ID de la llamada activa o null si no hay llamada
-     */
-    String getActiveCallId();
     
     /**
      * Establece el servicio de audio para las llamadas.

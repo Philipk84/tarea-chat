@@ -9,8 +9,8 @@ import java.util.InputMismatchException;
  * Proporciona un menú de consola para controlar el servidor de chat.
  */
 public class Main {
-    private Scanner sc;
-    private Controller controller;
+    private final Scanner sc;
+    private final Controller controller;
 
     public Main() {
         this.sc = new Scanner(System.in);

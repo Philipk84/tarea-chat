@@ -169,8 +169,7 @@ public class CallAudio {
                     try {
                         socket.receive(packet);
                         speakers.write(packet.getData(), 0, packet.getLength());
-                    } catch (SocketTimeoutException ste) {
-                        continue;
+                    } catch (SocketTimeoutException ignored) {
                     } catch (SocketException se) {
                         break;
                     }

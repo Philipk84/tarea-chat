@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
  */
 public class MessageHandlerImpl implements MessageHandler {
     private CallManager CallManagerImpl;
-    private String username;
+    private final String username;
 
     /**
      * Constructor que inicializa el manejador con el nombre de usuario.

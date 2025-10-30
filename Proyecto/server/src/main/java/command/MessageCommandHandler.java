@@ -33,12 +33,6 @@ public class MessageCommandHandler implements CommandHandler {
     @Override
     public void execute(String command, String userName, ClientHandler clientHandler) {
         String[] parts = command.split(" ", 3);
-        
-        if (parts.length < 3) {
-            clientHandler.sendMessage("Error: Formato correcto -> /msg <usuario> <mensaje>");
-            return;
-        }
-        
         String targetUser = parts[1].trim();
         String message = parts[2].trim();
         
@@ -67,7 +61,7 @@ public class MessageCommandHandler implements CommandHandler {
     }
     
     /**
-     * Obtiene el manejador de cliente para un usuario especÃ­fico.
+     * Obtiene el manejador de cliente para un usuario específico.
      * 
      * @param username Nombre del usuario
      * @return ClientHandler del usuario o null si no existe

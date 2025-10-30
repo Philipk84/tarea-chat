@@ -43,13 +43,4 @@ public class CommandRegistry {
         }
         return false;
     }
-
-    /**
-     * Obtiene la lista de comandos disponibles registrados.
-     * 
-     * @return Lista de manejadores de comandos registrados
-     */
-    public List<CommandHandler> getRegisteredHandlers() {
-        return new ArrayList<>(handlers);
-    }
 }

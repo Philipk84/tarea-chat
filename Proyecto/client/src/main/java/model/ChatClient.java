@@ -19,8 +19,8 @@ public class ChatClient {
     private DatagramSocket udpSocket;
 
     public ChatClient(Config config) {
-        this.serverHost = config.getHost();
-        this.serverPort = config.getPort();
+        this.serverHost = config.host();
+        this.serverPort = config.port();
         this.networkService = new NetworkServiceImpl(serverHost, serverPort);
         this.CallManagerImpl = new CallManagerImpl();
         this.audioService = new AudioServiceImpl();

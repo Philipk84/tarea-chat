@@ -32,11 +32,4 @@ public interface AudioService {
      * Detiene todas las operaciones de audio (envío y recepción).
      */
     void stopAudio();
-    
-    /**
-     * Verifica si el servicio de audio está activo.
-     * 
-     * @return true si está enviando o recibiendo audio, false en caso contrario
-     */
-    boolean isActive();
 }

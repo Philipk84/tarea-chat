@@ -21,11 +21,11 @@ import service.HistoryService;
 
 /**
  * Servidor principal del sistema de chat que coordina todas las operaciones
- * de comunicaciÃ³n, gestiÃ³n de usuarios, grupos, llamadas, mensajes y audios.
+ * de comunicacion, gestion de usuarios, grupos, llamadas, mensajes y audios.
  */
 public class ChatServer implements ServerService {
     private static ChatServer instance;
-    private static final int THREAD_POOL_SIZE = 10; // Como en class/Server.java
+    private static final int THREAD_POOL_SIZE = 10;
     
     private final Config config;
     private final UserManager userManager;
@@ -33,9 +33,9 @@ public class ChatServer implements ServerService {
     public final CallManagerImpl CallManagerImpl;
 
     private ServerSocket serverSocket;
-    private DatagramSocket udpSocket; // Socket UDP para audio y notas de voz (como class/UDPserver.java)
+    private DatagramSocket udpSocket;
     private ExecutorService threadPool;
-    private Map<SocketAddress, String> udpClients; // Mapa de clientes UDP (como class/UDPserver.java)
+    private final Map<SocketAddress, String> udpClients;
     private boolean running = false;
 
     public ChatServer(Config config) {
@@ -43,72 +43,81 @@ public class ChatServer implements ServerService {
         this.userManager = new UserManagerImpl();
         this.groupManager = new GroupManagerImpl();
         this.CallManagerImpl = new CallManagerImpl();
-        this.udpClients = new ConcurrentHashMap<>(); // Inicializar mapa UDP como en class/UDPserver.java
+        this.udpClients = new ConcurrentHashMap<>();
     }
 
     /**
      * Inicia el servidor de chat y comienza a aceptar conexiones de clientes.
      * Usa ExecutorService con ThreadPool fijo para manejar clientes de manera eficiente.
-     * PatrÃ³n similar a class/Server.java
-     * 
-     * @return Mensaje de estado del resultado de la operaciÃ³n
+     *
+     * @return Mensaje de estado del resultado de la operacion
      */
     @Override
     public String startServer() {
         if (running) {
-            return "El servidor ya estÃ¡ ejecutÃ¡ndose en el puerto " + config.getPort();
+            return "El servidor ya esta ejecutándose en el puerto " + config.port();
         }
         
         instance = this;
         
         try {
-            serverSocket = new ServerSocket(config.getPort());
-            udpSocket = new DatagramSocket(config.getPort() + 1);
+            serverSocket = new ServerSocket(config.port());
+            udpSocket = new DatagramSocket(config.port() + 1);
             threadPool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
             running = true;
-            
-            Thread serverThread = new Thread(() -> {
-                System.out.println("Servidor TCP escuchando en puerto " + config.getPort() + "...");
-                
-                while (running) {
-                    try {
-                        Socket socket = serverSocket.accept();
-                        ClientHandler handler = new ClientHandler(socket);
-                        threadPool.submit(handler);
-                    } catch (IOException e) {
-                        if (running) {
-                            System.err.println("Error aceptando conexión TCP del cliente: " + e.getMessage());
-                        }
-                    }
-                }
-            });
-            serverThread.setDaemon(true);
+
+            Thread serverThread = getTcpThread();
             serverThread.start();
+
+            // Thread udpThread = getUdpThread();
+            // udpThread.start();
             
-            Thread udpThread = new Thread(() -> {
-                System.out.println("Servidor UDP escuchando en puerto " + (config.getPort() + 1) + " (0.0.0.0)...");
-                byte[] receiveData = new byte[4096];
-                
-                while (running && !udpSocket.isClosed()) {
-                    try {
-                        DatagramPacket packet = new DatagramPacket(receiveData, receiveData.length);
-                        udpSocket.receive(packet);
-                        threadPool.submit(new UDPMessageHandler(packet, udpSocket, udpClients));
-                    } catch (Exception e) {
-                        if (running && !udpSocket.isClosed()) {
-                            System.err.println("Error procesando mensaje UDP: " + e.getMessage());
-                        }
-                    }
-                }
-            });
-            udpThread.setDaemon(true);
-            udpThread.start();
-            
-            return "Servidor iniciado exitosamente - TCP:" + config.getPort() + " UDP:" + (config.getPort() + 1);
+            return "Servidor iniciado exitosamente - TCP:" + config.port() + " UDP:" + (config.port() + 1);
         } catch (IOException e) {
             running = false;
             return "Error iniciando servidor: " + e.getMessage();
         }
+    }
+
+    private Thread getUdpThread() {
+        Thread udpThread = new Thread(() -> {
+            System.out.println("Servidor UDP escuchando en puerto " + (config.port() + 1) + " (0.0.0.0)...");
+            byte[] receiveData = new byte[4096];
+
+            while (running && !udpSocket.isClosed()) {
+                try {
+                    DatagramPacket packet = new DatagramPacket(receiveData, receiveData.length);
+                    udpSocket.receive(packet);
+                    //threadPool.submit(new UDPMessageHandler(packet, udpSocket, udpClients));
+                } catch (Exception e) {
+                    if (running && !udpSocket.isClosed()) {
+                        System.err.println("Error procesando mensaje UDP: " + e.getMessage());
+                    }
+                }
+            }
+        });
+        udpThread.setDaemon(true);
+        return udpThread;
+    }
+
+    private Thread getTcpThread() {
+        Thread serverThread = new Thread(() -> {
+            System.out.println("Servidor TCP escuchando en puerto " + config.port() + "...");
+
+            while (running) {
+                try {
+                    Socket socket = serverSocket.accept();
+                    ClientHandler handler = new ClientHandler(socket);
+                    threadPool.submit(handler);
+                } catch (IOException e) {
+                    if (running) {
+                        System.err.println("Error aceptando conexión TCP del cliente: " + e.getMessage());
+                    }
+                }
+            }
+        });
+        serverThread.setDaemon(true);
+        return serverThread;
     }
 
     /**
@@ -120,7 +129,7 @@ public class ChatServer implements ServerService {
     @Override
     public String closeServer() {
         if (!running) {
-            return "El servidor no estÃ¡ ejecutÃ¡ndose";
+            return "El servidor no esta ejecutándose";
         }
         
         running = false;
@@ -141,9 +150,9 @@ public class ChatServer implements ServerService {
     }
 
     /**
-     * Verifica si el servidor estÃ¡ actualmente en ejecuciÃ³n.
+     * Verifica si el servidor está actualmente en ejecución.
      * 
-     * @return true si el servidor estÃ¡ ejecutÃ¡ndose, false en caso contrario
+     * @return true si el servidor esta ejecutándose, false en caso contrario
      */
     @Override
     public boolean isRunning() {
@@ -170,10 +179,10 @@ public class ChatServer implements ServerService {
     }
 
     /**
-     * Registra la informaciÃ³n UDP de un usuario para llamadas de audio.
+     * Registra la información UDP de un usuario para llamadas de audio.
      * 
      * @param name Nombre del usuario
-     * @param ipPort DirecciÃ³n IP y puerto UDP en formato "ip:puerto"
+     * @param ipPort Direccion IP y puerto UDP en formato "ip:puerto"
      */
     public static synchronized void registerUdpInfo(String name, String ipPort) {
         instance.userManager.registerUdpInfo(name, ipPort);
@@ -190,16 +199,6 @@ public class ChatServer implements ServerService {
         if (instance != null && instance.udpClients != null && address != null && username != null) {
             instance.udpClients.put(address, username);
         }
-    }
-
-    /**
-     * Obtiene la informaciÃ³n UDP de un usuario.
-     * 
-     * @param name Nombre del usuario
-     * @return InformaciÃ³n UDP en formato "ip:puerto" o null si no existe
-     */
-    public static synchronized String getUdpInfo(String name) {
-        return instance.userManager.getUdpInfo(name);
     }
 
     /**
@@ -340,7 +339,7 @@ public class ChatServer implements ServerService {
     }
 
     /**
-     * Obtiene el manejador de cliente para un usuario especÃ­fico.
+     * Obtiene el manejador de cliente para un usuario específico.
      * 
      * @param username Nombre del usuario
      * @return Manejador del cliente o null si no existe

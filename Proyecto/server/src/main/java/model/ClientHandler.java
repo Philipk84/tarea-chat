@@ -2,8 +2,6 @@ package model;
 
 import java.io.*;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import command.*;
 
 /**
@@ -38,8 +36,6 @@ public class ClientHandler implements Runnable {
         commandRegistry.registerHandler(new MessageGroupCommandHandler());
         commandRegistry.registerHandler(new QuitCommandHandler());
         commandRegistry.registerHandler(new UdpPortCommandHandler());
-        commandRegistry.registerHandler(new VoiceGroupCommandHandler());
-        commandRegistry.registerHandler(new VoiceNoteCommandHandler());
     }
 
     /**
@@ -49,41 +45,6 @@ public class ClientHandler implements Runnable {
         if (out != null) {
             out.println(message);
         }
-    }
-
-    /**
-     * Envía una nota de voz (archivo binario) al cliente destino.
-     */
-    public void sendVoiceNote(String sender, File audioFile) {
-        try {
-            OutputStream out = socket.getOutputStream();
-            long fileSize = audioFile.length();
-
-            // Enviar encabezado
-            String header = "VOICE_NOTE_START " + sender + " " + fileSize + "\n";
-            out.write(header.getBytes(StandardCharsets.UTF_8));
-
-            // Enviar el archivo binario
-            try (FileInputStream fis = new FileInputStream(audioFile)) {
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = fis.read(buffer)) != -1) {
-                    out.write(buffer, 0, bytesRead);
-                }
-            }
-
-            // Enviar finalización
-            out.write("VOICE_NOTE_END\n".getBytes(StandardCharsets.UTF_8));
-            out.flush();
-
-        } catch (IOException e) {
-            System.err.println("Error enviando nota de voz a " + name + ": " + e.getMessage());
-        }
-    }
-
-
-    public String getName() {
-        return name;
     }
 
     public Socket getClientSocket() {
@@ -120,22 +81,16 @@ public class ClientHandler implements Runnable {
     }
 
     private void processUserCommands() throws IOException {
-    String line;
-    while (active && (line = readLineFromInputStream(socket.getInputStream())) != null) {
-
-            // Detección de inicio de nota de voz TCP
-            if (line.startsWith("VOICE_NOTE_START")) {
-                processVoiceNote(socket.getInputStream(), line);
-                continue;
-            }
-            // Detección de inicio de nota de voz grupal TCP (para clientes que suben directamente, generalmente tratado por comando)
-            if (line.startsWith("VOICE_NOTE_GROUP_START")) {
-                // Este flujo suele manejarse en VoiceGroupCommandHandler, aquí solo consumimos si llega de forma directa
-                processVoiceNote(socket.getInputStream(), line);
-                continue;
-            }
+        String line;
+        while (active && (line = readLineFromInputStream(socket.getInputStream())) != null) {
 
             if (line.trim().isEmpty()) continue;
+
+            // Detección de inicio de nota de voz TCP
+            if (line.startsWith("VOICE_NOTE_START") || line.startsWith("VOICE_NOTE_GROUP_START")) {
+                processVoiceNote(socket.getInputStream(), line);
+                continue;
+            }
 
             if (line.equals("/quit")) {
                 commandRegistry.executeCommand(line, name, this);

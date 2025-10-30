@@ -5,8 +5,8 @@ import java.util.Scanner;
 import java.util.InputMismatchException;
 
 public class Main {
-    private Scanner sc;
-    private Controller controller;
+    private final Scanner sc;
+    private final Controller controller;
     private String username;
 
     public Main() {

@@ -49,17 +49,6 @@ public class CallManagerImpl implements CallManager {
     }
 
     /**
-     * Verifica si un usuario está actualmente en una llamada.
-     * 
-     * @param username Nombre del usuario a verificar
-     * @return true si el usuario está en una llamada, false en caso contrario
-     */
-    @Override
-    public synchronized boolean isInCall(String username) {
-        return userToCall.containsKey(username);
-    }
-
-    /**
      * Obtiene el ID de la llamada en la que participa un usuario.
      * 
      * @param username Nombre del usuario

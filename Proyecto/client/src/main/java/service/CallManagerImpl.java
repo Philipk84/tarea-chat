@@ -21,10 +21,10 @@ public class CallManagerImpl implements CallManager {
     }
 
     @Override
-    public boolean startCall(String callId, List<InetSocketAddress> peers) {
+    public void startCall(String callId, List<InetSocketAddress> peers) {
         if (audioService == null) {
             System.err.println("AudioService no configurado");
-            return false;
+            return;
         }
 
         if (hasActiveCall()) {
@@ -37,12 +37,10 @@ public class CallManagerImpl implements CallManager {
             audioService.startReceiving();
             
             System.out.println("Llamada activa: " + callId + ".");
-            return true;
-            
+
         } catch (Exception e) {
             System.err.println("Error iniciando llamada: " + e.getMessage());
             activeCallId = null;
-            return false;
         }
     }
 
@@ -58,11 +56,6 @@ public class CallManagerImpl implements CallManager {
     @Override
     public boolean hasActiveCall() {
         return activeCallId != null;
-    }
-
-    @Override
-    public String getActiveCallId() {
-        return activeCallId;
     }
 
     @Override

@@ -7,17 +7,15 @@ import java.io.FileReader;
 /**
  * Controlador principal del servidor de chat.
  * ActÃºa como intermediario entre la interfaz de usuario y el modelo del servidor.
- * Maneja la configuraciÃ³n y las operaciones del servidor de chat.
+ * Maneja la configuracion y las operaciones del servidor de chat.
  */
 public class Controller {
-    private Gson gson;
-    private Config config;
-    private ChatServer chatServer;
+    private final ChatServer chatServer;
 
     public Controller() {
-        this.gson = new Gson();
+        Gson gson = new Gson();
         try {
-            this.config = gson.fromJson(new FileReader("Proyecto\\config.json"), Config.class);
+            Config config = gson.fromJson(new FileReader("Proyecto\\config.json"), Config.class);
             this.chatServer = new ChatServer(config);
         } catch (Exception e) {
             throw new RuntimeException("Error initializing controller", e);
@@ -27,7 +25,7 @@ public class Controller {
     /**
      * Inicia el servidor de chat.
      * 
-     * @return Mensaje de estado del resultado de la operaciÃ³n
+     * @return Mensaje de estado del resultado de la operacion
      */
     public String startServer() {
         return chatServer.startServer();
@@ -36,16 +34,16 @@ public class Controller {
     /**
      * Cierra el servidor de chat.
      * 
-     * @return Mensaje de estado del resultado de la operaciÃ³n
+     * @return Mensaje de estado del resultado de la operacion
      */
     public String closeServer() {
         return chatServer.closeServer();
     }
 
     /**
-     * Verifica si el servidor de chat estÃ¡ en ejecuciÃ³n.
+     * Verifica si el servidor de chat está en ejecución.
      * 
-     * @return true si el servidor estÃ¡ en ejecuciÃ³n, false en caso contrario
+     * @return true si el servidor está en ejecución, false en caso contrario
      */
     public boolean isServerRunning() {
         return chatServer.isRunning();
