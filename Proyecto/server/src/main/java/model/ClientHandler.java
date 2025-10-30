@@ -3,6 +3,7 @@ package model;
 import java.io.*;
 import java.net.Socket;
 import command.*;
+import service.HistoryService;
 
 /**
  * Manejador de cliente que procesa conexiones TCP y ejecuta comandos
@@ -145,8 +146,8 @@ public class ClientHandler implements Runnable {
                     ch.socket.getOutputStream().write(outHeaderBytes);
                 }
 
-                // Reenviar bytes
-                forwardBytesToRecipients(inputStream, size, recipients);
+                // Reenviar bytes y capturarlos para guardar en historial
+                byte[] captured = teeForwardBytesToRecipients(inputStream, size, recipients);
 
                 // Leer y reenviar fin
                 String end = readLineFromInputStream(inputStream);
@@ -157,6 +158,14 @@ public class ClientHandler implements Runnable {
                 for (ClientHandler ch : recipients) {
                     ch.socket.getOutputStream().write(endBytes);
                     ch.socket.getOutputStream().flush();
+                }
+
+                // Guardar y registrar en historial
+                try {
+                    HistoryService.SavedAudio saved = HistoryService.saveVoiceBytes(captured);
+                    HistoryService.logVoiceGroup(name, groupName, saved.relativePath(), saved.sizeBytes());
+                } catch (IOException ioe) {
+                    System.err.println("No se pudo guardar nota de voz grupal: " + ioe.getMessage());
                 }
                 sendMessage("Nota de voz grupal enviada a '" + groupName + "'.");
 
@@ -178,8 +187,8 @@ public class ClientHandler implements Runnable {
                 OutputStream out = target.socket.getOutputStream();
                 out.write(outHeader.getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
-                // Reenviar bytes
-                pipeBytes(inputStream, out, size);
+                // Reenviar bytes y capturarlos para guardar en historial
+                byte[] captured = pipeAndCaptureBytes(inputStream, out, size);
 
                 // Leer end del emisor y reenviar
                 String end = readLineFromInputStream(inputStream);
@@ -188,6 +197,14 @@ public class ClientHandler implements Runnable {
                 }
                 out.write("VOICE_NOTE_END\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 out.flush();
+
+                // Guardar y registrar en historial
+                try {
+                    HistoryService.SavedAudio saved = HistoryService.saveVoiceBytes(captured);
+                    HistoryService.logVoiceNote(name, targetUser, saved.relativePath(), saved.sizeBytes());
+                } catch (IOException ioe) {
+                    System.err.println("No se pudo guardar nota de voz: " + ioe.getMessage());
+                }
                 sendMessage("Nota de voz enviada a " + targetUser);
             } else {
                 sendMessage("Error: encabezado de nota de voz no reconocido");
@@ -198,18 +215,25 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void pipeBytes(InputStream in, OutputStream out, long size) throws IOException {
+    
+
+    // Variante que reenvía y además captura los bytes en memoria para guardarlos
+    private byte[] pipeAndCaptureBytes(InputStream in, OutputStream out, long size) throws IOException {
+        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream((int)Math.min(size, 1024 * 1024));
         byte[] buffer = new byte[4096];
         long remaining = size;
         while (remaining > 0) {
             int n = in.read(buffer, 0, (int)Math.min(buffer.length, remaining));
             if (n == -1) break;
             out.write(buffer, 0, n);
+            baos.write(buffer, 0, n);
             remaining -= n;
         }
+        return baos.toByteArray();
     }
 
-    private void forwardBytesToRecipients(InputStream in, long size, java.util.List<ClientHandler> recipients) throws IOException {
+    private byte[] teeForwardBytesToRecipients(InputStream in, long size, java.util.List<ClientHandler> recipients) throws IOException {
+        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream((int)Math.min(size, 1024 * 1024));
         byte[] buffer = new byte[4096];
         long remaining = size;
         while (remaining > 0) {
@@ -218,8 +242,10 @@ public class ClientHandler implements Runnable {
             for (ClientHandler ch : recipients) {
                 ch.socket.getOutputStream().write(buffer, 0, n);
             }
+            baos.write(buffer, 0, n);
             remaining -= n;
         }
+        return baos.toByteArray();
     }
 
     private void skipBytes(InputStream in, long size) throws IOException {

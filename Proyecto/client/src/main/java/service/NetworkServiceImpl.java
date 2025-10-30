@@ -148,17 +148,14 @@ public class NetworkServiceImpl implements NetworkService {
 
             System.out.println("Recibiendo nota de voz de " + sender + " (" + fileSize + " bytes)");
 
-            File receivedFile = new File("voice_from_" + sender + ".wav");
             byte[] audioData;
-            try (java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-                 FileOutputStream fos = new FileOutputStream(receivedFile)) {
+            try (java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream()) {
                 byte[] buffer = new byte[4096];
                 long remaining = fileSize;
                 while (remaining > 0) {
                     int bytesRead = rawIn.read(buffer, 0, (int) Math.min(buffer.length, remaining));
                     if (bytesRead == -1) break;
                     baos.write(buffer, 0, bytesRead);
-                    fos.write(buffer, 0, bytesRead);
                     remaining -= bytesRead;
                 }
                 audioData = baos.toByteArray();
@@ -170,7 +167,7 @@ public class NetworkServiceImpl implements NetworkService {
                 System.err.println("Fin de nota de voz no detectado correctamente (recibido: " + endLine + ")");
             }
 
-            System.out.println("Nota de voz recibida de " + sender + ": " + receivedFile.getName());
+            System.out.println("Nota de voz recibida de " + sender + ": " + audioData.length + " bytes");
             if (messageHandler != null) {
                 messageHandler.handleMessage("[Nota de voz recibida de " + sender + "]");
             }

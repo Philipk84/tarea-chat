@@ -5,7 +5,6 @@ import com.google.gson.GsonBuilder;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -16,6 +15,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
 
 /**
  * Servicio para registrar el historial de mensajes (texto y audios) en JSON.
@@ -117,15 +120,22 @@ public class HistoryService {
     }
 
     /**
-     * Guarda bytes de audio en un archivo bajo data/voice y devuelve la ruta relativa para el JSON.
+     * Guarda bytes de audio PCM (44100 Hz, 16-bit, mono, little-endian) en formato WAV
+     * dentro de data/voice, y devuelve la ruta relativa para el JSON.
+     * Nota: los bytes recibidos provienen del cliente que captura con ese formato.
      */
     public static SavedAudio saveVoiceBytes(byte[] data) throws IOException {
         ensureDirs();
-        String fileName = "voice-" + System.currentTimeMillis() + "-" + UUID.randomUUID() + ".bin";
+        String fileName = "voice-" + System.currentTimeMillis() + "-" + UUID.randomUUID() + ".wav";
         Path filePath = Paths.get(VOICE_DIR, fileName);
-        try (FileOutputStream fos = new FileOutputStream(filePath.toFile())) {
-            fos.write(data);
+
+        // Definir el formato de audio según la captura del cliente
+        AudioFormat fmt = new AudioFormat(44100, 16, 1, true, false); // PCM signed, little-endian
+        try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(data);
+            AudioInputStream ais = new AudioInputStream(bais, fmt, data.length / fmt.getFrameSize())) {
+            AudioSystem.write(ais, AudioFileFormat.Type.WAVE, filePath.toFile());
         }
+
         long size = Files.size(filePath);
         // Devolver ruta relativa desde Proyecto (para que sea portable en logs)
         String relative = "server" + File.separator + "data" + File.separator + "voice" + File.separator + fileName;
