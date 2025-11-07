@@ -1,5 +1,6 @@
 import { registerUser } from "../api/http.js";
 import { connectWS } from "../api/ws.js";
+import Chat from "./Chat.js"; // 👈 IMPORTANTE: importamos el componente de chat
 
 function Home() {
     const container = document.createElement("div");
@@ -26,12 +27,25 @@ function Home() {
         }
 
         try {
+            // 1) Registramos en el backend
             await registerUser(username);
+
+            // 2) Guardamos el usuario localmente
             localStorage.setItem("chat_username", username);
+
+            // 3) Conectamos WebSocket
             connectWS();
+
+            // 4) Opcional: actualizamos la URL para que se vea /chat
             window.history.pushState({}, "", "/chat");
-            window.location.reload();
+
+            // 5) Renderizamos la pantalla de chat en el mismo SPA
+            const app = document.getElementById("app");
+            app.innerHTML = "";
+            app.appendChild(Chat());
+
         } catch (e) {
+            console.error(e);
             error.textContent = e.message || "No se pudo registrar";
         }
     };
