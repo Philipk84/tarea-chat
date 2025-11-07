@@ -1,4 +1,4 @@
-import { routes } from "./src/router/routes.js";
+import { routes } from "./src/router/Routes.js";
 
 const app = document.getElementById("app");
 app.innerHTML = "";
