@@ -24,7 +24,7 @@ wss.on('connection', (ws) =>{
 const socket = new net.Socket();
 let connected = false;
 
-socket.connect(50003, "localhost", () =>{
+socket.connect(5000, "localhost", () =>{
   connected = true;
   console.log(connected)
 
