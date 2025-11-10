@@ -1,5 +1,5 @@
 import { registerUser } from "../api/http.js";
-import { connectWS } from "../api/ws.js";
+//import { connectWS } from "../api/ws.js";
 import Chat from "./Chat.js"; // 👈 IMPORTANTE: importamos el componente de chat
 
 function Home() {
@@ -34,7 +34,7 @@ function Home() {
             localStorage.setItem("chat_username", username);
 
             // 3) Conectamos WebSocket
-            connectWS();
+            //connectWS();
 
             // 4) Opcional: actualizamos la URL para que se vea /chat
             window.history.pushState({}, "", "/chat");
