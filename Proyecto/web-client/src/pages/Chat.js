@@ -3,7 +3,9 @@ import {
   sendGroupMessage,
   createGroup,
   joinGroup,
-  getUpdates
+  getUpdates,
+  getPrivateHistory,
+  getGroupHistory,
 } from "../api/http.js";
 
 function Chat() {
@@ -99,6 +101,8 @@ function Chat() {
     if (!to) return;
     currentChat = { type: "user", id: to };
     chatTitle.textContent = "Chat con: " + to;
+    // Cargar historial privado
+    loadHistory();
   };
 
   // Crear grupo
@@ -123,6 +127,8 @@ function Chat() {
 
       currentChat = { type: "group", id: gname };
       chatTitle.textContent = "Grupo: " + gname;
+      // Cargar historial del grupo
+      loadHistory();
     } catch (e) {
       alert("Error creando grupo: " + e.message);
     }
@@ -136,6 +142,8 @@ function Chat() {
       await joinGroup(gname);
       currentChat = { type: "group", id: gname };
       chatTitle.textContent = "Grupo: " + gname;
+      // Cargar historial del grupo
+      loadHistory();
     } catch (e) {
       alert("Error uniéndose al grupo: " + e.message);
     }
@@ -194,6 +202,89 @@ function Chat() {
 
     messages.appendChild(div);
     messages.scrollTop = messages.scrollHeight;
+  }
+
+  // ----- HISTORIAL -----
+  async function loadHistory() {
+    // Limpia mensajes actuales
+    messages.innerHTML = "";
+
+    if (!currentChat) return;
+
+    try {
+      let items = [];
+      if (currentChat.type === "user") {
+        const res = await getPrivateHistory(username, currentChat.id);
+        items = res.items || [];
+      } else if (currentChat.type === "group") {
+        const res = await getGroupHistory(currentChat.id);
+        items = res.items || [];
+      }
+
+      if (!items.length) {
+        const empty = document.createElement("div");
+        empty.classList.add("message");
+        empty.textContent = "Sin historial";
+        messages.appendChild(empty);
+        return;
+      }
+
+      for (const it of items) {
+        appendHistoryItem(it);
+      }
+      messages.scrollTop = messages.scrollHeight;
+    } catch (e) {
+      const err = document.createElement("div");
+      err.classList.add("message");
+      err.textContent = "Error cargando historial: " + (e.message || e);
+      messages.appendChild(err);
+    }
+  }
+
+  function appendHistoryItem(item) {
+    // item tiene campos: type, scope, sender, recipient|group, message|audioFile
+    if (item.type === "text") {
+      if (item.scope === "group") {
+        appendMessage({ from: item.sender, group: item.group, text: item.message });
+      } else {
+        const other = item.sender === username ? item.recipient : item.sender;
+        appendMessage({ from: item.sender, to: other, text: item.message });
+      }
+      return;
+    }
+
+    if (item.type === "voice_note" || item.type === "voice_group") {
+      const row = document.createElement("div");
+      row.classList.add("message");
+
+      // Título/etiqueta
+      const label = document.createElement("div");
+      label.style.fontWeight = "bold";
+      if (item.scope === "group") {
+        label.textContent = `[${item.group}] ${item.sender}: nota de voz`;
+      } else {
+        const other = item.sender === username ? item.recipient : item.sender;
+        label.textContent = `${item.sender} → ${other}: nota de voz`;
+      }
+      row.appendChild(label);
+
+      // Audio
+      const audio = document.createElement("audio");
+      audio.controls = true;
+
+      // audioFile es una ruta relativa tipo 'server/data/voice/xxx.wav'
+      const audioFile = (item.audioFile || "").toString();
+      const fileName = audioFile.split(/[\\/]/).pop();
+      audio.src = `/voice/${fileName}`;
+      audio.style.display = "block";
+      audio.style.marginTop = "4px";
+      row.appendChild(audio);
+
+      messages.appendChild(row);
+      return;
+    }
+
+    // Ignorar otros tipos (llamadas, etc.)
   }
 
   // ----- POLLING AUTOMÁTICO DE NUEVOS MENSAJES -----

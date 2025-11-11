@@ -25,6 +25,12 @@ module.exports = {
         changeOrigin: true,
         secure: false,
       },
+      {
+        context: ["/voice"],
+        target: "http://localhost:3001",
+        changeOrigin: true,
+        secure: false,
+      },
     ],
   },
   module: {

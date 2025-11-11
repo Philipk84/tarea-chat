@@ -15,10 +15,14 @@ const HTTP_PORT = Number(process.env.HTTP_PORT || 3001);
 
 // Ruta de history del servidor Java (misma máquina)
 const HISTORY_FILE = path.resolve(__dirname, '../../server/data/history.jsonl');
+const VOICE_DIR = path.resolve(__dirname, '../../server/data/voice');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Servir archivos de audio WAV del historial
+app.use('/voice', express.static(VOICE_DIR));
 
 // ─────────────────────────────────────────────────────────────
 // Conexión TCP persistente
