@@ -89,6 +89,53 @@ function sendCommandLine(line, timeoutMs = 1500) {
   });
 }
 
+// Utilidad: enviar comando al servidor usando el socket de un usuario concreto
+function sendCommandFromUser(username, command, timeoutMs = 1500) {
+  return new Promise((resolve, reject) => {
+    const client = userSockets[username];
+    if (!client) {
+      return reject(new Error(`Usuario ${username} no conectado`));
+    }
+
+    let buffer = "";
+
+    const onData = (chunk) => {
+      buffer += chunk.toString("utf8");
+      // asumimos respuestas por línea
+      if (buffer.includes("\n")) {
+        cleanup();
+        resolve(buffer.trim());
+      }
+    };
+
+    const onError = (err) => {
+      cleanup();
+      reject(err);
+    };
+
+    const cleanup = () => {
+      client.off("data", onData);
+      client.off("error", onError);
+      clearTimeout(timer);
+    };
+
+    const timer = setTimeout(() => {
+      cleanup();
+      if (buffer.trim()) {
+        resolve(buffer.trim());
+      } else {
+        reject(new Error("Timeout esperando respuesta del servidor"));
+      }
+    }, timeoutMs);
+
+    client.on("data", onData);
+    client.on("error", onError);
+
+    client.write(command.trim() + "\n");
+  });
+}
+
+
 // ─────────────────────────────────────────────────────────────
 // Endpoints HTTP
 // ─────────────────────────────────────────────────────────────
@@ -161,54 +208,75 @@ app.post("/chat", (req, res) => {
 });
 
 // Crear grupo
-// body: { groupName }
-app.post('/group/create', async (req, res) => {
+// body: { groupName, creator }
+app.post("/group/create", async (req, res) => {
   try {
-    const { groupName } = req.body || {};
-    if (!groupName) return res.status(400).json({ error: 'groupName requerido' });
-    const cmd = `/creategroup ${groupName}`;
-    const reply = await sendCommandLine(cmd);
-    const ok = /Grupo creado|OK/.test(reply);
+    const { groupName, creator } = req.body || {};
+    if (!groupName || !creator) {
+      return res
+        .status(400)
+        .json({ error: "groupName y creator son requeridos" });
+    }
+
+    const reply = await sendCommandFromUser(creator, `/creategroup ${groupName}`);
+    const ok = /Grupo creado|OK/i.test(reply);
+
     return res.status(ok ? 200 : 409).json({ reply });
   } catch (e) {
-    console.error('POST /group/create', e);
+    console.error("POST /group/create", e);
     return res.status(500).json({ error: e.message });
   }
 });
+
 
 // Unirse a grupo (si lo necesitas en el cliente)
 // body: { groupName }
-app.post('/group/join', async (req, res) => {
+// body: { groupName, user }
+app.post("/group/join", async (req, res) => {
   try {
-    const { groupName } = req.body || {};
-    if (!groupName) return res.status(400).json({ error: 'groupName requerido' });
-    const cmd = `/joingroup ${groupName}`;
-    const reply = await sendCommandLine(cmd);
-    const ok = /Te has unido|Ya eres miembro|OK/.test(reply);
+    const { groupName, user } = req.body || {};
+    if (!groupName || !user) {
+      return res
+        .status(400)
+        .json({ error: "groupName y user son requeridos" });
+    }
+
+    const reply = await sendCommandFromUser(user, `/joingroup ${groupName}`);
+    const ok = /Te has unido|Ya eres miembro|OK/i.test(reply);
+
     return res.status(ok ? 200 : 409).json({ reply });
   } catch (e) {
-    console.error('POST /group/join', e);
+    console.error("POST /group/join", e);
     return res.status(500).json({ error: e.message });
   }
 });
 
+
 // Enviar mensaje a grupo
 // body: { groupName, message }
-app.post('/group/message', async (req, res) => {
+// body: { groupName, sender, message }
+app.post("/group/message", async (req, res) => {
   try {
-    const { groupName, message } = req.body || {};
-    if (!groupName || !message) {
-      return res.status(400).json({ error: 'groupName y message son requeridos' });
+    const { groupName, sender, message } = req.body || {};
+    if (!groupName || !sender || !message) {
+      return res
+        .status(400)
+        .json({ error: "groupName, sender y message son requeridos" });
     }
-    const cmd = `/msggroup ${groupName} ${message}`;
-    const reply = await sendCommandLine(cmd);
-    const ok = /Mensaje enviado|OK/.test(reply);
+
+    const reply = await sendCommandFromUser(
+      sender,
+      `/msggroup ${groupName} ${message}`
+    );
+    const ok = /Mensaje enviado|OK/i.test(reply);
+
     return res.status(ok ? 200 : 409).json({ reply });
   } catch (e) {
-    console.error('POST /group/message', e);
+    console.error("POST /group/message", e);
     return res.status(500).json({ error: e.message });
   }
 });
+
 
 // Historial (lee server/data/history.jsonl y filtra)
 // GET /history?scope=private&user=U&peer=P

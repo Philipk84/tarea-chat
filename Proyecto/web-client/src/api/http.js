@@ -25,16 +25,19 @@ export function sendPrivateMessage(sender, receiver, message) {
   return post("/chat", { sender, receiver, message });
 }
 
-export function createGroup(groupName) {
-  return post("/group/create", { groupName });
+// Crear grupo (incluye quién lo crea)
+export function createGroup(groupName, creator) {
+  return post("/group/create", { groupName, creator });
 }
 
-export function joinGroup(groupName) {
-  return post("/group/join", { groupName });
+// Unirse a grupo (incluye quién se une)
+export function joinGroup(groupName, user) {
+  return post("/group/join", { groupName, user });
 }
 
+// Mensaje a grupo (incluye quién envía)
 export function sendGroupMessage(groupName, sender, message) {
-  return post("/group/message", { groupName, message });
+  return post("/group/message", { groupName, sender, message });
 }
 
 export function getPrivateHistory(user, peer) {

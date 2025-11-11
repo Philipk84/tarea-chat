@@ -42,3 +42,8 @@
 {"sender":"Seb","scope":"private","recipient":"Fel","id":"5feddc19-cb41-4b01-9769-9ee198fc057c","type":"text","message":"Holaa","timestamp":"2025-11-11T02:40:50.861670Z"}
 {"sender":"Ale","scope":"private","recipient":"Seb","id":"8f75f203-7ec6-4aef-824e-ef2149902baf","type":"text","message":"Hola","timestamp":"2025-11-11T02:41:13.589145500Z"}
 {"sender":"Seb","scope":"private","recipient":"Ale","id":"5d17320c-881d-40d3-8b14-1a3861e70af8","type":"text","message":"Hola","timestamp":"2025-11-11T02:41:41.613420700Z"}
+{"sender":"sebas","scope":"private","recipient":"paula","id":"556856da-1bbb-40f9-92f2-138feeb8b059","type":"text","message":"Hola","timestamp":"2025-11-11T03:21:05.173313900Z"}
+{"sender":"paula","scope":"private","recipient":"sebas","id":"430ea0b7-01c7-41a0-a474-b96925912b05","type":"text","message":"Como estas","timestamp":"2025-11-11T03:21:24.791898900Z"}
+{"sender":"paula","scope":"private","recipient":"sebas","id":"55797bc3-413c-4f78-beca-0720d37cad14","type":"text","message":"Hello","timestamp":"2025-11-11T03:38:09.558702600Z"}
+{"sender":"paula","scope":"group","id":"adb4585f-0bcb-4dca-8758-b4d6f4379eb5","type":"text","message":"Bueno muchachos","timestamp":"2025-11-11T03:38:48.882248800Z","group":"Prueba"}
+{"sender":"paula","scope":"group","id":"033016c1-15b7-4893-8fb4-3801f0502e48","type":"text","message":"Sebas","timestamp":"2025-11-11T03:39:44.985594400Z","group":"Prueba"}

@@ -106,48 +106,45 @@ function Chat() {
   };
 
   // Crear grupo
-  createGroupBtn.onclick = async () => {
-    const gname = groupNameInput.value.trim();
-    if (!gname) return;
+createGroupBtn.onclick = async () => {
+  const gname = groupNameInput.value.trim();
+  if (!gname) return;
 
-    try {
-      await createGroup(gname);
+  try {
+    // 1) Crear grupo como el usuario actual
+    await createGroup(gname, username);
 
-      // Los miembros se unirán manualmente, uno por uno
-      const membersRaw = groupMembersInput.value.trim();
-      if (membersRaw) {
-        const members = membersRaw
-          .split(",")
-          .map((m) => m.trim())
-          .filter(Boolean);
-        for (const member of members) {
-          await joinGroup(gname);
-        }
-      }
+    // 2) Asegurar que el creador esté dentro del grupo
+    await joinGroup(gname, username);
 
-      currentChat = { type: "group", id: gname };
-      chatTitle.textContent = "Grupo: " + gname;
-      // Cargar historial del grupo
-      loadHistory();
-    } catch (e) {
-      alert("Error creando grupo: " + e.message);
-    }
-  };
+    // 3) Seleccionar el grupo como chat actual
+    currentChat = { type: "group", id: gname };
+    chatTitle.textContent = "Grupo: " + gname;
 
-  // Unirse a grupo manualmente
-  joinGroupBtn.onclick = async () => {
-    const gname = groupNameInput.value.trim();
-    if (!gname) return;
-    try {
-      await joinGroup(gname);
-      currentChat = { type: "group", id: gname };
-      chatTitle.textContent = "Grupo: " + gname;
-      // Cargar historial del grupo
-      loadHistory();
-    } catch (e) {
-      alert("Error uniéndose al grupo: " + e.message);
-    }
-  };
+    // 4) Cargar historial de ese grupo
+    await loadHistory();
+  } catch (e) {
+    alert("Error creando grupo: " + (e.message || e));
+  }
+};
+
+
+// Unirse a grupo manualmente
+joinGroupBtn.onclick = async () => {
+  const gname = groupNameInput.value.trim();
+  if (!gname) return;
+
+  try {
+    await joinGroup(gname, username);
+
+    currentChat = { type: "group", id: gname };
+    chatTitle.textContent = "Grupo: " + gname;
+    await loadHistory();
+  } catch (e) {
+    alert("Error uniéndose al grupo: " + (e.message || e));
+  }
+};
+
 
   // ----- ENVÍO DE MENSAJES -----
   sendBtn.onclick = async () => {
