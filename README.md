@@ -1,34 +1,50 @@
 ## Integrantes
-- Alejandro Vargas Sanchez (A00404840)
+- Alejandro Vargas
 - Sebastián Romero
 - Felipe Calderon
   
 ## Ejecución del proyecto
 
-1. Clonar el repositorio
-2. Moverse en consola dentro de la carpeta del proyecto
-    ```bash
-   cd Proyecto
+### Solo la primera vez
 
-3. Compilar el proyecto
-    ```bash
-    gradle build
+Se hace el build de backend en Java desde la carpeta Proyecto, donde está gradlew:
 
-4. Modificar el archivo config.json: En este archivo, cambia el valor del campo host por la dirección IP del equipo donde se está ejecutando el servidor, por ejemplo:
-    ```bash
-    json
-    {
-      "port": 5000,
-      "host": "192.168.1.10"
-    }
-    
-  Todos deben tener la misma dirección de host
-  
-5. Correr el main del Servidor: Ejecutar la clase Main que se encuentra en Ui dentro del Server
+  ```bash
+  cd Proyecto
+  ```
 
-6. Correr el main del Cliente por cada usuario: Ejecutar el Main que esta en Ui dentro de Client
+  ```bash
+  ./gradlew clean build 
+  ```
+Luego hay que moverse dentro de la carpeta web-client y se instalan todas las dependencias:
+  ```bash
+  cd web-client
+  ```
+  ```bash
+  npm install
+  ```
 
-7. Usar la aplicación
+### Ejecución de la aplicación
+
+1. Se inicia el sevidor Java, desde la clase Main.js
+
+2. Se inicia el proxy, para esto hay que moverse a la carpeta de web-client
+
+  ```bash
+  cd Proyecto/web-client
+  ```
+Y luego se ejecuta
+
+  ```bash
+  node proxy/index.js
+  ```
+
+3. Iniciar el cliente web, se crea otra terminal y se vuelve a posicionar en web-client:
+
+  ```bash
+  cd Proyecto/web-client
+  ```
+Y se inicia
 
 ## 2. Descripción del flujo de comunicación entre cliente, proxy y backend
 
