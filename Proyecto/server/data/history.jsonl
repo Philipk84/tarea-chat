@@ -25,3 +25,27 @@
 {"audioFile":"server\\data\\voice\\voice-1761798103713-9d386557-5072-43c1-8fcc-d3e8702bcb89.bin","sender":"Ale","scope":"private","recipient":"Fel","id":"9d9a6319-4e6f-42f1-8067-d03b61bf0a67","type":"voice_note","timestamp":"2025-10-30T04:21:43.721605300Z","sizeBytes":465796}
 {"audioFile":"server\\data\\voice\\voice-1761798475631-9ffe5498-5d90-4b7a-ad84-bc83e5ef4059.wav","sender":"Fel","scope":"private","recipient":"Ale","id":"34c6ba43-dd1e-44a4-ae3d-592b4c87dc0f","type":"voice_note","timestamp":"2025-10-30T04:27:55.690855900Z","sizeBytes":476864}
 {"audioFile":"server\\data\\voice\\voice-1761798753036-92ccedf5-f355-4940-8268-23c0ff75143c.wav","sender":"f","scope":"private","recipient":"a","id":"d379a976-4bc5-4cf8-9b47-5d8ac99dbfca","type":"voice_note","timestamp":"2025-10-30T04:32:33.096859500Z","sizeBytes":363868}
+{"sender":"Juan","scope":"private","recipient":"Felipe","id":"3b509980-2a44-493b-aa9d-0980ffc2d432","type":"text","message":"Hola","timestamp":"2025-11-10T15:17:32.925482300Z"}
+{"sender":"Felipe","scope":"private","recipient":"Juan","id":"6149e375-93b4-498e-b035-e48ad26a1f6c","type":"text","message":"Que tal?","timestamp":"2025-11-10T15:18:05.797708500Z"}
+{"sender":"Juan","scope":"private","recipient":"Felipe","id":"6c681ae1-1353-4af8-acc9-aa52c21d8d4e","type":"text","message":"Bien y tu?","timestamp":"2025-11-10T15:18:28.078676300Z"}
+{"sender":"Felipe","scope":"private","recipient":"Juan","id":"75c2aeca-5bec-4792-9f6a-564b84d902c7","type":"text","message":"Hola","timestamp":"2025-11-10T15:55:30.171652900Z"}
+{"sender":"Juan","scope":"private","recipient":"Felipe","id":"b9be4fab-b1d6-4ca4-99c3-c2a79923121d","type":"text","message":"Que tal?","timestamp":"2025-11-10T15:55:39.295758900Z"}
+{"sender":"Juan","scope":"private","recipient":"Felipe","id":"f0aacc02-88fe-4aa7-87c9-05aea4009834","type":"text","message":"Hola","timestamp":"2025-11-10T16:02:15.812680900Z"}
+{"sender":"Felipe","scope":"private","recipient":"Juan","id":"c6e3675d-3368-4295-8d4c-01c950ebbcb1","type":"text","message":"Que tal?","timestamp":"2025-11-10T16:02:23.978474Z"}
+{"sender":"Felipe","scope":"private","recipient":"Yo","id":"7c92ac07-fee9-4aa6-b82d-2a4c5dfa07fa","type":"text","message":"Hola","timestamp":"2025-11-10T16:09:25.242307300Z"}
+{"sender":"Felipe","scope":"private","recipient":"Juan","id":"cd000607-d14a-4d4f-b5dd-8c764023726b","type":"text","message":"Hola","timestamp":"2025-11-10T16:21:58.872804600Z"}
+{"sender":"Juan","scope":"private","recipient":"Felipe","id":"aeafb66e-55fc-4d2b-9f29-3928fc75497f","type":"text","message":"Que tal?","timestamp":"2025-11-10T16:22:07.972401800Z"}
+{"sender":"Felipe","scope":"private","recipient":"Juan","id":"1489a41b-1d87-4ff6-bf6b-4ac337bfe8f7","type":"text","message":"Hola","timestamp":"2025-11-10T16:26:38.929942800Z"}
+{"sender":"Juan","scope":"private","recipient":"Felipe","id":"211f4e86-febd-405f-b385-c6028eb990c4","type":"text","message":"Que tal?","timestamp":"2025-11-10T16:27:11.296083300Z"}
+{"sender":"Ale","scope":"private","recipient":"Fel","id":"52b4ff0b-5cf3-4aa7-be3c-941ea13a1566","type":"text","message":"Hola","timestamp":"2025-11-11T02:26:17.071464700Z"}
+{"sender":"Fel","scope":"private","recipient":"Ale","id":"898d7f52-9c07-4eba-80b3-ab5cb59fe78a","type":"text","message":"Hola","timestamp":"2025-11-11T02:40:00.529548800Z"}
+{"sender":"Seb","scope":"private","recipient":"Fel","id":"5feddc19-cb41-4b01-9769-9ee198fc057c","type":"text","message":"Holaa","timestamp":"2025-11-11T02:40:50.861670Z"}
+{"sender":"Ale","scope":"private","recipient":"Seb","id":"8f75f203-7ec6-4aef-824e-ef2149902baf","type":"text","message":"Hola","timestamp":"2025-11-11T02:41:13.589145500Z"}
+{"sender":"Seb","scope":"private","recipient":"Ale","id":"5d17320c-881d-40d3-8b14-1a3861e70af8","type":"text","message":"Hola","timestamp":"2025-11-11T02:41:41.613420700Z"}
+{"sender":"sebas","scope":"private","recipient":"paula","id":"556856da-1bbb-40f9-92f2-138feeb8b059","type":"text","message":"Hola","timestamp":"2025-11-11T03:21:05.173313900Z"}
+{"sender":"paula","scope":"private","recipient":"sebas","id":"430ea0b7-01c7-41a0-a474-b96925912b05","type":"text","message":"Como estas","timestamp":"2025-11-11T03:21:24.791898900Z"}
+{"sender":"paula","scope":"private","recipient":"sebas","id":"55797bc3-413c-4f78-beca-0720d37cad14","type":"text","message":"Hello","timestamp":"2025-11-11T03:38:09.558702600Z"}
+{"sender":"paula","scope":"group","id":"adb4585f-0bcb-4dca-8758-b4d6f4379eb5","type":"text","message":"Bueno muchachos","timestamp":"2025-11-11T03:38:48.882248800Z","group":"Prueba"}
+{"sender":"paula","scope":"group","id":"033016c1-15b7-4893-8fb4-3801f0502e48","type":"text","message":"Sebas","timestamp":"2025-11-11T03:39:44.985594400Z","group":"Prueba"}
+{"sender":"sebas","scope":"private","recipient":"paula","id":"9596cce1-399d-45c9-8393-2d4ac10fc42a","type":"text","message":"Prueba","timestamp":"2025-11-11T03:51:34.774238400Z"}
+{"sender":"sebas","scope":"group","id":"5af31551-b508-4fdc-a72e-bef35c6fec87","type":"text","message":"AJajjaja","timestamp":"2025-11-11T03:51:51.155845Z","group":"Prueba"}
