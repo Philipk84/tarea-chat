@@ -1,49 +1,53 @@
-const API_BASE = "http://localhost:3001";
+// Proyecto/web-client/src/api/http.js
+import axios from "axios";
+const API_BASE = "/api";
 
-async function postJSON(path, body) {
-    const res = await fetch(API_BASE + path, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(body)
-    });
+async function post(path, body) {
+  const url = API_BASE + path;
+  const res = await axios.post(url, body, {
+    headers: { "Content-Type": "application/json" }
+  });
+  return res.data;
+}
 
-    const text = await res.text();
-    let data;
-    try {
-        data = JSON.parse(text);
-    } catch (e) {
-        data = text;
-    }
-
-    if (!res.ok) {
-        const msg = typeof data === "string" ? data : (data.error || "Error en la petición");
-        throw new Error(msg);
-    }
-
-    return data;
+async function get(path, params) {
+  const url = API_BASE + path;
+  const res = await axios.get(url, { params });
+  return res.data;
 }
 
 export function registerUser(username) {
-    return postJSON("/register", {
-        username: username,
-        clientIp: "127.0.0.1"
-    });
+  return post("/register", { username });
 }
 
 export function sendPrivateMessage(sender, receiver, message) {
-    return postJSON("/chat", { sender, receiver, message });
+  // el backend no necesita sender aquí; lo conserva el servidor Java
+  return post("/chat", { sender, receiver, message });
 }
 
-export function createGroup(groupName) {
-    return postJSON("/group/create", { groupName });
+// Crear grupo (incluye quién lo crea)
+export function createGroup(groupName, creator) {
+  return post("/group/create", { groupName, creator });
 }
 
-export function addUsersToGroup(groupName, members) {
-    return postJSON("/group/add", { groupName, members });
+// Unirse a grupo (incluye quién se une)
+export function joinGroup(groupName, user) {
+  return post("/group/join", { groupName, user });
 }
 
+// Mensaje a grupo (incluye quién envía)
 export function sendGroupMessage(groupName, sender, message) {
-    return postJSON("/group/message", { groupName, sender, message });
+  return post("/group/message", { groupName, sender, message });
+}
+
+export function getPrivateHistory(user, peer) {
+  return get("/history", { scope: "private", user, peer });
+}
+
+export function getGroupHistory(group) {
+  return get("/history", { scope: "group", group });
+}
+
+export function getUpdates(user) {
+  return get("/updates", { user });
 }
