@@ -1,5 +1,5 @@
 ## Integrantes
-- Alejandro Vargas
+- Alejandro Vargas Sánchez (A00404840) 
 - Sebastián Romero
 - Felipe Calderon
   
