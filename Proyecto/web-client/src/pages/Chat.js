@@ -95,15 +95,30 @@ function Chat() {
   // ----- ESTADO -----
   let currentChat = null; // { type: "user" | "group", id: string }
 
-  // Seleccionar chat directo
-  directInput.onchange = () => {
-    const to = directInput.value.trim();
-    if (!to) return;
-    currentChat = { type: "user", id: to };
-    chatTitle.textContent = "Chat con: " + to;
-    // Cargar historial privado
-    loadHistory();
-  };
+  function openDirectChat() {
+  const to = directInput.value.trim();
+  if (!to) return;
+  if (to === username) {
+    alert("No puedes chatear contigo mismo 😉");
+    return;
+  }
+  currentChat = { type: "user", id: to };
+  chatTitle.textContent = "Chat con: " + to;
+  loadHistory();
+}
+
+// Cambiar cuando se pierda el foco
+directInput.addEventListener("change", openDirectChat);
+
+// Cambiar al presionar Enter
+directInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    openDirectChat();
+    msgInput.focus();
+  }
+});
+
 
   // Crear grupo
 createGroupBtn.onclick = async () => {

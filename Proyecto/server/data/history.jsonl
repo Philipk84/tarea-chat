@@ -47,3 +47,5 @@
 {"sender":"paula","scope":"private","recipient":"sebas","id":"55797bc3-413c-4f78-beca-0720d37cad14","type":"text","message":"Hello","timestamp":"2025-11-11T03:38:09.558702600Z"}
 {"sender":"paula","scope":"group","id":"adb4585f-0bcb-4dca-8758-b4d6f4379eb5","type":"text","message":"Bueno muchachos","timestamp":"2025-11-11T03:38:48.882248800Z","group":"Prueba"}
 {"sender":"paula","scope":"group","id":"033016c1-15b7-4893-8fb4-3801f0502e48","type":"text","message":"Sebas","timestamp":"2025-11-11T03:39:44.985594400Z","group":"Prueba"}
+{"sender":"sebas","scope":"private","recipient":"paula","id":"9596cce1-399d-45c9-8393-2d4ac10fc42a","type":"text","message":"Prueba","timestamp":"2025-11-11T03:51:34.774238400Z"}
+{"sender":"sebas","scope":"group","id":"5af31551-b508-4fdc-a72e-bef35c6fec87","type":"text","message":"AJajjaja","timestamp":"2025-11-11T03:51:51.155845Z","group":"Prueba"}
