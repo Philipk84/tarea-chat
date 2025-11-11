@@ -37,3 +37,8 @@
 {"sender":"Juan","scope":"private","recipient":"Felipe","id":"aeafb66e-55fc-4d2b-9f29-3928fc75497f","type":"text","message":"Que tal?","timestamp":"2025-11-10T16:22:07.972401800Z"}
 {"sender":"Felipe","scope":"private","recipient":"Juan","id":"1489a41b-1d87-4ff6-bf6b-4ac337bfe8f7","type":"text","message":"Hola","timestamp":"2025-11-10T16:26:38.929942800Z"}
 {"sender":"Juan","scope":"private","recipient":"Felipe","id":"211f4e86-febd-405f-b385-c6028eb990c4","type":"text","message":"Que tal?","timestamp":"2025-11-10T16:27:11.296083300Z"}
+{"sender":"Ale","scope":"private","recipient":"Fel","id":"52b4ff0b-5cf3-4aa7-be3c-941ea13a1566","type":"text","message":"Hola","timestamp":"2025-11-11T02:26:17.071464700Z"}
+{"sender":"Fel","scope":"private","recipient":"Ale","id":"898d7f52-9c07-4eba-80b3-ab5cb59fe78a","type":"text","message":"Hola","timestamp":"2025-11-11T02:40:00.529548800Z"}
+{"sender":"Seb","scope":"private","recipient":"Fel","id":"5feddc19-cb41-4b01-9769-9ee198fc057c","type":"text","message":"Holaa","timestamp":"2025-11-11T02:40:50.861670Z"}
+{"sender":"Ale","scope":"private","recipient":"Seb","id":"8f75f203-7ec6-4aef-824e-ef2149902baf","type":"text","message":"Hola","timestamp":"2025-11-11T02:41:13.589145500Z"}
+{"sender":"Seb","scope":"private","recipient":"Ale","id":"5d17320c-881d-40d3-8b14-1a3861e70af8","type":"text","message":"Hola","timestamp":"2025-11-11T02:41:41.613420700Z"}
