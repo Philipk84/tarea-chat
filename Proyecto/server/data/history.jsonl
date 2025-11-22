@@ -49,3 +49,4 @@
 {"sender":"paula","scope":"group","id":"033016c1-15b7-4893-8fb4-3801f0502e48","type":"text","message":"Sebas","timestamp":"2025-11-11T03:39:44.985594400Z","group":"Prueba"}
 {"sender":"sebas","scope":"private","recipient":"paula","id":"9596cce1-399d-45c9-8393-2d4ac10fc42a","type":"text","message":"Prueba","timestamp":"2025-11-11T03:51:34.774238400Z"}
 {"sender":"sebas","scope":"group","id":"5af31551-b508-4fdc-a72e-bef35c6fec87","type":"text","message":"AJajjaja","timestamp":"2025-11-11T03:51:51.155845Z","group":"Prueba"}
+{"sender":"Seb","scope":"group","id":"8f1786cf-6e0b-40c5-a8d4-cefb02bca5dc","type":"text","message":"Holaaa grupo","timestamp":"2025-11-11T04:09:39.753661400Z","group":"Compunet"}
