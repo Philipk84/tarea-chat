@@ -22,7 +22,7 @@ public class Main {
         main.showMenu();
     }
 
-    /**
+    /**J
      * Muestra el menú principal y maneja las opciones del usuario.
      * Continúa ejecutándose hasta que el usuario selecciona salir.
      */

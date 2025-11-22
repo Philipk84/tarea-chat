@@ -71,6 +71,9 @@ public class ChatServer implements ServerService {
 
             // Thread udpThread = getUdpThread();
             // udpThread.start();
+
+            // Arrancar ICE para notas de voz / llamadas
+            rpc.IceBootstrap.start(this);
             
             return "Servidor iniciado exitosamente - TCP:" + config.port() + " UDP:" + (config.port() + 1);
         } catch (IOException e) {
@@ -143,6 +146,9 @@ public class ChatServer implements ServerService {
             if (udpSocket != null && !udpSocket.isClosed()) {
                 udpSocket.close();
             }
+
+            rpc.IceBootstrap.stop();
+
             return "Servidor cerrado exitosamente";
         } catch (IOException e) {
             return "Error cerrando servidor: " + e.getMessage();
@@ -370,5 +376,9 @@ public class ChatServer implements ServerService {
      */
     public static synchronized Set<String> getUsers() {
         return instance.userManager.getUsers();
+    }
+
+    public GroupManager getGroupManager() {
+        return groupManager;
     }
 }
