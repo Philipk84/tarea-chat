@@ -2,13 +2,14 @@ const net = require('net');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const express = require('express');
 const userSockets = {};  // { username: net.Socket }
 const userMessages = {}; // { username: [mensajes pendientes] }
 // ─────────────────────────────────────────────────────────────
 // Config
 // ─────────────────────────────────────────────────────────────
 const TCP_HOST = process.env.TCP_HOST || '127.0.0.1';
-const TCP_PORT = Number(process.env.TCP_PORT || 5000);
+const TCP_PORT = Number(process.env.TCP_PORT || 6000);
 const HTTP_PORT = Number(process.env.HTTP_PORT || 3001);
 
 // Ruta de history del servidor Java (misma máquina)

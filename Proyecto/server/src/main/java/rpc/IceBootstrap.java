@@ -1,5 +1,6 @@
 package rpc;
 
+import Chat.Call;
 import com.zeroc.Ice.*;
 import com.zeroc.Ice.Exception;
 
@@ -12,26 +13,28 @@ public final class IceBootstrap {
     public static void start(ChatServer chatServer) {
         Thread t = new Thread(() -> {
             try {
-                String[] args = {};
-                communicator = Util.initialize(args);
+                communicator = Util.initialize();
 
-                // Adaptador sobre WebSockets, por ejemplo puerto 10010
-                ObjectAdapter adapter = communicator.createObjectAdapterWithEndpoints(
-                    "CallAdapter",
-                    "ws -p 10010 -r /call"
-                );
+                // Igual estilo que Capturer.java pero con ws
+                ObjectAdapter adapter =
+                        communicator.createObjectAdapterWithEndpoints(
+                                "CallAdapter",
+                                "ws -p 10010 -r /call"
+                        );
 
-                CallI servant = new CallI(chatServer);
+                Call servant = new CallI(chatServer);
                 adapter.add(servant, Util.stringToIdentity("Call"));
+
                 adapter.activate();
 
-                System.out.println("[ICE] Adaptador CallAdapter escuchando en ws://localhost:10010/call");
-                communicator.waitForShutdown();
+                System.out.println("[ICE] CallAdapter escuchando en ws://localhost:10010/call");
 
+                communicator.waitForShutdown();
             } catch (Exception e) {
-                System.err.println("[ICE] Error en adaptador: " + e.getMessage());
+                System.err.println("[ICE] Error en CallAdapter: " + e.getMessage());
             }
         }, "Ice-CallAdapter");
+
         t.setDaemon(true);
         t.start();
     }

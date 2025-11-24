@@ -50,3 +50,5 @@
 {"sender":"sebas","scope":"private","recipient":"paula","id":"9596cce1-399d-45c9-8393-2d4ac10fc42a","type":"text","message":"Prueba","timestamp":"2025-11-11T03:51:34.774238400Z"}
 {"sender":"sebas","scope":"group","id":"5af31551-b508-4fdc-a72e-bef35c6fec87","type":"text","message":"AJajjaja","timestamp":"2025-11-11T03:51:51.155845Z","group":"Prueba"}
 {"sender":"Seb","scope":"group","id":"8f1786cf-6e0b-40c5-a8d4-cefb02bca5dc","type":"text","message":"Holaaa grupo","timestamp":"2025-11-11T04:09:39.753661400Z","group":"Compunet"}
+{"sender":"Felipe","scope":"private","recipient":"Juan","id":"b97b929f-31b6-43ac-b8e5-0ecdf2837ef4","type":"text","message":"Bro","timestamp":"2025-11-24T20:36:49.352890600Z"}
+{"sender":"Juan","scope":"private","recipient":"Felipe","id":"3f3a32ee-652f-49e1-a8d4-146848e1f28e","type":"text","message":"Hola","timestamp":"2025-11-24T20:38:20.239443200Z"}

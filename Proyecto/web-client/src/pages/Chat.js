@@ -8,6 +8,9 @@ import {
   getGroupHistory,
 } from "../api/http.js";
 
+import voiceDelegate from "../services/voiceDelegate.js";
+import { createRecorder } from "../services/recorder.js";
+
 function Chat() {
   const username = localStorage.getItem("chat_username");
   if (!username) {
@@ -15,6 +18,16 @@ function Chat() {
     window.location.reload();
     return document.createElement("div");
   }
+  // Suscribirnos a ICE para recibir notas de voz en tiempo real
+  voiceDelegate
+    .init(username)
+    .then(() => {
+      voiceDelegate.subscribe((entry) => {
+        // entry es VoiceEntry y tu appendHistoryItem ya maneja type voice_note/voice_group
+        appendHistoryItem(entry);
+      });
+    })
+    .catch((e) => console.error("Error inicializando ICE voz:", e));
 
   // ----- ESTRUCTURA GENERAL -----
   const root = document.createElement("div");
@@ -81,6 +94,33 @@ function Chat() {
 
   const sendBtn = document.createElement("button");
   sendBtn.textContent = "Enviar";
+
+  let currentRecorder = null;
+
+  const recBtn = document.createElement("button");
+  recBtn.textContent = "🎤";
+
+  recBtn.onclick = async () => {
+    if (!currentChat) {
+      alert("Selecciona primero un usuario o grupo");
+      return;
+    }
+
+    // Si ya está grabando, paramos y enviamos
+    if (currentRecorder) {
+      await currentRecorder.stop();
+      currentRecorder = null;
+      recBtn.textContent = "🎤";
+      return;
+    }
+
+    // Crear grabador con el destino actual
+    currentRecorder = createRecorder(username, currentChat);
+    await currentRecorder.start();
+    recBtn.textContent = "⏹";
+  };
+
+  inputBar.appendChild(recBtn);
 
   inputBar.appendChild(msgInput);
   inputBar.appendChild(sendBtn);

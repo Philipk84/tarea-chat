@@ -3,10 +3,9 @@ package rpc;
 import Chat.Call;
 import Chat.VoiceEntry;
 import Chat.VoiceObserverPrx;
+import com.zeroc.Ice.Current;
 import model.ChatServer;
 import service.HistoryService;
-
-import com.zeroc.Ice.Current;
 
 import java.io.IOException;
 import java.util.Map;
@@ -16,8 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CallI implements Call {
 
     private final ChatServer chatServer;
-
-    // username -> callback registrado
+    // username -> observer proxy
     private final Map<String, VoiceObserverPrx> observers = new ConcurrentHashMap<>();
 
     public CallI(ChatServer chatServer) {
@@ -27,25 +25,25 @@ public class CallI implements Call {
     @Override
     public void subscribe(String username, VoiceObserverPrx obs, Current current) {
         observers.put(username, obs);
-        System.out.println("[ICE] Usuario suscrito a voz: " + username);
+        System.out.println("[ICE] VoiceObserver suscrito: " + username);
     }
 
     @Override
     public void unsubscribe(String username, VoiceObserverPrx obs, Current current) {
         observers.remove(username);
-        System.out.println("[ICE] Usuario desuscrito de voz: " + username);
+        System.out.println("[ICE] VoiceObserver desuscrito: " + username);
     }
 
     @Override
     public void sendVoiceNoteToUser(String fromUser, String toUser, byte[] audio, Current current) {
         try {
-            // 1) Guardar WAV usando tu HistoryService
+            // 1) Guardar bytes PCM16 como WAV (como hace audio_rep)
             HistoryService.SavedAudio saved = HistoryService.saveVoiceBytes(audio);
 
-            // 2) Registrar en el historial (para /history y Chat.js)
+            // 2) Registrar en historial (history.jsonl)
             HistoryService.logVoiceNote(fromUser, toUser, saved.relativePath(), saved.sizeBytes());
 
-            // 3) Construir entrada compatible con appendHistoryItem
+            // 3) Armar entrada de voz para el front
             VoiceEntry entry = new VoiceEntry();
             entry.type = "voice_note";
             entry.scope = "private";
@@ -54,14 +52,14 @@ public class CallI implements Call {
             entry.group = "";
             entry.audioFile = saved.relativePath();
 
-            // 4) Notificar en tiempo real al emisor y receptor (si están suscritos)
+            // 4) Notificar en tiempo real (igual que SubjectImpl.notifyObs)
             notifyUser(fromUser, entry);
             if (!fromUser.equals(toUser)) {
                 notifyUser(toUser, entry);
             }
 
         } catch (IOException e) {
-            System.err.println("[ICE] Error guardando nota de voz: " + e.getMessage());
+            System.err.println("[ICE] Error guardando voice note user: " + e.getMessage());
         }
     }
 
@@ -69,6 +67,7 @@ public class CallI implements Call {
     public void sendVoiceNoteToGroup(String fromUser, String groupName, byte[] audio, Current current) {
         try {
             HistoryService.SavedAudio saved = HistoryService.saveVoiceBytes(audio);
+
             HistoryService.logVoiceGroup(fromUser, groupName, saved.relativePath(), saved.sizeBytes());
 
             VoiceEntry entry = new VoiceEntry();
@@ -79,19 +78,16 @@ public class CallI implements Call {
             entry.group = groupName;
             entry.audioFile = saved.relativePath();
 
-            // Tomamos los miembros del grupo desde tu ChatServer
-            Set<String> members = chatServer.getGroupManager().getGroupMembers(groupName);
-
-            // Notificar a todos los suscritos que pertenezcan al grupo
+            // Miembros del grupo desde ChatServer, igual a como ya lo usas
+            Set<String> members = ChatServer.getGroupMembers(groupName);
             for (String u : members) {
                 notifyUser(u, entry);
             }
-
-            // Aseguramos que el emisor también vea su propia nota
+            // Asegurar que el emisor también lo vea
             notifyUser(fromUser, entry);
 
         } catch (IOException e) {
-            System.err.println("[ICE] Error guardando nota de voz de grupo: " + e.getMessage());
+            System.err.println("[ICE] Error guardando voice note group: " + e.getMessage());
         }
     }
 
