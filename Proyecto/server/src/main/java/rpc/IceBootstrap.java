@@ -13,9 +13,17 @@ public final class IceBootstrap {
     public static void start(ChatServer chatServer) {
         Thread t = new Thread(() -> {
             try {
-                communicator = Util.initialize();
+                // Inicializar con propiedades para habilitar callbacks bidireccionales
+                InitializationData initData = new InitializationData();
+                initData.properties = Util.createProperties();
+                
+                // Habilitar ACM (Active Connection Management) para mantener conexiones vivas
+                initData.properties.setProperty("Ice.ACM.Client.Timeout", "0");
+                initData.properties.setProperty("Ice.ACM.Client.Heartbeat", "3");
+                
+                communicator = Util.initialize(initData);
 
-                // Igual estilo que Capturer.java pero con ws
+                // Crear adapter con soporte WebSocket bidireccional
                 ObjectAdapter adapter =
                         communicator.createObjectAdapterWithEndpoints(
                                 "CallAdapter",
@@ -28,10 +36,12 @@ public final class IceBootstrap {
                 adapter.activate();
 
                 System.out.println("[ICE] CallAdapter escuchando en ws://localhost:10010/call");
+                System.out.println("[ICE] Soporte bidireccional habilitado para callbacks");
 
                 communicator.waitForShutdown();
             } catch (Exception e) {
                 System.err.println("[ICE] Error en CallAdapter: " + e.getMessage());
+                e.printStackTrace();
             }
         }, "Ice-CallAdapter");
 

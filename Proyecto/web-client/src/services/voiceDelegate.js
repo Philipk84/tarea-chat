@@ -110,22 +110,38 @@ class VoiceDelegate {
 
       const adapter = await this.communicator.createObjectAdapter("");
       this._adapter = adapter;
+      
+      // Crear el servant correctamente para Ice.js
       const servant = new Slice.Chat.VoiceObserver();
-
-      servant.onVoice = (entry) => {
-        this.callbacks.forEach((cb) => cb(entry));
+      
+      // Implementar el método onVoice del servant
+      servant.onVoice = (entry, current) => {
+        console.log("[VoiceDelegate] Callback onVoice recibido:", entry);
+        this.callbacks.forEach((cb) => {
+          try {
+            cb(entry);
+          } catch (err) {
+            console.error("[VoiceDelegate] Error en callback:", err);
+          }
+        });
       };
 
       const ident = Ice.stringToIdentity("obs_" + this.currentUser);
+      console.log("[VoiceDelegate] Registrando observer con identity:", ident.name);
+      
       const addedPrx = adapter.add(servant, ident);
       await adapter.activate();
+      console.log("[VoiceDelegate] Adapter activado");
 
       const connection = await this.callPrx.ice_getConnection();
       connection.setAdapter(adapter);
+      console.log("[VoiceDelegate] Connection adapter configurado");
 
       const obsPrx = Slice.Chat.VoiceObserverPrx.uncheckedCast(addedPrx);
+      console.log("[VoiceDelegate] Observer proxy creado");
 
       await this.callPrx.subscribe(this.currentUser, obsPrx);
+      console.log("[VoiceDelegate] Subscripción completada para:", this.currentUser);
 
       this._setStatus("connected");
 

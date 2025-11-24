@@ -21,9 +21,57 @@ function Chat() {
 
   let recBtn = null;
   let voiceInitErrorShown = false;
+  
+  // Almacenar mensajes de voz pendientes por conversación
+  const pendingVoiceMessages = {}; // { "user:id" o "group:id": [entries] }
+
+  // Función auxiliar para obtener clave de chat
+  function getChatKey(chat) {
+    if (!chat) return null;
+    return chat.type === "user" ? `user:${chat.id}` : `group:${chat.id}`;
+  }
+
+  // Función auxiliar para verificar si un entry pertenece al chat actual
+  function isEntryForCurrentChat(entry) {
+    if (!currentChat) return false;
+    
+    if (currentChat.type === "user") {
+      // Para chat privado: verificar si involucra al usuario actual y al otro
+      const isPrivate = entry.scope === "private";
+      const involvesSelf = entry.sender === username || entry.recipient === username;
+      const involvesOther = entry.sender === currentChat.id || entry.recipient === currentChat.id;
+      return isPrivate && involvesSelf && involvesOther;
+    } else {
+      // Para grupo: verificar nombre del grupo
+      return entry.scope === "group" && entry.group === currentChat.id;
+    }
+  }
 
   voiceDelegate.subscribe((entry) => {
-    appendHistoryItem(entry);
+    console.log("[Voice] Notificación recibida:", entry);
+    
+    // Verificar si el entry es para el chat actual
+    if (isEntryForCurrentChat(entry)) {
+      // Mostrar inmediatamente
+      appendHistoryItem(entry);
+      messages.scrollTop = messages.scrollHeight;
+    } else {
+      // Guardar en pendientes para cuando se abra ese chat
+      let chatKey;
+      if (entry.scope === "private") {
+        // Determinar el otro usuario
+        const otherUser = entry.sender === username ? entry.recipient : entry.sender;
+        chatKey = `user:${otherUser}`;
+      } else {
+        chatKey = `group:${entry.group}`;
+      }
+      
+      if (!pendingVoiceMessages[chatKey]) {
+        pendingVoiceMessages[chatKey] = [];
+      }
+      pendingVoiceMessages[chatKey].push(entry);
+      console.log(`[Voice] Mensaje guardado para ${chatKey}`);
+    }
   });
 
   // ----- ESTRUCTURA GENERAL -----
@@ -154,6 +202,7 @@ function Chat() {
       currentRecorder = createRecorder(username, currentChat);
       await currentRecorder.start();
       recBtn.textContent = "⏹";
+      console.log("[Voice] Grabación iniciada");
     } catch (err) {
       console.error("Error iniciando grabación:", err);
       currentRecorder = null;
@@ -319,12 +368,23 @@ joinGroupBtn.onclick = async () => {
         empty.classList.add("message");
         empty.textContent = "Sin historial";
         messages.appendChild(empty);
-        return;
+      } else {
+        for (const it of items) {
+          appendHistoryItem(it);
+        }
       }
-
-      for (const it of items) {
-        appendHistoryItem(it);
+      
+      // Cargar mensajes de voz pendientes para este chat
+      const chatKey = getChatKey(currentChat);
+      if (chatKey && pendingVoiceMessages[chatKey]) {
+        console.log(`[Voice] Cargando ${pendingVoiceMessages[chatKey].length} mensajes pendientes para ${chatKey}`);
+        for (const entry of pendingVoiceMessages[chatKey]) {
+          appendHistoryItem(entry);
+        }
+        // Limpiar pendientes ya mostrados
+        delete pendingVoiceMessages[chatKey];
       }
+      
       messages.scrollTop = messages.scrollHeight;
     } catch (e) {
       const err = document.createElement("div");
@@ -349,6 +409,11 @@ joinGroupBtn.onclick = async () => {
     if (item.type === "voice_note" || item.type === "voice_group") {
       const row = document.createElement("div");
       row.classList.add("message");
+      
+      // Agregar clase para identificar si es mensaje propio
+      if (item.sender === username) {
+        row.classList.add("me");
+      }
 
       // Título/etiqueta
       const label = document.createElement("div");
@@ -356,8 +421,12 @@ joinGroupBtn.onclick = async () => {
       if (item.scope === "group") {
         label.textContent = `[${item.group}] ${item.sender}: nota de voz`;
       } else {
-        const target = item.sender === username ? item.recipient : username;
-        label.textContent = `${item.sender} → ${target}: nota de voz`;
+        const target = item.sender === username ? item.recipient : item.sender;
+        if (item.sender === username) {
+          label.textContent = `(Yo) → ${target}: nota de voz`;
+        } else {
+          label.textContent = `${item.sender} → Tú: nota de voz`;
+        }
       }
       row.appendChild(label);
 
@@ -371,9 +440,22 @@ joinGroupBtn.onclick = async () => {
       audio.src = `/voice/${fileName}`;
       audio.style.display = "block";
       audio.style.marginTop = "4px";
+      
+      // Agregar timestamp si existe
+      if (item.timestamp) {
+        const time = document.createElement("div");
+        time.style.fontSize = "0.8em";
+        time.style.color = "#666";
+        time.style.marginTop = "2px";
+        const date = new Date(item.timestamp);
+        time.textContent = date.toLocaleTimeString();
+        row.appendChild(time);
+      }
+      
       row.appendChild(audio);
 
       messages.appendChild(row);
+      console.log("[Voice] Audio agregado a la UI:", fileName);
       return;
     }
 
