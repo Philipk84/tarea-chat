@@ -10,6 +10,13 @@ module.exports = {
     clean: true,
   },
   devtool: "inline-source-map",
+  resolve: {
+    fallback: {
+      fs: false,
+      net: false,
+      tls: false,
+    },
+  },
   devServer: {
     static: {
       directory: path.join(__dirname, "dist"),

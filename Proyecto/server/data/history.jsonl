@@ -52,3 +52,7 @@
 {"sender":"Seb","scope":"group","id":"8f1786cf-6e0b-40c5-a8d4-cefb02bca5dc","type":"text","message":"Holaaa grupo","timestamp":"2025-11-11T04:09:39.753661400Z","group":"Compunet"}
 {"sender":"Felipe","scope":"private","recipient":"Juan","id":"b97b929f-31b6-43ac-b8e5-0ecdf2837ef4","type":"text","message":"Bro","timestamp":"2025-11-24T20:36:49.352890600Z"}
 {"sender":"Juan","scope":"private","recipient":"Felipe","id":"3f3a32ee-652f-49e1-a8d4-146848e1f28e","type":"text","message":"Hola","timestamp":"2025-11-24T20:38:20.239443200Z"}
+{"audioFile":"server\\data\\voice\\voice-1764023331892-a9400c22-8206-475a-a513-8267409d73a6.wav","sender":"Fel","scope":"private","recipient":"Ale","id":"871f6ac5-d332-4bf3-8529-3bf1c08d3316","type":"voice_note","timestamp":"2025-11-24T22:28:51.909781900Z","sizeBytes":241708}
+{"audioFile":"server\\data\\voice\\voice-1764024029952-7c0e0838-fd5b-4315-899d-6e54e3bc0c3b.wav","sender":"Fel","scope":"private","recipient":"Ale","id":"9f98c87c-7689-4069-87b1-8b7dfd53107a","type":"voice_note","timestamp":"2025-11-24T22:40:29.956828700Z","sizeBytes":180268}
+{"sender":"Ale","scope":"private","recipient":"Fel","id":"31242afa-4c26-4757-9730-25bce7ee8787","type":"text","message":"Hola","timestamp":"2025-11-24T22:47:11.456465600Z"}
+{"audioFile":"server\\data\\voice\\voice-1764024721775-88d6bc85-1cc1-4a5e-ace1-fe1bb488bf82.wav","sender":"Ale","scope":"private","recipient":"Fel","id":"3e53e111-d34e-4e0f-b8ed-6d53d028d347","type":"voice_note","timestamp":"2025-11-24T22:52:01.779146300Z","sizeBytes":184364}

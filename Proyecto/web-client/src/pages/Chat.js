@@ -18,16 +18,13 @@ function Chat() {
     window.location.reload();
     return document.createElement("div");
   }
-  // Suscribirnos a ICE para recibir notas de voz en tiempo real
-  voiceDelegate
-    .init(username)
-    .then(() => {
-      voiceDelegate.subscribe((entry) => {
-        // entry es VoiceEntry y tu appendHistoryItem ya maneja type voice_note/voice_group
-        appendHistoryItem(entry);
-      });
-    })
-    .catch((e) => console.error("Error inicializando ICE voz:", e));
+
+  let recBtn = null;
+  let voiceInitErrorShown = false;
+
+  voiceDelegate.subscribe((entry) => {
+    appendHistoryItem(entry);
+  });
 
   // ----- ESTRUCTURA GENERAL -----
   const root = document.createElement("div");
@@ -97,8 +94,33 @@ function Chat() {
 
   let currentRecorder = null;
 
-  const recBtn = document.createElement("button");
+  recBtn = document.createElement("button");
   recBtn.textContent = "🎤";
+  recBtn.disabled = true;
+  recBtn.title = "Conectando con el servicio de voz...";
+
+  voiceDelegate.onStatusChange((status, detail) => {
+    if (!recBtn) return;
+
+    if (status === "connected") {
+      recBtn.disabled = false;
+      recBtn.title = "Pulsa para grabar una nota de voz";
+    } else if (status === "connecting") {
+      recBtn.disabled = true;
+      recBtn.title = "Conectando con el servicio de voz...";
+    } else if (status === "error") {
+      recBtn.disabled = true;
+      recBtn.title = "Reintentando conexión con el servicio de voz...";
+
+      if (!voiceInitErrorShown) {
+        const message = detail?.message || "No se pudo conectar con el servicio de notas de voz.";
+        alert(message + " Revisa que el servidor esté activo.");
+        voiceInitErrorShown = true;
+      }
+    }
+  });
+
+  voiceDelegate.init(username);
 
   recBtn.onclick = async () => {
     if (!currentChat) {
@@ -106,18 +128,37 @@ function Chat() {
       return;
     }
 
+    if (voiceDelegate.getStatus() !== "connected") {
+      alert("El servicio de voz todavía se está conectando. Inténtalo en unos segundos.");
+      return;
+    }
+
+    await voiceDelegate.ensureReady();
+
     // Si ya está grabando, paramos y enviamos
     if (currentRecorder) {
-      await currentRecorder.stop();
-      currentRecorder = null;
-      recBtn.textContent = "🎤";
+      try {
+        await currentRecorder.stop();
+      } catch (err) {
+        console.error("Error enviando nota de voz:", err);
+        alert(err.message || "No se pudo enviar la nota de voz");
+      } finally {
+        currentRecorder = null;
+        recBtn.textContent = "🎤";
+      }
       return;
     }
 
     // Crear grabador con el destino actual
-    currentRecorder = createRecorder(username, currentChat);
-    await currentRecorder.start();
-    recBtn.textContent = "⏹";
+    try {
+      currentRecorder = createRecorder(username, currentChat);
+      await currentRecorder.start();
+      recBtn.textContent = "⏹";
+    } catch (err) {
+      console.error("Error iniciando grabación:", err);
+      currentRecorder = null;
+      alert(err.message || "No se pudo iniciar la grabación");
+    }
   };
 
   inputBar.appendChild(recBtn);
@@ -315,8 +356,8 @@ joinGroupBtn.onclick = async () => {
       if (item.scope === "group") {
         label.textContent = `[${item.group}] ${item.sender}: nota de voz`;
       } else {
-        const other = item.sender === username ? item.recipient : item.sender;
-        label.textContent = `${item.sender} → ${other}: nota de voz`;
+        const target = item.sender === username ? item.recipient : username;
+        label.textContent = `${item.sender} → ${target}: nota de voz`;
       }
       row.appendChild(label);
 

@@ -17,6 +17,14 @@ package Chat;
 
 public interface Call extends com.zeroc.Ice.Object
 {
+    void sendVoiceNoteToUser(String fromUser, String toUser, byte[] audio, com.zeroc.Ice.Current current);
+
+    void sendVoiceNoteToGroup(String fromUser, String groupName, byte[] audio, com.zeroc.Ice.Current current);
+
+    void subscribe(String username, VoiceObserverPrx obs, com.zeroc.Ice.Current current);
+
+    void unsubscribe(String username, VoiceObserverPrx obs, com.zeroc.Ice.Current current);
+
     /** @hidden */
     static final String[] _iceIds =
     {
@@ -39,5 +47,153 @@ public interface Call extends com.zeroc.Ice.Object
     static String ice_staticId()
     {
         return "::Chat::Call";
+    }
+
+    /**
+     * @hidden
+     * @param obj -
+     * @param inS -
+     * @param current -
+     * @return -
+    **/
+    static java.util.concurrent.CompletionStage<com.zeroc.Ice.OutputStream> _iceD_sendVoiceNoteToUser(Call obj, final com.zeroc.IceInternal.Incoming inS, com.zeroc.Ice.Current current)
+    {
+        com.zeroc.Ice.Object._iceCheckMode(null, current.mode);
+        com.zeroc.Ice.InputStream istr = inS.startReadParams();
+        String iceP_fromUser;
+        String iceP_toUser;
+        byte[] iceP_audio;
+        iceP_fromUser = istr.readString();
+        iceP_toUser = istr.readString();
+        iceP_audio = istr.readByteSeq();
+        inS.endReadParams();
+        obj.sendVoiceNoteToUser(iceP_fromUser, iceP_toUser, iceP_audio, current);
+        return inS.setResult(inS.writeEmptyParams());
+    }
+
+    /**
+     * @hidden
+     * @param obj -
+     * @param inS -
+     * @param current -
+     * @return -
+    **/
+    static java.util.concurrent.CompletionStage<com.zeroc.Ice.OutputStream> _iceD_sendVoiceNoteToGroup(Call obj, final com.zeroc.IceInternal.Incoming inS, com.zeroc.Ice.Current current)
+    {
+        com.zeroc.Ice.Object._iceCheckMode(null, current.mode);
+        com.zeroc.Ice.InputStream istr = inS.startReadParams();
+        String iceP_fromUser;
+        String iceP_groupName;
+        byte[] iceP_audio;
+        iceP_fromUser = istr.readString();
+        iceP_groupName = istr.readString();
+        iceP_audio = istr.readByteSeq();
+        inS.endReadParams();
+        obj.sendVoiceNoteToGroup(iceP_fromUser, iceP_groupName, iceP_audio, current);
+        return inS.setResult(inS.writeEmptyParams());
+    }
+
+    /**
+     * @hidden
+     * @param obj -
+     * @param inS -
+     * @param current -
+     * @return -
+    **/
+    static java.util.concurrent.CompletionStage<com.zeroc.Ice.OutputStream> _iceD_subscribe(Call obj, final com.zeroc.IceInternal.Incoming inS, com.zeroc.Ice.Current current)
+    {
+        com.zeroc.Ice.Object._iceCheckMode(null, current.mode);
+        com.zeroc.Ice.InputStream istr = inS.startReadParams();
+        String iceP_username;
+        VoiceObserverPrx iceP_obs;
+        iceP_username = istr.readString();
+        iceP_obs = VoiceObserverPrx.uncheckedCast(istr.readProxy());
+        inS.endReadParams();
+        obj.subscribe(iceP_username, iceP_obs, current);
+        return inS.setResult(inS.writeEmptyParams());
+    }
+
+    /**
+     * @hidden
+     * @param obj -
+     * @param inS -
+     * @param current -
+     * @return -
+    **/
+    static java.util.concurrent.CompletionStage<com.zeroc.Ice.OutputStream> _iceD_unsubscribe(Call obj, final com.zeroc.IceInternal.Incoming inS, com.zeroc.Ice.Current current)
+    {
+        com.zeroc.Ice.Object._iceCheckMode(null, current.mode);
+        com.zeroc.Ice.InputStream istr = inS.startReadParams();
+        String iceP_username;
+        VoiceObserverPrx iceP_obs;
+        iceP_username = istr.readString();
+        iceP_obs = VoiceObserverPrx.uncheckedCast(istr.readProxy());
+        inS.endReadParams();
+        obj.unsubscribe(iceP_username, iceP_obs, current);
+        return inS.setResult(inS.writeEmptyParams());
+    }
+
+    /** @hidden */
+    final static String[] _iceOps =
+    {
+        "ice_id",
+        "ice_ids",
+        "ice_isA",
+        "ice_ping",
+        "sendVoiceNoteToGroup",
+        "sendVoiceNoteToUser",
+        "subscribe",
+        "unsubscribe"
+    };
+
+    /** @hidden */
+    @Override
+    default java.util.concurrent.CompletionStage<com.zeroc.Ice.OutputStream> _iceDispatch(com.zeroc.IceInternal.Incoming in, com.zeroc.Ice.Current current)
+        throws com.zeroc.Ice.UserException
+    {
+        int pos = java.util.Arrays.binarySearch(_iceOps, current.operation);
+        if(pos < 0)
+        {
+            throw new com.zeroc.Ice.OperationNotExistException(current.id, current.facet, current.operation);
+        }
+
+        switch(pos)
+        {
+            case 0:
+            {
+                return com.zeroc.Ice.Object._iceD_ice_id(this, in, current);
+            }
+            case 1:
+            {
+                return com.zeroc.Ice.Object._iceD_ice_ids(this, in, current);
+            }
+            case 2:
+            {
+                return com.zeroc.Ice.Object._iceD_ice_isA(this, in, current);
+            }
+            case 3:
+            {
+                return com.zeroc.Ice.Object._iceD_ice_ping(this, in, current);
+            }
+            case 4:
+            {
+                return _iceD_sendVoiceNoteToGroup(this, in, current);
+            }
+            case 5:
+            {
+                return _iceD_sendVoiceNoteToUser(this, in, current);
+            }
+            case 6:
+            {
+                return _iceD_subscribe(this, in, current);
+            }
+            case 7:
+            {
+                return _iceD_unsubscribe(this, in, current);
+            }
+        }
+
+        assert(false);
+        throw new com.zeroc.Ice.OperationNotExistException(current.id, current.facet, current.operation);
     }
 }

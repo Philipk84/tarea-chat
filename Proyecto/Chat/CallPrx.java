@@ -17,6 +17,162 @@ package Chat;
 
 public interface CallPrx extends com.zeroc.Ice.ObjectPrx
 {
+    default void sendVoiceNoteToUser(String fromUser, String toUser, byte[] audio)
+    {
+        sendVoiceNoteToUser(fromUser, toUser, audio, com.zeroc.Ice.ObjectPrx.noExplicitContext);
+    }
+
+    default void sendVoiceNoteToUser(String fromUser, String toUser, byte[] audio, java.util.Map<String, String> context)
+    {
+        _iceI_sendVoiceNoteToUserAsync(fromUser, toUser, audio, context, true).waitForResponse();
+    }
+
+    default java.util.concurrent.CompletableFuture<Void> sendVoiceNoteToUserAsync(String fromUser, String toUser, byte[] audio)
+    {
+        return _iceI_sendVoiceNoteToUserAsync(fromUser, toUser, audio, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
+    }
+
+    default java.util.concurrent.CompletableFuture<Void> sendVoiceNoteToUserAsync(String fromUser, String toUser, byte[] audio, java.util.Map<String, String> context)
+    {
+        return _iceI_sendVoiceNoteToUserAsync(fromUser, toUser, audio, context, false);
+    }
+
+    /**
+     * @hidden
+     * @param iceP_fromUser -
+     * @param iceP_toUser -
+     * @param iceP_audio -
+     * @param context -
+     * @param sync -
+     * @return -
+     **/
+    default com.zeroc.IceInternal.OutgoingAsync<Void> _iceI_sendVoiceNoteToUserAsync(String iceP_fromUser, String iceP_toUser, byte[] iceP_audio, java.util.Map<String, String> context, boolean sync)
+    {
+        com.zeroc.IceInternal.OutgoingAsync<Void> f = new com.zeroc.IceInternal.OutgoingAsync<>(this, "sendVoiceNoteToUser", null, sync, null);
+        f.invoke(false, context, null, ostr -> {
+                     ostr.writeString(iceP_fromUser);
+                     ostr.writeString(iceP_toUser);
+                     ostr.writeByteSeq(iceP_audio);
+                 }, null);
+        return f;
+    }
+
+    default void sendVoiceNoteToGroup(String fromUser, String groupName, byte[] audio)
+    {
+        sendVoiceNoteToGroup(fromUser, groupName, audio, com.zeroc.Ice.ObjectPrx.noExplicitContext);
+    }
+
+    default void sendVoiceNoteToGroup(String fromUser, String groupName, byte[] audio, java.util.Map<String, String> context)
+    {
+        _iceI_sendVoiceNoteToGroupAsync(fromUser, groupName, audio, context, true).waitForResponse();
+    }
+
+    default java.util.concurrent.CompletableFuture<Void> sendVoiceNoteToGroupAsync(String fromUser, String groupName, byte[] audio)
+    {
+        return _iceI_sendVoiceNoteToGroupAsync(fromUser, groupName, audio, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
+    }
+
+    default java.util.concurrent.CompletableFuture<Void> sendVoiceNoteToGroupAsync(String fromUser, String groupName, byte[] audio, java.util.Map<String, String> context)
+    {
+        return _iceI_sendVoiceNoteToGroupAsync(fromUser, groupName, audio, context, false);
+    }
+
+    /**
+     * @hidden
+     * @param iceP_fromUser -
+     * @param iceP_groupName -
+     * @param iceP_audio -
+     * @param context -
+     * @param sync -
+     * @return -
+     **/
+    default com.zeroc.IceInternal.OutgoingAsync<Void> _iceI_sendVoiceNoteToGroupAsync(String iceP_fromUser, String iceP_groupName, byte[] iceP_audio, java.util.Map<String, String> context, boolean sync)
+    {
+        com.zeroc.IceInternal.OutgoingAsync<Void> f = new com.zeroc.IceInternal.OutgoingAsync<>(this, "sendVoiceNoteToGroup", null, sync, null);
+        f.invoke(false, context, null, ostr -> {
+                     ostr.writeString(iceP_fromUser);
+                     ostr.writeString(iceP_groupName);
+                     ostr.writeByteSeq(iceP_audio);
+                 }, null);
+        return f;
+    }
+
+    default void subscribe(String username, VoiceObserverPrx obs)
+    {
+        subscribe(username, obs, com.zeroc.Ice.ObjectPrx.noExplicitContext);
+    }
+
+    default void subscribe(String username, VoiceObserverPrx obs, java.util.Map<String, String> context)
+    {
+        _iceI_subscribeAsync(username, obs, context, true).waitForResponse();
+    }
+
+    default java.util.concurrent.CompletableFuture<Void> subscribeAsync(String username, VoiceObserverPrx obs)
+    {
+        return _iceI_subscribeAsync(username, obs, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
+    }
+
+    default java.util.concurrent.CompletableFuture<Void> subscribeAsync(String username, VoiceObserverPrx obs, java.util.Map<String, String> context)
+    {
+        return _iceI_subscribeAsync(username, obs, context, false);
+    }
+
+    /**
+     * @hidden
+     * @param iceP_username -
+     * @param iceP_obs -
+     * @param context -
+     * @param sync -
+     * @return -
+     **/
+    default com.zeroc.IceInternal.OutgoingAsync<Void> _iceI_subscribeAsync(String iceP_username, VoiceObserverPrx iceP_obs, java.util.Map<String, String> context, boolean sync)
+    {
+        com.zeroc.IceInternal.OutgoingAsync<Void> f = new com.zeroc.IceInternal.OutgoingAsync<>(this, "subscribe", null, sync, null);
+        f.invoke(false, context, null, ostr -> {
+                     ostr.writeString(iceP_username);
+                     ostr.writeProxy(iceP_obs);
+                 }, null);
+        return f;
+    }
+
+    default void unsubscribe(String username, VoiceObserverPrx obs)
+    {
+        unsubscribe(username, obs, com.zeroc.Ice.ObjectPrx.noExplicitContext);
+    }
+
+    default void unsubscribe(String username, VoiceObserverPrx obs, java.util.Map<String, String> context)
+    {
+        _iceI_unsubscribeAsync(username, obs, context, true).waitForResponse();
+    }
+
+    default java.util.concurrent.CompletableFuture<Void> unsubscribeAsync(String username, VoiceObserverPrx obs)
+    {
+        return _iceI_unsubscribeAsync(username, obs, com.zeroc.Ice.ObjectPrx.noExplicitContext, false);
+    }
+
+    default java.util.concurrent.CompletableFuture<Void> unsubscribeAsync(String username, VoiceObserverPrx obs, java.util.Map<String, String> context)
+    {
+        return _iceI_unsubscribeAsync(username, obs, context, false);
+    }
+
+    /**
+     * @hidden
+     * @param iceP_username -
+     * @param iceP_obs -
+     * @param context -
+     * @param sync -
+     * @return -
+     **/
+    default com.zeroc.IceInternal.OutgoingAsync<Void> _iceI_unsubscribeAsync(String iceP_username, VoiceObserverPrx iceP_obs, java.util.Map<String, String> context, boolean sync)
+    {
+        com.zeroc.IceInternal.OutgoingAsync<Void> f = new com.zeroc.IceInternal.OutgoingAsync<>(this, "unsubscribe", null, sync, null);
+        f.invoke(false, context, null, ostr -> {
+                     ostr.writeString(iceP_username);
+                     ostr.writeProxy(iceP_obs);
+                 }, null);
+        return f;
+    }
+
     /**
      * Contacts the remote server to verify that the object implements this type.
      * Raises a local exception if a communication error occurs.
