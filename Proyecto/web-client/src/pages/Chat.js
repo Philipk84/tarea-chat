@@ -10,6 +10,7 @@ import {
 
 import voiceDelegate from "../services/voiceDelegate.js";
 import { createRecorder } from "../services/recorder.js";
+import callService from "../services/callService.js";
 
 function Chat() {
   const username = localStorage.getItem("chat_username");
@@ -127,6 +128,56 @@ function Chat() {
   chatTitle.textContent = "Conversación global";
   header.appendChild(chatTitle);
 
+  // Botón de llamada (solo visible para chats privados)
+  const callBtn = document.createElement("button");
+  callBtn.textContent = "📞";
+  callBtn.title = "Llamar";
+  callBtn.style.marginLeft = "10px";
+  callBtn.style.padding = "5px 10px";
+  callBtn.style.cursor = "pointer";
+  callBtn.style.display = "none"; // Oculto por defecto
+  header.appendChild(callBtn);
+
+  // Función para actualizar visibilidad del botón de llamada
+  function updateCallButton() {
+    if (currentChat && currentChat.type === "user") {
+      callBtn.style.display = "inline-block";
+      if (callService.hasActiveCall()) {
+        callBtn.textContent = "📞⏹";
+        callBtn.title = "Colgar";
+      } else {
+        callBtn.textContent = "📞";
+        callBtn.title = "Llamar";
+      }
+    } else {
+      callBtn.style.display = "none";
+    }
+  }
+
+  // Handler del botón de llamada
+  callBtn.onclick = async () => {
+    if (!currentChat || currentChat.type !== "user") {
+      return;
+    }
+
+    if (callService.hasActiveCall()) {
+      await callService.endCall();
+      updateCallButton();
+    } else {
+      try {
+        await callService.startCall(username, currentChat.id);
+        updateCallButton();
+      } catch (error) {
+        alert("Error iniciando llamada: " + error.message);
+      }
+    }
+  };
+
+  // Actualizar botón cuando cambia el estado de la llamada
+  callService.on("onCallEnded", () => {
+    updateCallButton();
+  });
+
   const messages = document.createElement("div");
   messages.classList.add("messages");
 
@@ -169,6 +220,72 @@ function Chat() {
   });
 
   voiceDelegate.init(username);
+
+  // ============================================
+  // INICIALIZAR SERVICIO DE LLAMADAS
+  // ============================================
+  callService.init(username);
+
+  // Configurar callbacks de voiceDelegate para llamadas
+  voiceDelegate.setOnCallIncoming((fromUser) => {
+    callService.handleIncomingCall(fromUser);
+  });
+
+  voiceDelegate.setOnCallEnded((fromUser) => {
+    callService.endCall();
+  });
+
+  voiceDelegate.setOnIceOffer((fromUser, offer) => {
+    callService.handleIceOffer(fromUser, offer);
+  });
+
+  voiceDelegate.setOnIceAnswer((fromUser, answer) => {
+    callService.handleIceAnswer(fromUser, answer);
+  });
+
+  voiceDelegate.setOnIceCandidate((fromUser, candidate) => {
+    callService.handleIceCandidate(fromUser, candidate);
+  });
+
+  // Suscribirse a eventos de callService
+  callService.on("onIncomingCall", (fromUser) => {
+    const accept = confirm(`Llamada entrante de ${fromUser}. ¿Aceptar?`);
+    if (accept) {
+      callService.acceptCall(fromUser, username);
+    } else {
+      callService.rejectCall(fromUser);
+    }
+  });
+
+  // Reproducir audio remoto
+  let remoteAudioElement = null;
+
+  callService.on("onRemoteStream", (stream) => {
+    if (!remoteAudioElement) {
+      remoteAudioElement = document.createElement("audio");
+      remoteAudioElement.autoplay = true;
+      remoteAudioElement.style.display = "none";
+      document.body.appendChild(remoteAudioElement);
+    }
+
+    remoteAudioElement.srcObject = stream;
+    remoteAudioElement.play().catch((err) => {
+      console.error("Error reproduciendo audio remoto:", err);
+    });
+  });
+
+  callService.on("onCallStateChange", (state) => {
+    console.log("Estado de llamada:", state);
+    if (state === "connected") {
+      console.log("✓ Llamada conectada!");
+    }
+  });
+
+  callService.on("onCallEnded", () => {
+    if (remoteAudioElement) {
+      remoteAudioElement.srcObject = null;
+    }
+  });
 
   recBtn.onclick = async () => {
     if (!currentChat) {
@@ -234,6 +351,7 @@ function Chat() {
   }
   currentChat = { type: "user", id: to };
   chatTitle.textContent = "Chat con: " + to;
+  updateCallButton(); // Actualizar botón de llamada
   loadHistory();
 }
 
@@ -265,6 +383,7 @@ createGroupBtn.onclick = async () => {
     // 3) Seleccionar el grupo como chat actual
     currentChat = { type: "group", id: gname };
     chatTitle.textContent = "Grupo: " + gname;
+    updateCallButton(); // Actualizar botón de llamada
 
     // 4) Cargar historial de ese grupo
     await loadHistory();
@@ -284,6 +403,7 @@ joinGroupBtn.onclick = async () => {
 
     currentChat = { type: "group", id: gname };
     chatTitle.textContent = "Grupo: " + gname;
+    updateCallButton(); // Actualizar botón de llamada
     await loadHistory();
   } catch (e) {
     alert("Error uniéndose al grupo: " + (e.message || e));

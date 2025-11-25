@@ -25,86 +25,159 @@ const Slice = Ice.Slice;
 
 const Chat = _ModuleRegistry.module("Chat");
 
-Slice.defineSequence(Chat, "ByteSeqHelper", "Ice.ByteHelper", true);
+    Slice.defineSequence(Chat, "ByteSeqHelper", "Ice.ByteHelper", true);
 
-Chat.VoiceEntry = class
-{
-    constructor(type = "", scope = "", sender = "", recipient = "", group = "", audioFile = "")
+    Chat.VoiceEntry = class
     {
-        this.type = type;
-        this.scope = scope;
-        this.sender = sender;
-        this.recipient = recipient;
-        this.group = group;
-        this.audioFile = audioFile;
-    }
+        constructor(type = "", scope = "", sender = "", recipient = "", group = "", audioFile = "")
+        {
+            this.type = type;
+            this.scope = scope;
+            this.sender = sender;
+            this.recipient = recipient;
+            this.group = group;
+            this.audioFile = audioFile;
+        }
 
-    _write(ostr)
+        _write(ostr)
+        {
+            ostr.writeString(this.type);
+            ostr.writeString(this.scope);
+            ostr.writeString(this.sender);
+            ostr.writeString(this.recipient);
+            ostr.writeString(this.group);
+            ostr.writeString(this.audioFile);
+        }
+
+        _read(istr)
+        {
+            this.type = istr.readString();
+            this.scope = istr.readString();
+            this.sender = istr.readString();
+            this.recipient = istr.readString();
+            this.group = istr.readString();
+            this.audioFile = istr.readString();
+        }
+
+        static get minWireSize()
+        {
+            return  6;
+        }
+    };
+
+    Slice.defineStruct(Chat.VoiceEntry, true, true);
+
+    Chat.SessionDescription = class
     {
-        ostr.writeString(this.type);
-        ostr.writeString(this.scope);
-        ostr.writeString(this.sender);
-        ostr.writeString(this.recipient);
-        ostr.writeString(this.group);
-        ostr.writeString(this.audioFile);
-    }
+        constructor(type = "", sdp = "")
+        {
+            this.type = type;
+            this.sdp = sdp;
+        }
 
-    _read(istr)
+        _write(ostr)
+        {
+            ostr.writeString(this.type);
+            ostr.writeString(this.sdp);
+        }
+
+        _read(istr)
+        {
+            this.type = istr.readString();
+            this.sdp = istr.readString();
+        }
+
+        static get minWireSize()
+        {
+            return  2;
+        }
+    };
+
+    Slice.defineStruct(Chat.SessionDescription, true, true);
+
+    Chat.Candidate = class
     {
-        this.type = istr.readString();
-        this.scope = istr.readString();
-        this.sender = istr.readString();
-        this.recipient = istr.readString();
-        this.group = istr.readString();
-        this.audioFile = istr.readString();
-    }
+        constructor(candidate = "", sdpMid = "", sdpMLineIndex = 0)
+        {
+            this.candidate = candidate;
+            this.sdpMid = sdpMid;
+            this.sdpMLineIndex = sdpMLineIndex;
+        }
 
-    static get minWireSize()
+        _write(ostr)
+        {
+            ostr.writeString(this.candidate);
+            ostr.writeString(this.sdpMid);
+            ostr.writeInt(this.sdpMLineIndex);
+        }
+
+        _read(istr)
+        {
+            this.candidate = istr.readString();
+            this.sdpMid = istr.readString();
+            this.sdpMLineIndex = istr.readInt();
+        }
+
+        static get minWireSize()
+        {
+            return  6;
+        }
+    };
+
+    Slice.defineStruct(Chat.Candidate, true, true);
+
+    Slice.defineSequence(Chat, "CandidateSeqHelper", "Chat.Candidate", false);
+
+    const iceC_Chat_VoiceObserver_ids = [
+        "::Chat::VoiceObserver",
+        "::Ice::Object"
+    ];
+
+    Chat.VoiceObserver = class extends Ice.Object
     {
-        return  6;
-    }
-};
+    };
 
-Slice.defineStruct(Chat.VoiceEntry, true, true);
+    Chat.VoiceObserverPrx = class extends Ice.ObjectPrx
+    {
+    };
 
-const iceC_Chat_VoiceObserver_ids = [
-    "::Chat::VoiceObserver",
-    "::Ice::Object"
-];
+    Slice.defineOperations(Chat.VoiceObserver, Chat.VoiceObserverPrx, iceC_Chat_VoiceObserver_ids, 0,
+    {
+        "onVoice": [, , , , , [[Chat.VoiceEntry]], , , , ],
+        "onIceOffer": [, , , , , [[7], [Chat.SessionDescription]], , , , ],
+        "onIceAnswer": [, , , , , [[7], [Chat.SessionDescription]], , , , ],
+        "onIceCandidate": [, , , , , [[7], [Chat.Candidate]], , , , ],
+        "onCallIncoming": [, , , , , [[7]], , , , ],
+        "onCallEnded": [, , , , , [[7]], , , , ]
+    });
 
-Chat.VoiceObserver = class extends Ice.Object
-{
-};
+    const iceC_Chat_Call_ids = [
+        "::Chat::Call",
+        "::Ice::Object"
+    ];
 
-Chat.VoiceObserverPrx = class extends Ice.ObjectPrx
-{
-};
+    Chat.Call = class extends Ice.Object
+    {
+    };
 
-Slice.defineOperations(Chat.VoiceObserver, Chat.VoiceObserverPrx, iceC_Chat_VoiceObserver_ids, 0,
-{
-    "onVoice": [, , , , , [[Chat.VoiceEntry]], , , , ]
-});
+    Chat.CallPrx = class extends Ice.ObjectPrx
+    {
+    };
 
-const iceC_Chat_Call_ids = [
-    "::Chat::Call",
-    "::Ice::Object"
-];
-
-Chat.Call = class extends Ice.Object
-{
-};
-
-Chat.CallPrx = class extends Ice.ObjectPrx
-{
-};
-
-Slice.defineOperations(Chat.Call, Chat.CallPrx, iceC_Chat_Call_ids, 0,
-{
-    "sendVoiceNoteToUser": [, , , , , [[7], [7], ["Chat.ByteSeqHelper"]], , , , ],
-    "sendVoiceNoteToGroup": [, , , , , [[7], [7], ["Chat.ByteSeqHelper"]], , , , ],
-    "subscribe": [, , , , , [[7], ["Chat.VoiceObserverPrx"]], , , , ],
-    "unsubscribe": [, , , , , [[7], ["Chat.VoiceObserverPrx"]], , , , ]
-});
+    Slice.defineOperations(Chat.Call, Chat.CallPrx, iceC_Chat_Call_ids, 0,
+    {
+        "sendVoiceNoteToUser": [, , , , , [[7], [7], ["Chat.ByteSeqHelper"]], , , , ],
+        "sendVoiceNoteToGroup": [, , , , , [[7], [7], ["Chat.ByteSeqHelper"]], , , , ],
+        "subscribe": [, , , , , [[7], ["Chat.VoiceObserverPrx"]], , , , ],
+        "unsubscribe": [, , , , , [[7], ["Chat.VoiceObserverPrx"]], , , , ],
+        "initiateCall": [, , , , , [[7], [7]], , , , ],
+        "acceptCall": [, , , , , [[7], [7]], , , , ],
+        "rejectCall": [, , , , , [[7], [7]], , , , ],
+        "endCall": [, , , , , [[7], [7]], , , , ],
+        "sendIceOffer": [, , , , , [[7], [7], [Chat.SessionDescription]], , , , ],
+        "sendIceAnswer": [, , , , , [[7], [7], [Chat.SessionDescription]], , , , ],
+        "sendIceCandidate": [, , , , , [[7], [7], [Chat.Candidate]], , , , ]
+    });
 
 export { Chat };
 export default { Chat };

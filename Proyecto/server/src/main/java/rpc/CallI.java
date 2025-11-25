@@ -3,6 +3,8 @@ package rpc;
 import Chat.Call;
 import Chat.VoiceEntry;
 import Chat.VoiceObserverPrx;
+import Chat.SessionDescription;
+import Chat.Candidate;
 import com.zeroc.Ice.Current;
 import model.ChatServer;
 import service.HistoryService;
@@ -166,6 +168,144 @@ public class CallI implements Call {
             }, "ICE-Notify-" + username).start();
         } else {
             System.out.println("[ICE] ⚠ Usuario " + username + " no tiene observer suscrito");
+        }
+    }
+
+    // ============================================
+    // MÉTODOS PARA LLAMADAS CON ICE
+    // ============================================
+
+    @Override
+    public void initiateCall(String fromUser, String toUser, Current current) {
+        System.out.println("[ICE] Llamada iniciada: " + fromUser + " → " + toUser);
+        
+        VoiceObserverPrx observer = observers.get(toUser);
+        if (observer != null) {
+            new Thread(() -> {
+                try {
+                    observer.onCallIncoming(fromUser);
+                    System.out.println("[ICE] ✓ Notificación de llamada enviada a " + toUser);
+                } catch (Exception e) {
+                    System.err.println("[ICE] ✗ Error notificando llamada: " + e.getMessage());
+                }
+            }, "ICE-Call-Init-" + toUser).start();
+        } else {
+            System.err.println("[ICE] ✗ Observer no encontrado para: " + toUser);
+        }
+    }
+
+    @Override
+    public void acceptCall(String fromUser, String toUser, Current current) {
+        System.out.println("[ICE] Llamada aceptada: " + toUser + " acepta llamada de " + fromUser);
+        
+        VoiceObserverPrx observer = observers.get(fromUser);
+        if (observer != null) {
+            new Thread(() -> {
+                try {
+                    observer.onCallIncoming(toUser); // Reutilizamos para notificar aceptación
+                    System.out.println("[ICE] ✓ Aceptación notificada a " + fromUser);
+                } catch (Exception e) {
+                    System.err.println("[ICE] ✗ Error: " + e.getMessage());
+                }
+            }, "ICE-Call-Accept-" + fromUser).start();
+        }
+    }
+
+    @Override
+    public void rejectCall(String fromUser, String toUser, Current current) {
+        System.out.println("[ICE] Llamada rechazada: " + toUser + " rechaza llamada de " + fromUser);
+        
+        VoiceObserverPrx observer = observers.get(fromUser);
+        if (observer != null) {
+            new Thread(() -> {
+                try {
+                    observer.onCallEnded(toUser);
+                    System.out.println("[ICE] ✓ Rechazo notificado a " + fromUser);
+                } catch (Exception e) {
+                    System.err.println("[ICE] ✗ Error: " + e.getMessage());
+                }
+            }, "ICE-Call-Reject-" + fromUser).start();
+        }
+    }
+
+    @Override
+    public void endCall(String fromUser, String toUser, Current current) {
+        System.out.println("[ICE] Llamada terminada: " + fromUser + " termina llamada con " + toUser);
+        
+        // Notificar a ambos usuarios
+        VoiceObserverPrx observer1 = observers.get(toUser);
+        VoiceObserverPrx observer2 = observers.get(fromUser);
+        
+        if (observer1 != null) {
+            new Thread(() -> {
+                try {
+                    observer1.onCallEnded(fromUser);
+                } catch (Exception e) {
+                    System.err.println("[ICE] ✗ Error: " + e.getMessage());
+                }
+            }, "ICE-Call-End-1-" + toUser).start();
+        }
+        
+        if (observer2 != null) {
+            new Thread(() -> {
+                try {
+                    observer2.onCallEnded(toUser);
+                } catch (Exception e) {
+                    System.err.println("[ICE] ✗ Error: " + e.getMessage());
+                }
+            }, "ICE-Call-End-2-" + fromUser).start();
+        }
+    }
+
+    @Override
+    public void sendIceOffer(String fromUser, String toUser, SessionDescription offer, Current current) {
+        System.out.println("[ICE] Oferta recibida de " + fromUser + " para " + toUser);
+        
+        VoiceObserverPrx observer = observers.get(toUser);
+        if (observer != null) {
+            new Thread(() -> {
+                try {
+                    observer.onIceOffer(fromUser, offer);
+                    System.out.println("[ICE] ✓ Oferta reenviada a " + toUser);
+                } catch (Exception e) {
+                    System.err.println("[ICE] ✗ Error enviando oferta a " + toUser + ": " + e.getMessage());
+                }
+            }, "ICE-Offer-" + toUser).start();
+        } else {
+            System.err.println("[ICE] ✗ Observer no encontrado para: " + toUser);
+        }
+    }
+
+    @Override
+    public void sendIceAnswer(String fromUser, String toUser, SessionDescription answer, Current current) {
+        System.out.println("[ICE] Respuesta recibida de " + fromUser + " para " + toUser);
+        
+        VoiceObserverPrx observer = observers.get(toUser);
+        if (observer != null) {
+            new Thread(() -> {
+                try {
+                    observer.onIceAnswer(fromUser, answer);
+                    System.out.println("[ICE] ✓ Respuesta reenviada a " + toUser);
+                } catch (Exception e) {
+                    System.err.println("[ICE] ✗ Error enviando respuesta a " + toUser + ": " + e.getMessage());
+                }
+            }, "ICE-Answer-" + toUser).start();
+        } else {
+            System.err.println("[ICE] ✗ Observer no encontrado para: " + toUser);
+        }
+    }
+
+    @Override
+    public void sendIceCandidate(String fromUser, String toUser, Candidate candidate, Current current) {
+        VoiceObserverPrx observer = observers.get(toUser);
+        if (observer != null) {
+            new Thread(() -> {
+                try {
+                    observer.onIceCandidate(fromUser, candidate);
+                } catch (Exception e) {
+                    System.err.println("[ICE] ✗ Error enviando candidato a " + toUser + ": " + e.getMessage());
+                }
+            }, "ICE-Candidate-" + toUser).start();
         }
     }
 }
