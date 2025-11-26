@@ -191,17 +191,23 @@ function sendCommandFromUser(username, command, timeoutMs = 1500) {
 
 app.post("/register", (req, res) => {
   const { username } = req.body || {};
+  console.log(`[REGISTER] Solicitud de registro para: ${username}`);
+  
   if (!username) return res.status(400).json({ error: "username requerido" });
 
   // Si ya existe socket activo, no crear otro
   if (userSockets[username]) {
+    console.log(`[REGISTER] Usuario ${username} ya está conectado`);
     return res.status(200).json({ reply: "Usuario ya conectado" });
   }
 
   const client = new net.Socket();
   let responseData = "";
 
+  console.log(`[REGISTER] Conectando a TCP ${TCP_HOST}:${TCP_PORT} para ${username}...`);
+  
   client.connect(TCP_PORT, TCP_HOST, () => {
+    console.log(`[REGISTER] ✓ Conectado, enviando nombre: ${username}`);
     client.write(username + "\n");
   });
 
@@ -231,6 +237,7 @@ app.post("/register", (req, res) => {
   // Espera breve para confirmar registro
   setTimeout(() => {
     userSockets[username] = client;
+    console.log(`[REGISTER] ✓ Usuario ${username} registrado. Usuarios activos: ${Object.keys(userSockets).join(', ')}`);
     res.status(200).json({ reply: responseData.trim() || "Usuario registrado" });
   }, 300);
 
@@ -243,13 +250,20 @@ app.post("/register", (req, res) => {
 // body: { sender, receiver, message }
 app.post("/chat", (req, res) => {
   const { receiver, message, sender } = req.body || {};
+  console.log(`[CHAT] Recibido: sender=${sender}, receiver=${receiver}, message=${message}`);
+  console.log(`[CHAT] Usuarios conectados: ${Object.keys(userSockets).join(', ') || 'ninguno'}`);
+  
   if (!receiver || !message || !sender) {
     return res.status(400).json({ error: "sender, receiver y message requeridos" });
   }
 
   const client = userSockets[sender];
-  if (!client) return res.status(400).json({ error: "Usuario no conectado" });
+  if (!client) {
+    console.log(`[CHAT] ✗ Usuario ${sender} no encontrado en userSockets`);
+    return res.status(400).json({ error: "Usuario no conectado" });
+  }
 
+  console.log(`[CHAT] ✓ Enviando mensaje de ${sender} a ${receiver}`);
   client.write(`/msg ${receiver} ${message}\n`);
   res.status(200).json({ reply: "Mensaje enviado" });
 });
@@ -259,6 +273,9 @@ app.post("/chat", (req, res) => {
 app.post("/group/create", async (req, res) => {
   try {
     const { groupName, creator } = req.body || {};
+    console.log(`[GROUP CREATE] groupName=${groupName}, creator=${creator}`);
+    console.log(`[GROUP CREATE] Usuarios conectados: ${Object.keys(userSockets).join(', ') || 'ninguno'}`);
+    
     if (!groupName || !creator) {
       return res
         .status(400)
@@ -266,6 +283,7 @@ app.post("/group/create", async (req, res) => {
     }
 
     const reply = await sendCommandFromUser(creator, `/creategroup ${groupName}`);
+    console.log(`[GROUP CREATE] Respuesta: ${reply}`);
     const ok = /Grupo creado|OK/i.test(reply);
 
     return res.status(ok ? 200 : 409).json({ reply });
