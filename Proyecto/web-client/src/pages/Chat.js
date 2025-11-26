@@ -6,10 +6,13 @@ import {
   getUpdates,
   getPrivateHistory,
   getGroupHistory,
+  startCall,
+  endCall,
 } from "../api/http.js";
 
 import voiceDelegate from "../services/voiceDelegate.js";
-import { createRecorder } from "../services/recorder.js";
+import { createRecorder, createCallStream } from "../services/recorder.js";
+import { playPcm16 } from "../services/callPlayer.js";
 
 function Chat() {
   const username = localStorage.getItem("chat_username");
@@ -21,6 +24,9 @@ function Chat() {
 
   let recBtn = null;
   let voiceInitErrorShown = false;
+    // Estado para llamadas
+  let currentCall = null; // { id, peers, stream }
+
   
   // Almacenar mensajes de voz pendientes por conversación
   const pendingVoiceMessages = {}; // { "user:id" o "group:id": [entries] }
@@ -47,6 +53,7 @@ function Chat() {
     }
   }
 
+  /** 
   voiceDelegate.subscribe((entry) => {
     console.log("[Voice] Notificación recibida:", entry);
     
@@ -73,6 +80,45 @@ function Chat() {
       console.log(`[Voice] Mensaje guardado para ${chatKey}`);
     }
   });
+  */
+
+    voiceDelegate.subscribe(async (msg) => {
+    // 1) Mensajes de audio de llamada (call_chunk) que vienen por ICE
+    if (msg && msg.type === "call_chunk") {
+      const { callId, fromUser, audio } = msg.chunk;
+
+      // Solo reproducir si es la llamada actual y no soy yo
+      if (currentCall && currentCall.id === callId && fromUser !== username) {
+        await playPcm16(audio);
+      }
+      return; // no seguimos, porque esto no es una nota de voz normal
+    }
+
+    // 2) Notas de voz normales (VoiceEntry) – compatibilidad con lo que ya tenías
+    const entry = msg.entry || msg; // por si en el futuro voiceDelegate envía {type:'voice', entry}
+
+    console.log("[Voice] Notificación recibida:", entry);
+    
+    if (isEntryForCurrentChat(entry)) {
+      appendHistoryItem(entry);
+      messages.scrollTop = messages.scrollHeight;
+    } else {
+      let chatKey;
+      if (entry.scope === "private") {
+        const otherUser = entry.sender === username ? entry.recipient : entry.sender;
+        chatKey = `user:${otherUser}`;
+      } else {
+        chatKey = `group:${entry.group}`;
+      }
+      
+      if (!pendingVoiceMessages[chatKey]) {
+        pendingVoiceMessages[chatKey] = [];
+      }
+      pendingVoiceMessages[chatKey].push(entry);
+      console.log(`[Voice] Mensaje guardado para ${chatKey}`);
+    }
+  });
+
 
   // ----- ESTRUCTURA GENERAL -----
   const root = document.createElement("div");
@@ -126,6 +172,18 @@ function Chat() {
   const chatTitle = document.createElement("h2");
   chatTitle.textContent = "Conversación global";
   header.appendChild(chatTitle);
+
+  // ----- BOTONES PARA LLAMADAS -----
+  const callBtn = document.createElement("button");
+  callBtn.textContent = "📞 Llamar";
+  callBtn.onclick = makeCallToCurrentUser;
+
+  const hangBtn = document.createElement("button");
+  hangBtn.textContent = "⛔ Colgar";
+  hangBtn.onclick = hangUpCall;
+
+  header.appendChild(callBtn);
+  header.appendChild(hangBtn);
 
   const messages = document.createElement("div");
   messages.classList.add("messages");
@@ -322,6 +380,37 @@ joinGroupBtn.onclick = async () => {
     }
   };
 
+    // ----- LLAMADAS -----
+  async function makeCallToCurrentUser() {
+    if (!currentChat || currentChat.type !== "user") {
+      alert("Para llamar, abre un chat directo con un usuario.");
+      return;
+    }
+    try {
+      await startCall(username, currentChat.id);
+    } catch (e) {
+      alert("Error iniciando llamada: " + (e.message || e));
+    }
+  }
+
+  async function hangUpCall() {
+    try {
+      if (currentCall) {
+        await endCall(username, currentCall.id);
+        if (currentCall.stream) {
+          await currentCall.stream.stop();
+        }
+        currentCall = null;
+      } else {
+        // por si el servidor cree que hay llamada
+        await endCall(username);
+      }
+    } catch (e) {
+      alert("Error terminando llamada: " + (e.message || e));
+    }
+  }
+
+
   msgInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") sendBtn.click();
   });
@@ -462,19 +551,60 @@ joinGroupBtn.onclick = async () => {
     // Ignorar otros tipos (llamadas, etc.)
   }
 
-  // ----- POLLING AUTOMÁTICO DE NUEVOS MENSAJES -----
+    // ----- POLLING AUTOMÁTICO DE NUEVOS MENSAJES Y LLAMADAS -----
   async function pollUpdates() {
     try {
       const { items } = await getUpdates(username);
       if (!items || !Array.isArray(items)) return;
 
       for (const line of items) {
+        // 1) Inicio de llamada
+        if (line.startsWith("LLAMADA_INICIADA:")) {
+          // Ejemplo:
+          // "LLAMADA_INICIADA: call123 user1:ip:puerto,user2:ip:puerto"
+          const [, rest] = line.split("LLAMADA_INICIADA:");
+          const trimmed = rest.trim();
+          const [callId, peersStr] = trimmed.split(" ", 2);
+
+          const peers = peersStr
+            ? peersStr.split(",").map((p) => {
+                const [name, ip, port] = p.split(":");
+                return { name, ip, port };
+              })
+            : [];
+
+          // Arrancar el envío de audio de esta llamada
+          if (!currentCall || currentCall.id !== callId) {
+            const stream = createCallStream(username, callId);
+            await stream.start();
+            currentCall = { id: callId, peers, stream };
+            console.log("[Call] Llamada iniciada:", currentCall);
+          }
+
+          // Muestra también el texto en la UI si quieres
+          appendIncoming(line);
+          continue;
+        }
+
+        // 2) Fin de llamada
+        if (line.startsWith("LLAMADA_TERMINADA:")) {
+          if (currentCall && currentCall.stream) {
+            await currentCall.stream.stop();
+          }
+          currentCall = null;
+          console.log("[Call] Llamada terminada");
+          appendIncoming(line);
+          continue;
+        }
+
+        // 3) Otros mensajes normales
         appendIncoming(line);
       }
     } catch (e) {
       console.error("Error obteniendo updates:", e.message);
     }
   }
+
 
   function appendIncoming(line) {
     const div = document.createElement("div");

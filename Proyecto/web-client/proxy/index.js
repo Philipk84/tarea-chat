@@ -335,3 +335,74 @@ app.get('/health', (_req, res) => {
 app.listen(HTTP_PORT, () => {
   console.log(`[HTTP] Proxy escuchando en http://localhost:${HTTP_PORT}`);
 });
+
+// Iniciar llamada individual
+// body: { caller, callee }
+app.post("/call/start", async (req, res) => {
+  try {
+    const { caller, callee } = req.body || {};
+    if (!caller || !callee) {
+      return res.status(400).json({ error: "caller y callee requeridos" });
+    }
+
+    const reply = await sendCommandFromUser(caller, `/call ${callee}`);
+    return res.status(200).json({ reply });
+  } catch (e) {
+    console.error("POST /call/start", e);
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+// Iniciar llamada grupal
+// body: { caller, groupName }
+app.post("/call/group", async (req, res) => {
+  try {
+    const { caller, groupName } = req.body || {};
+    if (!caller || !groupName) {
+      return res.status(400).json({ error: "caller y groupName requeridos" });
+    }
+
+    const reply = await sendCommandFromUser(caller, `/callgroup ${groupName}`);
+    return res.status(200).json({ reply });
+  } catch (e) {
+    console.error("POST /call/group", e);
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+// Terminar llamada
+// body: { user, callId? }  // callId opcional: si no viene se usa la llamada actual
+app.post("/call/end", async (req, res) => {
+  try {
+    const { user, callId } = req.body || {};
+    if (!user) {
+      return res.status(400).json({ error: "user requerido" });
+    }
+
+    const cmd = callId ? `/endcall ${callId}` : `/endcall`;
+    const reply = await sendCommandFromUser(user, cmd);
+    return res.status(200).json({ reply });
+  } catch (e) {
+    console.error("POST /call/end", e);
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+
+// Borrar en casa de que falle (Opcional Funcionalidad UDP)
+// Registrar puerto UDP del usuario
+// body: { user, port }
+app.post("/udp/register", async (req, res) => {
+  try {
+    const { user, port } = req.body || {};
+    if (!user || !port) {
+      return res.status(400).json({ error: "user y port requeridos" });
+    }
+
+    const reply = await sendCommandFromUser(user, `/udpport ${port}`);
+    return res.status(200).json({ reply });
+  } catch (e) {
+    console.error("POST /udp/register", e);
+    return res.status(500).json({ error: e.message });
+  }
+});

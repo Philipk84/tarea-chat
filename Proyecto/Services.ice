@@ -13,8 +13,17 @@ module Chat {
         string audioFile; // ruta relativa del .wav, ej: "voice/nota-123.wav"
     };
 
+    struct CallChunk {
+        string callId;
+        string fromUser;
+        ByteSeq audio;  // trocito PCM16
+    };
+
+
     interface VoiceObserver {
         void onVoice(VoiceEntry entry);
+        void onCallChunk(CallChunk chunk);
+
     };
 
     interface Call {
@@ -26,5 +35,8 @@ module Chat {
         void subscribe(string username, VoiceObserver* obs);
 
         void unsubscribe(string username, VoiceObserver* obs);
+
+        void sendCallChunk(string callId, string fromUser, ByteSeq audio);
+
     };
 }

@@ -126,6 +126,18 @@ class VoiceDelegate {
         });
       };
 
+      // NUEVO: audio de llamadas
+      servant.onCallChunk = (chunk, current) => {
+        console.log("[VoiceDelegate] onCallChunk:", chunk);
+        this.callbacks.forEach((cb) => {
+          try {
+            cb({ type: "call_chunk", chunk });
+          } catch (err) {
+            console.error("[VoiceDelegate] Error en callback (call_chunk):", err);
+          }
+        });
+      };
+
       const ident = Ice.stringToIdentity("obs_" + this.currentUser);
       console.log("[VoiceDelegate] Registrando observer con identity:", ident.name);
       
@@ -194,7 +206,14 @@ class VoiceDelegate {
       payload
     );
   }
+
+  async sendCallChunk(callId, fromUser, bytes) {
+  await this.ensureReady();
+  const payload = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  await this.callPrx.sendCallChunk(callId, fromUser, payload);
+  }
 }
+
 
 const instance = new VoiceDelegate();
 export default instance;
