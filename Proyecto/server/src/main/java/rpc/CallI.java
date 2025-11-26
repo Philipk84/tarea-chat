@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import Chat.CallChunk;
+
 
 public class CallI implements Call {
 
@@ -168,4 +170,78 @@ public class CallI implements Call {
             System.out.println("[ICE] ⚠ Usuario " + username + " no tiene observer suscrito");
         }
     }
+
+    @Override
+    public void sendCallChunk(String callId, String fromUser, byte[] audio, Current current) {
+        System.out.println("[ICE] sendCallChunk recibido:");
+        System.out.println("[ICE]   - callId: " + callId);
+        System.out.println("[ICE]   - fromUser: " + fromUser);
+        System.out.println("[ICE]   - bytes: " + (audio != null ? audio.length : 0));
+
+        // 1) Obtener el CallManager y los participantes de la llamada
+        var callManager = ChatServer.getCallManagerImpl();
+        if (callManager == null) {
+            System.out.println("[ICE]   - No hay CallManager activo, se ignora chunk");
+            return;
+        }
+
+        Set<String> participants = callManager.getParticipants(callId);
+        if (participants == null || participants.isEmpty()) {
+            System.out.println("[ICE]   - No hay participantes para la llamada " + callId);
+            return;
+        }
+
+        // 2) Construir el CallChunk que se enviará a los demás
+        CallChunk chunk = new CallChunk();
+        chunk.callId = callId;
+        chunk.fromUser = fromUser;
+        chunk.audio = audio;
+
+        // 3) Reenviar a todos los participantes excepto al emisor
+        for (String user : participants) {
+            if (user == null || user.equals(fromUser)) {
+                continue;
+            }
+
+            VoiceObserverPrx obs = observers.get(user);
+            if (obs == null) {
+                System.out.println("[ICE]   - Usuario " + user + " no tiene observer suscrito (no se envía chunk)");
+                continue;
+            }
+
+            final VoiceObserverPrx targetObs = obs;
+            final String targetUser = user;
+
+            // Enviar en un hilo separado para no bloquear la llamada Ice
+            new Thread(() -> {
+                try {
+                    // Verificar conexión activa
+                    try {
+                        targetObs.ice_getConnection();
+                    } catch (Exception connEx) {
+                        System.err.println("[ICE] Conexión perdida para " + targetUser + " (call chunk): " + connEx.getMessage());
+                        observers.remove(targetUser);
+                        return;
+                    }
+
+                    // Enviar el chunk de audio
+                    targetObs.onCallChunk(chunk);
+                    //System.out.println("[ICE] ✓ Chunk de llamada enviado a " + targetUser + " (callId=" + callId + ")");
+
+                } catch (com.zeroc.Ice.CloseConnectionException e) {
+                    System.out.println("[ICE] ⚠ Conexión cerrada para " + targetUser + " (call chunk)");
+                    observers.remove(targetUser);
+                } catch (com.zeroc.Ice.ConnectionLostException e) {
+                    System.out.println("[ICE] ⚠ Conexión perdida con " + targetUser + " (call chunk)");
+                    observers.remove(targetUser);
+                } catch (Exception e) {
+                    System.err.println("[ICE] ✗ Error enviando call chunk a " + targetUser);
+                    System.err.println("[ICE]   - Clase: " + e.getClass().getName());
+                    System.err.println("[ICE]   - Mensaje: " + e.getMessage());
+                    observers.remove(targetUser);
+                }
+            }, "ICE-CallChunk-" + targetUser).start();
+        }
+    }
+
 }
