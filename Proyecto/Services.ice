@@ -19,11 +19,19 @@ module Chat {
         ByteSeq audio;  // trocito PCM16
     };
 
+    struct CallEvent {
+        string type;      // "call_started" | "call_incoming" | "call_ended" | "call_rejected"
+        string callId;
+        string caller;
+        string callee;    // vacío si es grupo
+        string group;     // vacío si es privado
+        string scope;     // "private" | "group"
+    };
 
     interface VoiceObserver {
         void onVoice(VoiceEntry entry);
         void onCallChunk(CallChunk chunk);
-
+        void onCallEvent(CallEvent event);
     };
 
     interface Call {
@@ -38,5 +46,11 @@ module Chat {
 
         void sendCallChunk(string callId, string fromUser, ByteSeq audio);
 
+        // Gestión de llamadas
+        string startCall(string caller, string callee);
+        string startGroupCall(string caller, string groupName);
+        void acceptCall(string callId, string user);
+        void rejectCall(string callId, string user);
+        void endCall(string callId, string user);
     };
 }

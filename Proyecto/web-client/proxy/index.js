@@ -23,6 +23,10 @@ app.use(express.json());
 // Servir archivos de audio WAV del historial
 app.use('/voice', express.static(VOICE_DIR));
 
+// Servir archivos estáticos del build
+const DIST_DIR = path.resolve(__dirname, '../dist');
+app.use(express.static(DIST_DIR));
+
 // ─────────────────────────────────────────────────────────────
 // Conexión TCP persistente
 // ─────────────────────────────────────────────────────────────
@@ -334,6 +338,11 @@ app.get('/health', (_req, res) => {
 // Start HTTP
 app.listen(HTTP_PORT, () => {
   console.log(`[HTTP] Proxy escuchando en http://localhost:${HTTP_PORT}`);
+});
+
+// Catch-all: servir index.html para todas las rutas SPA (debe ir al final, después de listen)
+app.use((req, res) => {
+  res.sendFile(path.join(DIST_DIR, 'index.html'));
 });
 
 // Iniciar llamada individual

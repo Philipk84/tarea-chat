@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import Chat.CallChunk;
+import Chat.CallEvent;
+import java.util.UUID;
 
 
 public class CallI implements Call {
@@ -19,6 +21,8 @@ public class CallI implements Call {
     private final ChatServer chatServer;
     // username -> observer proxy
     private final Map<String, VoiceObserverPrx> observers = new ConcurrentHashMap<>();
+    // callId -> Set<participants>
+    private final Map<String, Set<String>> activeCalls = new ConcurrentHashMap<>();
 
     public CallI(ChatServer chatServer) {
         this.chatServer = chatServer;
@@ -241,6 +245,181 @@ public class CallI implements Call {
                     observers.remove(targetUser);
                 }
             }, "ICE-CallChunk-" + targetUser).start();
+        }
+    }
+
+    @Override
+    public String startCall(String caller, String callee, Current current) {
+        String callId = UUID.randomUUID().toString();
+        System.out.println("[ICE CALL] Iniciando llamada privada");
+        System.out.println("[ICE CALL]   - callId: " + callId);
+        System.out.println("[ICE CALL]   - caller: " + caller);
+        System.out.println("[ICE CALL]   - callee: " + callee);
+
+        // Crear set de participantes
+        Set<String> participants = ConcurrentHashMap.newKeySet();
+        participants.add(caller);
+        participants.add(callee);
+        activeCalls.put(callId, participants);
+
+        // Registrar en el CallManager del ChatServer
+        var callManager = ChatServer.getCallManagerImpl();
+        if (callManager != null) {
+            callManager.createCall(participants);
+        }
+
+        // Registrar en historial
+        HistoryService.logCallStarted(callId, participants);
+
+        // Notificar evento de llamada entrante al receptor
+        notifyCallEvent(callee, "call_incoming", callId, caller, callee, "", "private");
+        
+        // Notificar al emisor que la llamada está iniciada
+        notifyCallEvent(caller, "call_started", callId, caller, callee, "", "private");
+
+        System.out.println("[ICE CALL] ✓ Llamada creada: " + callId);
+        return callId;
+    }
+
+    @Override
+    public String startGroupCall(String caller, String groupName, Current current) {
+        String callId = UUID.randomUUID().toString();
+        System.out.println("[ICE CALL] Iniciando llamada grupal");
+        System.out.println("[ICE CALL]   - callId: " + callId);
+        System.out.println("[ICE CALL]   - caller: " + caller);
+        System.out.println("[ICE CALL]   - group: " + groupName);
+
+        // Obtener miembros del grupo
+        Set<String> members = ChatServer.getGroupMembers(groupName);
+        if (members == null || members.isEmpty()) {
+            System.err.println("[ICE CALL] ✗ Grupo no encontrado o sin miembros: " + groupName);
+            return "";
+        }
+
+        // Agregar al caller si no está en el grupo
+        Set<String> participants = ConcurrentHashMap.newKeySet();
+        participants.addAll(members);
+        participants.add(caller);
+        activeCalls.put(callId, participants);
+
+        // Registrar en el CallManager
+        var callManager = ChatServer.getCallManagerImpl();
+        if (callManager != null) {
+            callManager.createCall(participants);
+        }
+
+        // Registrar en historial
+        HistoryService.logCallStarted(callId, participants);
+
+        // Notificar a todos los miembros del grupo
+        for (String member : participants) {
+            if (member.equals(caller)) {
+                notifyCallEvent(member, "call_started", callId, caller, "", groupName, "group");
+            } else {
+                notifyCallEvent(member, "call_incoming", callId, caller, "", groupName, "group");
+            }
+        }
+
+        System.out.println("[ICE CALL] ✓ Llamada grupal creada: " + callId);
+        return callId;
+    }
+
+    @Override
+    public void acceptCall(String callId, String user, Current current) {
+        System.out.println("[ICE CALL] Usuario " + user + " aceptó llamada: " + callId);
+        
+        Set<String> participants = activeCalls.get(callId);
+        if (participants == null) {
+            System.err.println("[ICE CALL] ✗ Llamada no encontrada: " + callId);
+            return;
+        }
+
+        // Notificar a todos los participantes que el usuario aceptó
+        for (String participant : participants) {
+            notifyCallEvent(participant, "call_accepted", callId, user, "", "", "private");
+        }
+    }
+
+    @Override
+    public void rejectCall(String callId, String user, Current current) {
+        System.out.println("[ICE CALL] Usuario " + user + " rechazó llamada: " + callId);
+        
+        Set<String> participants = activeCalls.get(callId);
+        if (participants == null) {
+            System.err.println("[ICE CALL] ✗ Llamada no encontrada: " + callId);
+            return;
+        }
+
+        // Notificar a todos los participantes que el usuario rechazó
+        for (String participant : participants) {
+            notifyCallEvent(participant, "call_rejected", callId, user, "", "", "private");
+        }
+
+        // Terminar la llamada
+        endCall(callId, user, current);
+    }
+
+    @Override
+    public void endCall(String callId, String user, Current current) {
+        System.out.println("[ICE CALL] Terminando llamada: " + callId + " por " + user);
+        
+        Set<String> participants = activeCalls.remove(callId);
+        if (participants == null) {
+            System.err.println("[ICE CALL] ✗ Llamada no encontrada: " + callId);
+            return;
+        }
+
+        // Registrar en historial
+        HistoryService.logCallEnded(callId, participants, user);
+
+        // Notificar a todos los participantes que la llamada terminó
+        for (String participant : participants) {
+            notifyCallEvent(participant, "call_ended", callId, user, "", "", "private");
+        }
+
+        // Limpiar del CallManager
+        var callManager = ChatServer.getCallManagerImpl();
+        if (callManager != null) {
+            callManager.endCall(callId);
+        }
+
+        System.out.println("[ICE CALL] ✓ Llamada terminada: " + callId);
+    }
+
+    private void notifyCallEvent(String username, String type, String callId, String caller, String callee, String group, String scope) {
+        VoiceObserverPrx obs = observers.get(username);
+        if (obs != null) {
+            new Thread(() -> {
+                try {
+                    // Verificar conexión
+                    try {
+                        obs.ice_getConnection();
+                    } catch (Exception connEx) {
+                        System.err.println("[ICE CALL] Conexión perdida para " + username);
+                        observers.remove(username);
+                        return;
+                    }
+
+                    // Crear evento
+                    CallEvent event = new CallEvent();
+                    event.type = type;
+                    event.callId = callId;
+                    event.caller = caller;
+                    event.callee = callee;
+                    event.group = group;
+                    event.scope = scope;
+
+                    // Enviar evento
+                    obs.onCallEvent(event);
+                    System.out.println("[ICE CALL] ✓ Evento enviado a " + username + ": " + type);
+
+                } catch (Exception e) {
+                    System.err.println("[ICE CALL] ✗ Error enviando evento a " + username + ": " + e.getMessage());
+                    observers.remove(username);
+                }
+            }, "ICE-CallEvent-" + username).start();
+        } else {
+            System.out.println("[ICE CALL] ⚠ Usuario " + username + " no tiene observer suscrito");
         }
     }
 
