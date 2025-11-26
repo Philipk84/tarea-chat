@@ -9,6 +9,7 @@ import {
 } from "../api/http.js";
 
 import voiceDelegate from "../services/voiceDelegate.js";
+import callManager from "../services/callManager.js";
 import { createRecorder } from "../services/recorder.js";
 
 function Chat() {
@@ -24,6 +25,9 @@ function Chat() {
   
   // Almacenar mensajes de voz pendientes por conversación
   const pendingVoiceMessages = {}; // { "user:id" o "group:id": [entries] }
+  
+  // Inicializar callManager
+  callManager.init(username);
 
   // Función auxiliar para obtener clave de chat
   function getChatKey(chat) {
@@ -47,6 +51,7 @@ function Chat() {
     }
   }
 
+  /** 
   voiceDelegate.subscribe((entry) => {
     console.log("[Voice] Notificación recibida:", entry);
     
@@ -73,6 +78,33 @@ function Chat() {
       console.log(`[Voice] Mensaje guardado para ${chatKey}`);
     }
   });
+  */
+
+    voiceDelegate.subscribe((entry) => {
+    // Los eventos de llamada (call_chunk, call_event) los maneja callManager
+    // Aquí solo procesamos VoiceEntry (notas de voz)
+    console.log("[Voice] Notificación recibida:", entry);
+    
+    if (isEntryForCurrentChat(entry)) {
+      appendHistoryItem(entry);
+      messages.scrollTop = messages.scrollHeight;
+    } else {
+      let chatKey;
+      if (entry.scope === "private") {
+        const otherUser = entry.sender === username ? entry.recipient : entry.sender;
+        chatKey = `user:${otherUser}`;
+      } else {
+        chatKey = `group:${entry.group}`;
+      }
+      
+      if (!pendingVoiceMessages[chatKey]) {
+        pendingVoiceMessages[chatKey] = [];
+      }
+      pendingVoiceMessages[chatKey].push(entry);
+      console.log(`[Voice] Mensaje guardado para ${chatKey}`);
+    }
+  });
+
 
   // ----- ESTRUCTURA GENERAL -----
   const root = document.createElement("div");
@@ -126,6 +158,43 @@ function Chat() {
   const chatTitle = document.createElement("h2");
   chatTitle.textContent = "Conversación global";
   header.appendChild(chatTitle);
+
+  // ----- BOTONES PARA LLAMADAS -----
+  const callBtn = document.createElement("button");
+  callBtn.textContent = "📞 Llamar";
+  callBtn.onclick = makeCallToCurrentUser;
+
+  const hangBtn = document.createElement("button");
+  hangBtn.textContent = "⛔ Colgar";
+  hangBtn.onclick = hangUpCall;
+
+  header.appendChild(callBtn);
+  header.appendChild(hangBtn);
+
+  // Modal para llamadas entrantes
+  const callModal = document.createElement("div");
+  callModal.style.display = "none";
+  callModal.style.position = "fixed";
+  callModal.style.top = "50%";
+  callModal.style.left = "50%";
+  callModal.style.transform = "translate(-50%, -50%)";
+  callModal.style.background = "white";
+  callModal.style.padding = "20px";
+  callModal.style.borderRadius = "8px";
+  callModal.style.boxShadow = "0 4px 6px rgba(0,0,0,0.3)";
+  callModal.style.zIndex = "1000";
+
+  const callModalText = document.createElement("p");
+  callModal.appendChild(callModalText);
+
+  const acceptCallBtn = document.createElement("button");
+  acceptCallBtn.textContent = "✅ Aceptar";
+  acceptCallBtn.style.marginRight = "10px";
+  callModal.appendChild(acceptCallBtn);
+
+  const rejectCallBtn = document.createElement("button");
+  rejectCallBtn.textContent = "❌ Rechazar";
+  callModal.appendChild(rejectCallBtn);
 
   const messages = document.createElement("div");
   messages.classList.add("messages");
@@ -221,6 +290,7 @@ function Chat() {
 
   root.appendChild(sidebar);
   root.appendChild(main);
+  root.appendChild(callModal);
 
   // ----- ESTADO -----
   let currentChat = null; // { type: "user" | "group", id: string }
@@ -321,6 +391,94 @@ joinGroupBtn.onclick = async () => {
       alert("Error enviando mensaje: " + e.message);
     }
   };
+
+  // ----- LLAMADAS CON ICE -----
+  async function makeCallToCurrentUser() {
+    if (!currentChat) {
+      alert("Selecciona primero un usuario o grupo");
+      return;
+    }
+    
+    try {
+      if (currentChat.type === "user") {
+        await callManager.startPrivateCall(currentChat.id);
+        alert(`Llamando a ${currentChat.id}...`);
+      } else if (currentChat.type === "group") {
+        await callManager.startGroupCall(currentChat.id);
+        alert(`Llamando al grupo ${currentChat.id}...`);
+      }
+    } catch (e) {
+      alert("Error iniciando llamada: " + (e.message || e));
+    }
+  }
+
+  async function hangUpCall() {
+    try {
+      await callManager.endCall();
+      alert("Llamada finalizada");
+    } catch (e) {
+      alert("Error terminando llamada: " + (e.message || e));
+    }
+  }
+  
+  // Manejar llamadas entrantes
+  callManager.onIncomingCall((call) => {
+    let callerInfo;
+    if (call.type === "private") {
+      callerInfo = `${call.caller} te está llamando`;
+    } else {
+      callerInfo = `Llamada grupal entrante en ${call.group}`;
+    }
+    
+    callModalText.textContent = callerInfo;
+    callModal.style.display = "block";
+    
+    acceptCallBtn.onclick = async () => {
+      try {
+        await callManager.acceptCall(call.callId);
+        callModal.style.display = "none";
+        alert("Llamada aceptada");
+      } catch (e) {
+        alert("Error aceptando llamada: " + (e.message || e));
+        callModal.style.display = "none";
+      }
+    };
+    
+    rejectCallBtn.onclick = async () => {
+      try {
+        await callManager.rejectCall(call.callId);
+        callModal.style.display = "none";
+      } catch (e) {
+        alert("Error rechazando llamada: " + (e.message || e));
+        callModal.style.display = "none";
+      }
+    };
+  });
+  
+  // Manejar eventos de llamada para notificaciones en UI
+  callManager.onCallEvent((event) => {
+    console.log("[Call Event]", event);
+    
+    const eventMessages = {
+      call_started: "Llamada iniciada",
+      call_accepted: `${event.caller} aceptó la llamada`,
+      call_rejected: `${event.caller} rechazó la llamada`,
+      call_ended: "Llamada finalizada",
+    };
+    
+    const message = eventMessages[event.type];
+    if (message) {
+      const div = document.createElement("div");
+      div.classList.add("message", "system");
+      div.textContent = `🔔 ${message}`;
+      div.style.textAlign = "center";
+      div.style.fontStyle = "italic";
+      div.style.color = "#666";
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+    }
+  });
+
 
   msgInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") sendBtn.click();
@@ -475,6 +633,7 @@ joinGroupBtn.onclick = async () => {
       console.error("Error obteniendo updates:", e.message);
     }
   }
+
 
   function appendIncoming(line) {
     const div = document.createElement("div");

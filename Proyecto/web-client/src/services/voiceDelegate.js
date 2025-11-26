@@ -8,6 +8,7 @@ class VoiceDelegate {
   constructor() {
     this.communicator = null;
     this.callPrx = null;
+    this.connection = null;
     this.callbacks = [];
     this.subscriber = null;
     this.initPromise = null;
@@ -59,6 +60,15 @@ class VoiceDelegate {
   }
 
   _cleanup() {
+    if (this.connection) {
+      try {
+        this.connection.close();
+      } catch (_) {
+        // ignore
+      }
+      this.connection = null;
+    }
+    
     if (this._adapter) {
       try {
         const result = this._adapter.destroy?.();
@@ -125,6 +135,42 @@ class VoiceDelegate {
           }
         });
       };
+      
+      // Implementar el método onCallChunk del servant
+      servant.onCallChunk = (chunk, current) => {
+        //console.log("[VoiceDelegate] Callback onCallChunk recibido de:", chunk.fromUser);
+        this.callbacks.forEach((cb) => {
+          try {
+            cb(chunk);
+          } catch (err) {
+            console.error("[VoiceDelegate] Error en callback chunk:", err);
+          }
+        });
+      };
+      
+      // Implementar el método onCallEvent del servant
+      servant.onCallEvent = (event, current) => {
+        console.log("[VoiceDelegate] Callback onCallEvent recibido:", event);
+        this.callbacks.forEach((cb) => {
+          try {
+            cb(event);
+          } catch (err) {
+            console.error("[VoiceDelegate] Error en callback event:", err);
+          }
+        });
+      };
+
+      // NUEVO: audio de llamadas
+      servant.onCallChunk = (chunk, current) => {
+        console.log("[VoiceDelegate] onCallChunk:", chunk);
+        this.callbacks.forEach((cb) => {
+          try {
+            cb({ type: "call_chunk", chunk });
+          } catch (err) {
+            console.error("[VoiceDelegate] Error en callback (call_chunk):", err);
+          }
+        });
+      };
 
       const ident = Ice.stringToIdentity("obs_" + this.currentUser);
       console.log("[VoiceDelegate] Registrando observer con identity:", ident.name);
@@ -135,6 +181,25 @@ class VoiceDelegate {
 
       const connection = await this.callPrx.ice_getConnection();
       connection.setAdapter(adapter);
+      
+      // Mantener referencia a la conexión para que no se cierre
+      this.connection = connection;
+      
+      // Configurar callback para detectar cuando se cierra
+      connection.setCloseCallback(() => {
+        console.log("[VoiceDelegate] Conexión cerrada por el servidor");
+        this._cleanup();
+        this._setStatus("error", new Error("Conexión perdida"));
+        
+        // Reintentar después de un tiempo
+        if (!this._retryTimer) {
+          this._retryTimer = setTimeout(() => {
+            this._retryTimer = null;
+            this._attemptInit();
+          }, this.retryDelayMs);
+        }
+      });
+      
       console.log("[VoiceDelegate] Connection adapter configurado");
 
       const obsPrx = Slice.Chat.VoiceObserverPrx.uncheckedCast(addedPrx);
@@ -194,7 +259,40 @@ class VoiceDelegate {
       payload
     );
   }
+
+  async sendCallChunk(callId, fromUser, bytes) {
+    await this.ensureReady();
+    const payload = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    await this.callPrx.sendCallChunk(callId, fromUser, payload);
+  }
+
+  // Métodos para gestión de llamadas
+  async startCall(caller, callee) {
+    await this.ensureReady();
+    return await this.callPrx.startCall(caller, callee);
+  }
+
+  async startGroupCall(caller, groupName) {
+    await this.ensureReady();
+    return await this.callPrx.startGroupCall(caller, groupName);
+  }
+
+  async acceptCall(callId, username) {
+    await this.ensureReady();
+    await this.callPrx.acceptCall(callId, username);
+  }
+
+  async rejectCall(callId, username) {
+    await this.ensureReady();
+    await this.callPrx.rejectCall(callId, username);
+  }
+
+  async endCall(callId, username) {
+    await this.ensureReady();
+    await this.callPrx.endCall(callId, username);
+  }
 }
+
 
 const instance = new VoiceDelegate();
 export default instance;
