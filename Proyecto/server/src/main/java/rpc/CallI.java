@@ -240,7 +240,7 @@ public class CallI implements Call {
 
                     // Enviar el chunk de audio
                     targetObs.onCallChunk(chunk);
-                    //System.out.println("[ICE] ✓ Chunk de llamada enviado a " + targetUser + " (callId=" + callId + ")");
+                    System.out.println("[ICE] ✓ Chunk de llamada enviado a " + targetUser + " (callId=" + callId + ", bytes=" + (audio != null ? audio.length : 0) + ")");
 
                 } catch (com.zeroc.Ice.CloseConnectionException e) {
                     System.out.println("[ICE] ⚠ Conexión cerrada para " + targetUser + " (call chunk)");

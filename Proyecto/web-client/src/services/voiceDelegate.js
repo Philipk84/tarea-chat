@@ -143,9 +143,14 @@ class VoiceDelegate {
       
       // Implementar el método onCallChunk del servant
       servant.onCallChunk = (chunk, current) => {
-        //console.log("[VoiceDelegate] Callback onCallChunk recibido de:", chunk.fromUser);
+        console.log("[VoiceDelegate] onCallChunk recibido:", {
+          callId: chunk.callId,
+          fromUser: chunk.fromUser,
+          audioBytes: chunk.audio?.length || 0
+        });
         this.callbacks.forEach((cb) => {
           try {
+            // Pasar el chunk directamente con su estructura completa
             cb(chunk);
           } catch (err) {
             console.error("[VoiceDelegate] Error en callback chunk:", err);
@@ -161,18 +166,6 @@ class VoiceDelegate {
             cb(event);
           } catch (err) {
             console.error("[VoiceDelegate] Error en callback event:", err);
-          }
-        });
-      };
-
-      // NUEVO: audio de llamadas
-      servant.onCallChunk = (chunk, current) => {
-        console.log("[VoiceDelegate] onCallChunk:", chunk);
-        this.callbacks.forEach((cb) => {
-          try {
-            cb({ type: "call_chunk", chunk });
-          } catch (err) {
-            console.error("[VoiceDelegate] Error en callback (call_chunk):", err);
           }
         });
       };
