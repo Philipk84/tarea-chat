@@ -35,7 +35,7 @@ public final class IceBootstrap {
 
                 adapter.activate();
 
-                System.out.println("[ICE] CallAdapter escuchando en ws://localhost:10010/call");
+                System.out.println("[ICE] CallAdapter escuchando en ws://0.0.0.0:10010/call");
                 System.out.println("[ICE] Soporte bidireccional habilitado para callbacks");
 
                 communicator.waitForShutdown();

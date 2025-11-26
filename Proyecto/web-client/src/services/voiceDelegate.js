@@ -107,8 +107,9 @@ class VoiceDelegate {
     try {
       this.communicator = Ice.initialize();
 
+      const serverHost = window.location.hostname || 'localhost';
       const base = await this.communicator.stringToProxy(
-        "Call:ws -h localhost -p 10010 -r /call"
+        `Call:ws -h ${serverHost} -p 10010 -r /call`
       );
 
       const prx = await Slice.Chat.CallPrx.checkedCast(base);

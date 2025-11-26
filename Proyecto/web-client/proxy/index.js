@@ -8,7 +8,7 @@ const userMessages = {}; // { username: [mensajes pendientes] }
 // ─────────────────────────────────────────────────────────────
 // Config
 // ─────────────────────────────────────────────────────────────
-const TCP_HOST = process.env.TCP_HOST || '127.0.0.1';
+const TCP_HOST = process.env.TCP_HOST || '0.0.0.0';
 const TCP_PORT = Number(process.env.TCP_PORT || 6000);
 const HTTP_PORT = Number(process.env.HTTP_PORT || 3001);
 
@@ -337,7 +337,7 @@ app.get('/health', (_req, res) => {
 
 // Start HTTP
 app.listen(HTTP_PORT, () => {
-  console.log(`[HTTP] Proxy escuchando en http://localhost:${HTTP_PORT}`);
+  console.log(`[HTTP] Proxy escuchando en http://0.0.0.0:${HTTP_PORT}`);
 });
 
 // Catch-all: servir index.html para todas las rutas SPA (debe ir al final, después de listen)

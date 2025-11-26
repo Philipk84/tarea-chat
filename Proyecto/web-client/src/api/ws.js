@@ -6,7 +6,8 @@ export function connectWS() {
         return;
     }
 
-    ws = new WebSocket("ws://localhost:3002");
+    const serverHost = window.location.hostname || 'localhost';
+    ws = new WebSocket(`ws://${serverHost}:3002`);
 
     ws.onopen = () => {
         console.log("[WS] Conectado al proxy");
