@@ -254,11 +254,14 @@ public class ChatServer implements ServerService {
      * @return ID de la llamada creada o null si no se pudo crear
      */
     public static synchronized String startIndividualCall(String from, String to) {
-        if (!instance.userManager.isUserOnline(to) || instance.userManager.getUdpInfo(to) == null) return null;
-        if (!instance.userManager.isUserOnline(from) || instance.userManager.getUdpInfo(from) == null) return null;
+        // Solo comprobamos que estén conectados
+        if (!instance.userManager.isUserOnline(to)) return null;
+        if (!instance.userManager.isUserOnline(from)) return null;
+
         Set<String> participants = new HashSet<>();
         participants.add(from);
         participants.add(to);
+
         String callId = instance.CallManagerImpl.createCall(participants);
         notifyCallStarted(callId);
         try {
@@ -267,26 +270,31 @@ public class ChatServer implements ServerService {
         return callId;
     }
 
+
     /**
      * Inicia una llamada grupal con todos los miembros conectados de un grupo.
      * 
      * @param from Usuario que inicia la llamada grupal
      * @param groupName Nombre del grupo a llamar
      * @return ID de la llamada creada o null si no se pudo crear
-     */
+    */
     public static synchronized String startGroupCall(String from, String groupName) {
         Set<String> members = instance.groupManager.getGroupMembers(groupName);
-        if (members.isEmpty()) return null;
+        if (members == null || members.isEmpty()) return null;
+
         Set<String> participants = new HashSet<>();
         for (String u : members) {
-            if (instance.userManager.isUserOnline(u) && instance.userManager.getUdpInfo(u) != null) {
+            if (instance.userManager.isUserOnline(u)) {
                 participants.add(u);
             }
         }
-        if (instance.userManager.isUserOnline(from) && instance.userManager.getUdpInfo(from) != null) {
+        if (instance.userManager.isUserOnline(from)) {
             participants.add(from);
         }
+
+        // Tiene que haber al menos 2 en la llamada
         if (participants.size() < 2) return null;
+
         String callId = instance.CallManagerImpl.createCall(participants);
         notifyCallStarted(callId);
         try {
