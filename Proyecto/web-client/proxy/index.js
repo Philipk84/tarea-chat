@@ -3,6 +3,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
+const http = require('http');
 const userSockets = {};  // { username: net.Socket }
 const userMessages = {}; // { username: [mensajes pendientes] }
 // ─────────────────────────────────────────────────────────────
@@ -11,6 +12,10 @@ const userMessages = {}; // { username: [mensajes pendientes] }
 const TCP_HOST = process.env.TCP_HOST || '0.0.0.0';
 const TCP_PORT = Number(process.env.TCP_PORT || 6000);
 const HTTP_PORT = Number(process.env.HTTP_PORT || 3001);
+
+// IP del servidor principal (donde está el servidor Java)
+// Dejar vacío si el proxy corre en el mismo dispositivo que el servidor
+const MAIN_SERVER_IP = process.env.MAIN_SERVER_IP || '';
 
 // Ruta de history del servidor Java (misma máquina)
 const HISTORY_FILE = path.resolve(__dirname, '../../server/data/history.jsonl');
@@ -21,7 +26,36 @@ app.use(cors());
 app.use(express.json());
 
 // Servir archivos de audio WAV del historial
-app.use('/voice', express.static(VOICE_DIR));
+// Si el archivo no existe localmente y MAIN_SERVER_IP está configurado, lo obtiene del servidor principal
+app.use('/voice', (req, res, next) => {
+  const localPath = path.join(VOICE_DIR, req.path);
+  
+  // Primero intentar servir localmente
+  if (fs.existsSync(localPath)) {
+    return express.static(VOICE_DIR)(req, res, next);
+  }
+  
+  // Si no existe localmente y hay un servidor principal configurado, proxy al servidor principal
+  if (MAIN_SERVER_IP) {
+    const remoteUrl = `http://${MAIN_SERVER_IP}:${HTTP_PORT}/voice${req.path}`;
+    console.log(`[VOICE PROXY] Archivo no local, obteniendo de: ${remoteUrl}`);
+    
+    http.get(remoteUrl, (proxyRes) => {
+      if (proxyRes.statusCode === 200) {
+        res.set('Content-Type', 'audio/wav');
+        proxyRes.pipe(res);
+      } else {
+        res.status(proxyRes.statusCode).send('Audio no encontrado');
+      }
+    }).on('error', (err) => {
+      console.error(`[VOICE PROXY] Error obteniendo audio remoto: ${err.message}`);
+      res.status(500).send('Error obteniendo audio del servidor');
+    });
+  } else {
+    // No hay servidor remoto configurado, intentar servir estático normal
+    return express.static(VOICE_DIR)(req, res, next);
+  }
+});
 
 // Servir archivos estáticos del build
 const DIST_DIR = path.resolve(__dirname, '../dist');
@@ -287,6 +321,25 @@ app.post("/group/message", async (req, res) => {
 app.get('/history', async (req, res) => {
   try {
     const { scope, user, peer, group } = req.query;
+
+    // Si hay servidor principal configurado, obtener historial de ahí
+    if (MAIN_SERVER_IP) {
+      const queryString = req.url.split('?')[1] || '';
+      const remoteUrl = `http://${MAIN_SERVER_IP}:${HTTP_PORT}/history?${queryString}`;
+      console.log(`[HISTORY PROXY] Obteniendo historial de: ${remoteUrl}`);
+      
+      return http.get(remoteUrl, (proxyRes) => {
+        let data = '';
+        proxyRes.on('data', chunk => data += chunk);
+        proxyRes.on('end', () => {
+          res.set('Content-Type', 'application/json');
+          res.status(proxyRes.statusCode).send(data);
+        });
+      }).on('error', (err) => {
+        console.error(`[HISTORY PROXY] Error: ${err.message}`);
+        res.status(500).json({ error: 'Error obteniendo historial del servidor' });
+      });
+    }
 
     if (!fs.existsSync(HISTORY_FILE)) {
       return res.status(200).json({ items: [] });
