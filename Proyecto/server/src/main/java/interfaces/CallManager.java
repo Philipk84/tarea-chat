@@ -7,12 +7,12 @@ import java.util.Set;
  */
 public interface CallManager {
     /**
-     * Crea una nueva llamada con los participantes especificados.
+     * Crea una nueva llamada con el ID y participantes especificados.
      * 
+     * @param callId ID de la llamada
      * @param participants Conjunto de nombres de usuario que participarán en la llamada
-     * @return ID único de la llamada creada
      */
-    String createCall(Set<String> participants);
+    void createCall(String callId, Set<String> participants);
 
     /**
      * Termina una llamada activa y libera a todos los participantes.

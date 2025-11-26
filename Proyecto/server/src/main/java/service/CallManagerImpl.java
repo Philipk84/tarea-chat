@@ -22,17 +22,20 @@ public class CallManagerImpl implements CallManager {
     private final Map<String, String> userToCall = new HashMap<>();
 
     /**
-     * Crea una nueva llamada con el conjunto de participantes especificado.
+     * Crea una nueva llamada con el ID y conjunto de participantes especificado.
      * 
+     * @param callId ID de la llamada
      * @param participants Conjunto de nombres de usuario que participarán en la llamada
-     * @return ID único de la llamada creada
      */
     @Override
-    public synchronized String createCall(Set<String> participants) {
-        String callId = UUID.randomUUID().toString();
+    public synchronized void createCall(String callId, Set<String> participants) {
+        System.out.println("[CallManagerImpl] createCall llamado");
+        System.out.println("[CallManagerImpl]   - callId: " + callId);
+        System.out.println("[CallManagerImpl]   - participants: " + participants);
         calls.put(callId, new HashSet<>(participants));
+        System.out.println("[CallManagerImpl]   - Guardado en Map. Total llamadas: " + calls.size());
+        System.out.println("[CallManagerImpl]   - CallIds en Map: " + calls.keySet());
         for (String u : participants) userToCall.put(u, callId);
-        return callId;
     }
 
     /**
@@ -67,6 +70,11 @@ public class CallManagerImpl implements CallManager {
      */
     @Override
     public synchronized Set<String> getParticipants(String callId) {
-        return calls.getOrDefault(callId, Collections.emptySet());
+        System.out.println("[CallManagerImpl] getParticipants llamado");
+        System.out.println("[CallManagerImpl]   - callId buscado: " + callId);
+        System.out.println("[CallManagerImpl]   - CallIds disponibles: " + calls.keySet());
+        Set<String> result = calls.getOrDefault(callId, Collections.emptySet());
+        System.out.println("[CallManagerImpl]   - Resultado: " + result);
+        return result;
     }
 }

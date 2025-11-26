@@ -259,7 +259,8 @@ public class ChatServer implements ServerService {
         Set<String> participants = new HashSet<>();
         participants.add(from);
         participants.add(to);
-        String callId = instance.CallManagerImpl.createCall(participants);
+        String callId = java.util.UUID.randomUUID().toString();
+        instance.CallManagerImpl.createCall(callId, participants);
         notifyCallStarted(callId);
         try {
             HistoryService.logCallStarted(callId, participants);
@@ -287,7 +288,8 @@ public class ChatServer implements ServerService {
             participants.add(from);
         }
         if (participants.size() < 2) return null;
-        String callId = instance.CallManagerImpl.createCall(participants);
+        String callId = java.util.UUID.randomUUID().toString();
+        instance.CallManagerImpl.createCall(callId, participants);
         notifyCallStarted(callId);
         try {
             HistoryService.logCallStarted(callId, participants);

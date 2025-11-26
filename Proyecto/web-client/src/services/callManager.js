@@ -175,6 +175,7 @@ class CallManager {
       
       const callId = this.currentCall.callId;
       console.log("[CallManager] Terminando llamada:", callId);
+      console.log("[CallManager] endCall - stack:", new Error().stack);
       
       await voiceDelegate.endCall(callId, this.username);
       
@@ -357,8 +358,14 @@ class CallManager {
         break;
         
       case "call_accepted":
-        // Otro participante aceptó
+        // Otro participante aceptó - iniciar captura si es nuestra llamada
         console.log("[CallManager] Llamada aceptada por:", caller);
+        if (this.currentCall && this.currentCall.callId === callId) {
+          // Si aún no estamos capturando, iniciar
+          if (!this.audioProcessor && !this.audioContext) {
+            this._startAudioCapture(callId);
+          }
+        }
         break;
         
       case "call_rejected":

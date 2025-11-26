@@ -55,4 +55,10 @@ module.exports = {
       filename: "index.html",
     }),
   ],
+  ignoreWarnings: [
+    {
+      module: /Services\.js$/,
+      message: /Critical dependency: require function is used/,
+    },
+  ],
 };

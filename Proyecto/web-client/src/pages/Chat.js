@@ -85,6 +85,12 @@ function Chat() {
     // Aquí solo procesamos VoiceEntry (notas de voz)
     console.log("[Voice] Notificación recibida:", entry);
     
+    // Filtrar solo VoiceEntry (tienen audioFile y type="voice_note" o "voice_group")
+    if (!entry.audioFile || (entry.type !== "voice_note" && entry.type !== "voice_group")) {
+      console.log("[Voice] Ignorando notificación que no es VoiceEntry");
+      return;
+    }
+    
     if (isEntryForCurrentChat(entry)) {
       appendHistoryItem(entry);
       messages.scrollTop = messages.scrollHeight;
@@ -413,6 +419,7 @@ joinGroupBtn.onclick = async () => {
   }
 
   async function hangUpCall() {
+    console.log("[Chat] hangUpCall ejecutado - stack:", new Error().stack);
     try {
       await callManager.endCall();
       alert("Llamada finalizada");

@@ -30,24 +30,24 @@ public class CallI implements Call {
 
     @Override
     public void subscribe(String username, VoiceObserverPrx obs, Current current) {
-        System.out.println("[ICE] VoiceObserver suscrito: " + username);
-        System.out.println("[ICE]   - Proxy recibido: " + obs);
-        System.out.println("[ICE]   - Connection: " + current.con);
+        // System.out.println("[ICE] VoiceObserver suscrito: " + username);
+        // System.out.println("[ICE]   - Proxy recibido: " + obs);
+        // System.out.println("[ICE]   - Connection: " + current.con);
         
         try {
             // CRÍTICO: Fijar el proxy a la conexión bidireccional actual
             // Esto es necesario para callbacks en Ice
             VoiceObserverPrx fixedProxy = obs.ice_fixed(current.con);
-            System.out.println("[ICE]   - Proxy fijado: " + fixedProxy);
+            // System.out.println("[ICE]   - Proxy fijado: " + fixedProxy);
             
             // Agregar callback para limpiar cuando se cierre la conexión
             current.con.setCloseCallback(con -> {
                 observers.remove(username);
-                System.out.println("[ICE] ⚠ Conexión cerrada, observer removido automáticamente para: " + username);
+                // System.out.println("[ICE] ⚠ Conexión cerrada, observer removido automáticamente para: " + username);
             });
             
             observers.put(username, fixedProxy);
-            System.out.println("[ICE] ✓ Observer almacenado correctamente para " + username);
+            // System.out.println("[ICE] ✓ Observer almacenado correctamente para " + username);
             
         } catch (Exception e) {
             System.err.println("[ICE] ✗ Error fijando proxy: " + e.getMessage());
@@ -82,11 +82,11 @@ public class CallI implements Call {
             entry.audioFile = saved.relativePath();
 
             // 4) Notificar en tiempo real (igual que SubjectImpl.notifyObs)
-            System.out.println("[ICE] Nota de voz guardada: " + saved.relativePath());
-            System.out.println("[ICE] Notificando a emisor: " + fromUser);
+            // System.out.println("[ICE] Nota de voz guardada: " + saved.relativePath());
+            // System.out.println("[ICE] Notificando a emisor: " + fromUser);
             notifyUser(fromUser, entry);
             if (!fromUser.equals(toUser)) {
-                System.out.println("[ICE] Notificando a receptor: " + toUser);
+                // System.out.println("[ICE] Notificando a receptor: " + toUser);
                 notifyUser(toUser, entry);
             }
 
@@ -177,10 +177,10 @@ public class CallI implements Call {
 
     @Override
     public void sendCallChunk(String callId, String fromUser, byte[] audio, Current current) {
-        System.out.println("[ICE] sendCallChunk recibido:");
-        System.out.println("[ICE]   - callId: " + callId);
-        System.out.println("[ICE]   - fromUser: " + fromUser);
-        System.out.println("[ICE]   - bytes: " + (audio != null ? audio.length : 0));
+        // System.out.println("[ICE] sendCallChunk recibido:");
+        // System.out.println("[ICE]   - callId: " + callId);
+        // System.out.println("[ICE]   - fromUser: " + fromUser);
+        // System.out.println("[ICE]   - bytes: " + (audio != null ? audio.length : 0));
 
         // 1) Obtener el CallManager y los participantes de la llamada
         var callManager = ChatServer.getCallManagerImpl();
@@ -189,11 +189,21 @@ public class CallI implements Call {
             return;
         }
 
+        // System.out.println("[ICE]   - CallManager encontrado, buscando participantes...");
         Set<String> participants = callManager.getParticipants(callId);
+        // System.out.println("[ICE]   - Resultado de getParticipants: " + participants);
+        // System.out.println("[ICE]   - activeCalls tiene: " + activeCalls.keySet());
+        
         if (participants == null || participants.isEmpty()) {
-            System.out.println("[ICE]   - No hay participantes para la llamada " + callId);
+            // Solo logear la primera vez que falla
+            if (!activeCalls.containsKey(callId)) {
+                System.out.println("[ICE CHUNK ERROR] No hay participantes para la llamada " + callId);
+                System.out.println("[ICE CHUNK ERROR]   - activeCalls contiene: " + activeCalls.keySet());
+            }
             return;
         }
+        
+        // System.out.println("[ICE]   - Participantes encontrados: " + participants);
 
         // 2) Construir el CallChunk que se enviará a los demás
         CallChunk chunk = new CallChunk();
@@ -265,7 +275,11 @@ public class CallI implements Call {
         // Registrar en el CallManager del ChatServer
         var callManager = ChatServer.getCallManagerImpl();
         if (callManager != null) {
-            callManager.createCall(participants);
+            System.out.println("[ICE CALL]   - Registrando en CallManager...");
+            callManager.createCall(callId, participants);
+            System.out.println("[ICE CALL]   - ✓ Registrado en CallManager");
+        } else {
+            System.err.println("[ICE CALL]   - ✗ CallManager es null!");
         }
 
         // Registrar en historial
@@ -278,6 +292,7 @@ public class CallI implements Call {
         notifyCallEvent(caller, "call_started", callId, caller, callee, "", "private");
 
         System.out.println("[ICE CALL] ✓ Llamada creada: " + callId);
+        System.out.println("[ICE CALL]   - Participantes: " + participants);
         return callId;
     }
 
@@ -305,7 +320,7 @@ public class CallI implements Call {
         // Registrar en el CallManager
         var callManager = ChatServer.getCallManagerImpl();
         if (callManager != null) {
-            callManager.createCall(participants);
+            callManager.createCall(callId, participants);
         }
 
         // Registrar en historial
@@ -333,6 +348,11 @@ public class CallI implements Call {
             System.err.println("[ICE CALL] ✗ Llamada no encontrada: " + callId);
             return;
         }
+
+        // Agregar al usuario que acepta a los participantes activos
+        participants.add(user);
+        System.out.println("[ICE CALL] ✓ Usuario " + user + " agregado a la llamada");
+        System.out.println("[ICE CALL]   - Participantes actuales: " + participants);
 
         // Notificar a todos los participantes que el usuario aceptó
         for (String participant : participants) {
