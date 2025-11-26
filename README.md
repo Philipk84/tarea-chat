@@ -1,7 +1,7 @@
 ## Integrantes
 - Alejandro Vargas Sánchez (A00404840) 
 - Sebastián Romero
-- Felipe Calderon
+- Felipe Calderon (A00404998)
   
 ## Ejecución del proyecto
 
@@ -44,7 +44,13 @@ Y luego se ejecuta
   ```bash
   cd Proyecto/web-client
   ```
-Y se inicia
+Y se inicia con
+
+  ```bash
+  npm run start
+  ```
+
+4. Usar el chat
 
 ## 2. Descripción del flujo de comunicación entre cliente, proxy y backend
 
