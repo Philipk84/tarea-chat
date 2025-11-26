@@ -28,32 +28,42 @@ app.use(express.json());
 // Servir archivos de audio WAV del historial
 // Si el archivo no existe localmente y MAIN_SERVER_IP está configurado, lo obtiene del servidor principal
 app.use('/voice', (req, res, next) => {
-  const localPath = path.join(VOICE_DIR, req.path);
+  const fileName = req.path.replace(/^\//, ''); // Quitar el / inicial
+  const localPath = path.join(VOICE_DIR, fileName);
+  
+  console.log(`[VOICE] Solicitado: ${fileName}`);
+  console.log(`[VOICE] Buscando en: ${localPath}`);
   
   // Primero intentar servir localmente
   if (fs.existsSync(localPath)) {
-    return express.static(VOICE_DIR)(req, res, next);
+    console.log(`[VOICE] ✓ Archivo encontrado localmente`);
+    res.set('Content-Type', 'audio/wav');
+    return res.sendFile(localPath);
   }
+  
+  console.log(`[VOICE] ✗ Archivo no existe localmente`);
   
   // Si no existe localmente y hay un servidor principal configurado, proxy al servidor principal
   if (MAIN_SERVER_IP) {
-    const remoteUrl = `http://${MAIN_SERVER_IP}:${HTTP_PORT}/voice${req.path}`;
-    console.log(`[VOICE PROXY] Archivo no local, obteniendo de: ${remoteUrl}`);
+    const remoteUrl = `http://${MAIN_SERVER_IP}:${HTTP_PORT}/voice/${fileName}`;
+    console.log(`[VOICE PROXY] Obteniendo de servidor principal: ${remoteUrl}`);
     
     http.get(remoteUrl, (proxyRes) => {
+      console.log(`[VOICE PROXY] Respuesta del servidor: ${proxyRes.statusCode}`);
       if (proxyRes.statusCode === 200) {
         res.set('Content-Type', 'audio/wav');
         proxyRes.pipe(res);
       } else {
-        res.status(proxyRes.statusCode).send('Audio no encontrado');
+        res.status(404).send('Audio no encontrado en servidor principal');
       }
     }).on('error', (err) => {
       console.error(`[VOICE PROXY] Error obteniendo audio remoto: ${err.message}`);
       res.status(500).send('Error obteniendo audio del servidor');
     });
   } else {
-    // No hay servidor remoto configurado, intentar servir estático normal
-    return express.static(VOICE_DIR)(req, res, next);
+    // No hay servidor remoto, archivo no existe
+    console.log(`[VOICE] ✗ No hay servidor remoto configurado, archivo no encontrado`);
+    res.status(404).send('Audio no encontrado');
   }
 });
 
