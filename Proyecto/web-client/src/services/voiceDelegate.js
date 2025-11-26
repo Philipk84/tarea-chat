@@ -1,5 +1,6 @@
 import IceModule from "ice";
 import * as Slice from "../ice/Services.js";
+import { config } from "../config.js";
 
 const Ice = IceModule.Ice || IceModule;
 
@@ -107,7 +108,10 @@ class VoiceDelegate {
     try {
       this.communicator = Ice.initialize();
 
-      const serverHost = window.location.hostname || 'localhost';
+      // Determinar host del servidor Ice
+      const serverHost = config.iceHost || window.location.hostname || 'localhost';
+      console.log("[VoiceDelegate] Conectando a servidor Ice en:", serverHost, ":", config.icePort);
+      
       const base = await this.communicator.stringToProxy(
         `Call:ws -h ${serverHost} -p 10010 -r /call`
       );

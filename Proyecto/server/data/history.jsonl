@@ -109,3 +109,6 @@
 {"callId":"2868b44b-a2da-48a6-a780-0f1e1c6cdd14","sender":"server","scope":"call","endedBy":"Fel","id":"f4d0b3af-c5ea-4191-a272-3be2d6f103e8","type":"call_ended","timestamp":"2025-11-26T06:22:46.173396500Z","participants":["Ale","Fel"]}
 {"callId":"b5e8c860-293a-486c-86d4-2a269027dcd5","sender":"server","scope":"call","id":"313e7e1f-9212-4572-8ac3-4a534eb6ea0e","type":"call_started","timestamp":"2025-11-26T06:22:56.774103800Z","participants":["Ale","Fel"]}
 {"callId":"b5e8c860-293a-486c-86d4-2a269027dcd5","sender":"server","scope":"call","endedBy":"Fel","id":"be87c168-8e7c-4ccd-929e-4bf41af5d42c","type":"call_ended","timestamp":"2025-11-26T06:23:04.799862400Z","participants":["Ale","Fel"]}
+{"sender":"Fel","scope":"private","recipient":"Ale","id":"3372ca61-f9d8-4ebf-8e76-79b0ba0133d1","type":"text","message":"Hola","timestamp":"2025-11-26T07:03:59.487414200Z"}
+{"callId":"12956214-66cd-47e5-acd1-8ba8fcce936c","sender":"server","scope":"call","id":"b99bd598-97e0-45da-9319-88ca8a75b8ce","type":"call_started","timestamp":"2025-11-26T07:04:09.600326200Z","participants":["Ale","Fel"]}
+{"callId":"12956214-66cd-47e5-acd1-8ba8fcce936c","sender":"server","scope":"call","endedBy":"Ale","id":"a9295066-2a7c-4825-a09b-b806725da25d","type":"call_ended","timestamp":"2025-11-26T07:04:19.222837300Z","participants":["Ale","Fel"]}

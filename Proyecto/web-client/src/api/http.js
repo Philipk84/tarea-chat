@@ -1,6 +1,8 @@
 // Proyecto/web-client/src/api/http.js
 import axios from "axios";
-const API_BASE = "/api";
+import { config } from "../config.js";
+
+const API_BASE = config.httpBaseUrl || "/api";
 
 async function post(path, body) {
   const url = API_BASE + path;

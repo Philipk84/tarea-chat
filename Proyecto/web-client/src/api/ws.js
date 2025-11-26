@@ -1,3 +1,5 @@
+import { config } from "../config.js";
+
 let ws = null;
 let listeners = [];
 
@@ -6,8 +8,9 @@ export function connectWS() {
         return;
     }
 
-    const serverHost = window.location.hostname || 'localhost';
-    ws = new WebSocket(`ws://${serverHost}:3002`);
+    const serverHost = config.wsHost || window.location.hostname || 'localhost';
+    console.log("[WS] Conectando a servidor WebSocket en:", serverHost, ":", config.wsPort);
+    ws = new WebSocket(`ws://${serverHost}:${config.wsPort}`);
 
     ws.onopen = () => {
         console.log("[WS] Conectado al proxy");
