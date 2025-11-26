@@ -166,3 +166,6 @@
 {"sender":"Ale","scope":"private","recipient":"Fel","id":"5fd6a7c3-c86f-4d53-8a24-85db51c2bda7","type":"text","message":"Hola","timestamp":"2025-11-26T22:14:37.623290100Z"}
 {"audioFile":"server\\data\\voice\\voice-1764195285070-e4b1a3b5-29f0-4051-8167-95f67e125c0e.wav","sender":"Ale","scope":"private","recipient":"Fel","id":"ae0a4713-928f-412f-8049-6e86d3fbfaef","type":"voice_note","timestamp":"2025-11-26T22:14:45.133326400Z","sizeBytes":192556}
 {"sender":"Fel","scope":"group","id":"1e99387a-8e81-49da-a549-0df8809c3a1f","type":"text","message":"Hola","timestamp":"2025-11-26T22:15:04.463400100Z","group":"Compunet"}
+{"sender":"Seb","scope":"group","id":"1041034f-1efb-4b80-882c-e67c454cc4c6","type":"text","message":"Hola","timestamp":"2025-11-26T22:20:18.040404Z","group":"Compunet"}
+{"callId":"8ecb0c7b-8224-456a-aafb-c870c988b460","sender":"server","scope":"call","id":"2a54d643-1abe-42f9-aa6e-2c4988034422","type":"call_started","timestamp":"2025-11-26T22:20:31.664048500Z","participants":["Seb","Ale","Fel"]}
+{"audioFile":"server\\data\\voice\\voice-1764195658195-5e31b023-449c-48c5-beb0-a3aafc6165b0.wav","sender":"Ale","scope":"group","id":"0032d117-7be1-4389-ae40-ea70a696f20f","type":"voice_group","timestamp":"2025-11-26T22:20:58.198307300Z","group":"Compunet","sizeBytes":155692}

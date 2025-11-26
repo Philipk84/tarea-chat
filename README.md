@@ -1,102 +1,237 @@
+# Proyecto de Chat | Compunet 2025 - 2
+
 ## Integrantes
 - Alejandro Vargas Sánchez (A00404840) 
-- Sebastián Romero
-- Felipe Calderon (A00404998)
+- Sebastián Romero Leon (A00404670)
+- Felipe Calderon Arias (A00404998)
   
 ## Ejecución del proyecto
 
 ### Solo la primera vez
 
-Se hace el build de backend en Java desde la carpeta Proyecto, donde está gradlew:
+1. Hacer el build del backend Java desde la carpeta `Proyecto`:
 
-  ```bash
-  cd Proyecto
-  ```
+```bash
+cd Proyecto
+./gradlew clean build 
+```
 
-  ```bash
-  ./gradlew clean build 
-  ```
-Luego hay que moverse dentro de la carpeta web-client y se instalan todas las dependencias:
-  ```bash
-  cd web-client
-  ```
-  ```bash
-  npm install
-  ```
+2. Instalar dependencias del proxy:
+
+```bash
+cd proxy
+npm install
+```
+
+3. Instalar dependencias del cliente web:
+
+```bash
+cd ../web-client
+npm install
+```
 
 ### Ejecución de la aplicación
 
-1. Se inicia el sevidor Java, desde la clase Main.js
+#### Opción 1: Comandos separados (3 terminales)
 
-2. Se inicia el proxy, para esto hay que moverse a la carpeta de web-client
+**Terminal 1 - Servidor Java:**
+```bash
+# Ejecutar desde IDE (clase Main.java en server/src/main/java/ui/)
+```
 
-  ```bash
-  cd Proyecto/web-client
-  ```
-Y luego se ejecuta
+**Terminal 2 - Proxy HTTP:**
+```bash
+cd Proyecto/proxy
+npm start
+```
 
-  ```bash
-  node proxy/index.js
-  ```
+**Terminal 3 - Cliente Web (desarrollo):**
+```bash
+cd Proyecto/web-client
+npm start
+```
 
-3. Iniciar el cliente web, se crea otra terminal y se vuelve a posicionar en web-client:
+#### Opción 2: Proxy + Cliente juntos (2 terminales)
 
-  ```bash
-  cd Proyecto/web-client
-  ```
-Y se inicia con
+**Terminal 1 - Servidor Java:**
+```bash
+# Ejecutar desde IDE (clase Main.java en server/src/main/java/ui/)
+```
 
-  ```bash
-  npm run start
-  ```
+**Terminal 2 - Proxy + Webpack:**
+```bash
+cd Proyecto/web-client
+npm run dev
+```
 
-4. Usar el chat
+Este comando ejecuta `concurrently` para iniciar el proxy y webpack-dev-server simultáneamente.
+
+### Estructura del proyecto
+
+```
+Proyecto/
+├── server/                 # Backend Java
+│   ├── src/main/java/      # Código fuente
+│   └── data/               # Datos persistentes
+│       ├── history.jsonl   # Historial de mensajes
+│       └── voice/          # Archivos de audio WAV
+├── proxy/                  # Proxy HTTP/TCP (ES Modules)
+│   ├── package.json        # "type": "module"
+│   └── src/
+│       ├── index.js        # Express routes
+│       └── services/
+│           └── proxyService.js  # Lógica TCP/usuarios
+├── web-client/             # Frontend (Webpack + Vanilla JS)
+│   ├── src/                # Código fuente
+│   ├── dist/               # Build de producción
+│   └── package.json        # Scripts npm
+└── config.json             # Configuración de puertos
+```
+
+### Scripts disponibles
+
+#### Desde `Proyecto/proxy`:
+| Comando | Descripción |
+|---------|-------------|
+| `npm start` | Inicia el proxy en puerto 3001 |
+| `npm run dev` | Inicia con hot-reload (--watch) |
+
+#### Desde `Proyecto/web-client`:
+| Comando | Descripción |
+|---------|-------------|
+| `npm start` | Webpack dev server (puerto 8080) |
+| `npm run build` | Genera build en `dist/` |
+| `npm run proxy` | Inicia solo el proxy |
+| `npm run dev` | Proxy + Webpack juntos |
+
+### Configuración multi-dispositivo
+
+Para ejecutar la aplicación en múltiples dispositivos (ej: servidor en PC1, cliente en PC2):
+
+**En el dispositivo servidor (PC1):**
+```bash
+# Ejecutar servidor Java normalmente
+# Ejecutar proxy normalmente
+cd Proyecto/proxy
+npm start
+```
+
+**En el dispositivo cliente (PC2):**
+
+1. Configurar las IPs en `web-client/src/config.js`:
+```javascript
+const ICE_SERVER_IP = '192.168.1.90';  // IP del PC1
+```
+
+2. Configurar el proxy para conectar al servidor remoto:
+```bash
+cd Proyecto/proxy
+TCP_HOST=192.168.1.90 MAIN_SERVER_IP=192.168.1.90 npm start
+```
+
+Variables de entorno del proxy:
+| Variable | Default | Descripción |
+|----------|---------|-------------|
+| `TCP_HOST` | `0.0.0.0` | IP del servidor Java (TCP) |
+| `TCP_PORT` | `6000` | Puerto TCP del servidor |
+| `HTTP_PORT` | `3001` | Puerto HTTP del proxy |
+| `MAIN_SERVER_IP` | (vacío) | IP para obtener audio/historial remoto |
 
 ## 2. Descripción del flujo de comunicación entre cliente, proxy y backend
 
+### Arquitectura general
+
+```
+┌─────────────────┐     HTTP/WS      ┌─────────────────┐      TCP       ┌─────────────────┐
+│   Web Client    │ ──────────────── │     Proxy       │ ────────────── │  Java Server    │
+│   (Webpack)     │    :8080→:3001   │   (Express)     │     :6000      │   (Netty/Ice)   │
+│                 │                  │                 │                │                 │
+│  ┌───────────┐  │                  │  ┌───────────┐  │                │  ┌───────────┐  │
+│  │  UI/SPA   │  │                  │  │  Routes   │  │                │  │  Handlers │  │
+│  └───────────┘  │                  │  └───────────┘  │                │  └───────────┘  │
+│        │        │                  │        │        │                │        │        │
+│        ▼        │                  │        ▼        │                │        ▼        │
+│  ┌───────────┐  │     Ice/WS       │  ┌───────────┐  │                │  ┌───────────┐  │
+│  │ Ice Client│  │ ─────────────────┼──┼────────────┼─┼────────────────│─▶│  CallI    │  │
+│  └───────────┘  │    :10010        │  │  Service  │  │                │  └───────────┘  │
+└─────────────────┘                  │  └───────────┘  │                └─────────────────┘
+                                     └─────────────────┘
+```
+
 ### Conexiones activas y puertos
 
-- Cliente → Proxy (HTTP): la UI hace fetch/XHR a `http://localhost:3001` mediante rutas `/api/*` (el devServer en `:8080` reescribe hacia `:3001`).
-- Cliente → WebSocket Proxy: Conexión WebSocket en `ws://localhost:3002` para notificaciones en tiempo real.
-- Cliente ↔ Backend Java (Ice ZeroC): Conexión bidireccional WebSocket RPC a `ws://localhost:10010/call` para llamadas de audio y notas de voz.
-- Proxy ↔ Backend Java (TCP texto, línea a línea):
-  - Conexión TCP persistente a `127.0.0.1:6000` para comandos "globales" (crear grupo, unirse, mensaje a grupo).
-  - Conexión TCP por usuario registrado: al hacer `POST /register` se abre un `net.Socket` dedicado; se usa para enviar sus comandos (p. ej. `/msg`) y recibir mensajes entrantes.
-- Archivos de audio: el proxy sirve estático en `/voice/*` los WAV que el backend guarda en `server/data/voice`.
+| Conexión | Protocolo | Puerto | Descripción |
+|----------|-----------|--------|-------------|
+| Cliente → Proxy | HTTP | 8080 → 3001 | API REST (webpack proxy) |
+| Cliente → Java | Ice/WebSocket | 10010 | Audio bidireccional |
+| Proxy → Java | TCP | 6000 | Comandos de texto |
+| Proxy (archivos) | HTTP | 3001 | `/voice/*` archivos WAV |
 
 Puertos por defecto:
 - Backend TCP (mensajes de texto): `6000` (desde `Proyecto/config.json`)
 - Backend Ice ZeroC (audio/llamadas): `10010` (WebSocket bidireccional)
 - Proxy HTTP: `3001`
-- Proxy WebSocket (notificaciones): `3002`
 - Cliente (webpack): `8080` (proxy de `/api` y `/voice` hacia `3001`)
 
 ---
 
-### Patrón “pull” (HTTP → TCP → HTTP)
+### Estructura del Proxy (ES Modules)
+
+El proxy está estructurado como módulo ES con separación de responsabilidades:
+
+```
+proxy/
+├── package.json              # "type": "module"
+└── src/
+    ├── index.js              # Express app + rutas
+    └── services/
+        └── proxyService.js   # Lógica TCP + estado
+```
+
+**`src/index.js`** - Rutas HTTP:
+- Importa funciones del servicio
+- Define endpoints Express
+- Sirve archivos estáticos del SPA
+
+**`src/services/proxyService.js`** - Lógica de negocio:
+- Conexión TCP persistente al servidor Java
+- Gestión de sockets por usuario (`userSockets`)
+- Cola de mensajes por usuario (`userMessages`)
+- Funciones exportadas para cada operación
+
+---
+
+### Patrón "pull" (HTTP → TCP → HTTP)
 
 #### Cliente (HTTP) → Proxy
 
-Endpoints reales de la pagina web:
-- Registrar usuario → `POST /api/register` `{ username }`
-- Enviar privado → `POST /api/chat` `{ sender, receiver, message }`
-- Crear grupo → `POST /api/group/create` `{ groupName }`
-- Unirse a grupo → `POST /api/group/join` `{ groupName }`
-- Mensaje a grupo → `POST /api/group/message` `{ groupName, message }`
-- Historial privado → `GET /api/history?scope=private&user=U&peer=P`
-- Historial de grupo → `GET /api/history?scope=group&group=G`
-- Polling de eventos → `GET /api/updates?user=U`
-- Salud proxy → `GET /api/health`
+Endpoints de la API:
+| Método | Ruta | Body | Descripción |
+|--------|------|------|-------------|
+| POST | `/register` | `{ username }` | Registrar usuario |
+| POST | `/chat` | `{ sender, receiver, message }` | Mensaje privado |
+| POST | `/group/create` | `{ groupName, creator }` | Crear grupo |
+| POST | `/group/join` | `{ groupName, user }` | Unirse a grupo |
+| POST | `/group/message` | `{ groupName, sender, message }` | Mensaje a grupo |
+| GET | `/history` | `?scope=private&user=U&peer=P` | Historial privado |
+| GET | `/history` | `?scope=group&group=G` | Historial de grupo |
+| GET | `/updates` | `?user=U` | Polling de mensajes |
+| GET | `/voice/:file` | - | Obtener archivo de audio |
+| GET | `/health` | - | Estado del proxy |
+| GET | `/config` | - | Configuración actual |
 
 #### Proxy (traducción) → Backend Java (TCP, texto plano por línea)
 
-- `POST /register`              → abre socket usuario y envía: `<username>\n`
-- `POST /chat`                  → usa socket del sender: `/msg <receiver> <message>\n`
-- `POST /group/create`          → socket persistente: `/creategroup <groupName>\n`
-- `POST /group/join`            → socket persistente: `/joingroup <groupName>\n`
-- `POST /group/message`         → socket persistente: `/msggroup <groupName> <message>\n`
-- `GET /history`                → no consulta al backend; lee `server/data/history.jsonl` y filtra
-- `GET /updates`                → retorna y limpia cola `userMessages[user]` acumulada del socket de ese usuario
+| Endpoint HTTP | Comando TCP |
+|---------------|-------------|
+| `POST /register` | Abre socket usuario, envía: `<username>\n` |
+| `POST /chat` | Socket del sender: `/msg <receiver> <message>\n` |
+| `POST /group/create` | Socket del creator: `/creategroup <groupName>\n` |
+| `POST /group/join` | Socket del user: `/joingroup <groupName>\n` |
+| `POST /group/message` | Socket del sender: `/msggroup <groupName> <message>\n` |
+| `GET /history` | Lee `server/data/history.jsonl` y filtra |
+| `GET /updates` | Retorna y limpia cola `userMessages[user]` |
+| `GET /voice/:file` | Sirve archivo o proxy a `MAIN_SERVER_IP` |
 
 #### Backend Java → Proxy → Cliente (HTTP JSON)
 
@@ -114,13 +249,13 @@ Endpoints reales de la pagina web:
 
 ---
 
-### Patrón “push” simulado (Backend → Proxy → Cliente)
+### Patrón "push" simulado (Backend → Proxy → Cliente)
 
 1. El backend envía al socket del usuario receptor líneas como:
    - Privado: `MENSAJE_PRIVADO de <sender>: <texto>`
    - Grupo: `MENSAJE_GRUPO [<grupo>] de <sender>: <texto>`
 2. El proxy las guarda en `userMessages[usuario]`.
-3. El navegador consulta cada 1.5 s `GET /api/updates?user=U` y recibe `{ items: ["MENSAJE_PRIVADO de ...", ...] }`.
+3. El navegador consulta cada 1.5 s `GET /updates?user=U` y recibe `{ items: ["MENSAJE_PRIVADO de ...", ...] }`.
 4. La UI pinta cada línea.
    
 ---
@@ -143,24 +278,31 @@ Ejemplos de objetos en historial:
 
 ### Ejemplos de extremo a extremo
 
-- Privado (pull + ack):
-  - UI → `POST /api/chat` `{ sender:"ana", receiver:"bob", message:"Hola!" }`
-  - Proxy → TCP: `/msg bob Hola!`
-  - Backend → socket ana: `Mensaje enviado a bob`
-  - Backend → socket bob: `MENSAJE_PRIVADO de ana: Hola!`
-  - UI de bob → `GET /api/updates?user=bob` → muestra el mensaje
+**Mensaje privado (pull + ack):**
+```
+UI → POST /chat { sender:"ana", receiver:"bob", message:"Hola!" }
+Proxy → TCP: /msg bob Hola!
+Backend → socket ana: Mensaje enviado a bob
+Backend → socket bob: MENSAJE_PRIVADO de ana: Hola!
+UI de bob → GET /updates?user=bob → muestra el mensaje
+```
 
-- Grupo (mensaje + recepción por polling):
-  - UI → `POST /api/group/create` `{ groupName:"compunet" }`
-  - UI → `POST /api/group/join` `{ groupName:"compunet" }` (cada miembro)
-  - UI → `POST /api/group/message` `{ groupName:"compunet", message:"Hola equipo" }`
-  - Backend difunde a miembros: `MENSAJE_GRUPO [compunet] de ana: Hola equipo`
-  - Cada miembro lo obtiene en `/api/updates`
+**Mensaje a grupo:**
+```
+UI → POST /group/create { groupName:"compunet", creator:"ana" }
+UI → POST /group/join { groupName:"compunet", user:"bob" }
+UI → POST /group/message { groupName:"compunet", sender:"ana", message:"Hola equipo" }
+Backend difunde: MENSAJE_GRUPO [compunet] de ana: Hola equipo
+Cada miembro lo obtiene en GET /updates
+```
 
-- Historial:
-  - UI → `GET /api/history?scope=private&user=ana&peer=bob`
-  - Proxy → lee y filtra `history.jsonl`, devuelve `{ items:[...] }`
-  - UI renderiza texto y audios (con `<audio src="/voice/archivo.wav">`)
+**Historial:**
+```
+UI → GET /history?scope=private&user=ana&peer=bob
+Proxy → lee y filtra history.jsonl
+Respuesta: { items: [...] }
+UI renderiza texto y audios con <audio src="/voice/archivo.wav">
+```
 
 ---
 
@@ -187,7 +329,7 @@ El sistema de audio utiliza **Ice ZeroC** (versión 3.7.10 para JavaScript) como
    - `audioRecorder.js`: Maneja la grabación de notas de voz
 
 3. **Interfaz Slice (Services.ice)**:
-```slice
+```c
 module Chat {
     // Entrada de nota de voz
     struct VoiceEntry {
@@ -336,29 +478,29 @@ voiceDelegate.subscribe((data) => {
 ```
 Cliente (Ale)                           Servidor Java                      Cliente (Fel)
     │                                        │                                   │
-    ├─ [Graba audio] ─────────────────────> │                                   │
+    ├─ [Graba audio] ─────────────────────>  │                                   │
     │  MediaRecorder → Blob                  │                                   │
     │  AudioContext → Float32                │                                   │
     │  Conversión → PCM16                    │                                   │
     │                                        │                                   │
-    ├─ sendVoiceToUser(Ale, Fel, bytes) ──> │                                   │
-    │  Ice.CallPrx.sendVoiceNoteToUser()    │                                   │
+    ├─ sendVoiceToUser(Ale, Fel, bytes) ──>  │                                   │
+    │  Ice.CallPrx.sendVoiceNoteToUser()     │                                   │
     │                                        │                                   │
     │                                   [CallI.java]                             │
     │                                   saveVoiceBytes()                         │
-    │                                   ↓ WAV en disk                           │
-    │                                   ↓ Log en history.jsonl                  │
+    │                                   ↓ WAV en disk                            │
+    │                                   ↓ Log en history.jsonl                   │
     │                                        │                                   │
     │                                   notifyUser(Ale)                          │
-    │ <─────────────────────────────── obs.onVoice(entry)                       │
-    │  [Callback Ice recibido]              │                                   │
-    │  UI muestra nota enviada              │                                   │
+    │ <─────────────────────────────── obs.onVoice(entry)                        │
+    │  [Callback Ice recibido]               │                                   │
+    │  UI muestra nota enviada               │                                   │
     │                                        │                                   │
     │                                   notifyUser(Fel) ───────────────────────> │
-    │                                        │       obs.onVoice(entry) ────────> │
-    │                                        │                      [Callback Ice]│
-    │                                        │                      UI muestra    │
-    │                                        │                      reproductor   │
+    │                                        │      obs.onVoice(entry) ────────> │
+    │                                        │                     [Callback Ice]│
+    │                                        │                     UI muestra    │
+    │                                        │                     reproductor   │
 ```
 
 ---
@@ -553,18 +695,18 @@ _playCallChunk(fromUser, audioData) {
 ```
 Ale (caller)                        Servidor Java                      Fel (callee)
     │                                      │                                  │
-    ├─ startPrivateCall("Fel") ─────────> │                                  │
-    │  Ice: startCall("Ale", "Fel")       │                                  │
+    ├─ startPrivateCall("Fel") ─────────>  │                                  │
+    │  Ice: startCall("Ale", "Fel")        │                                  │
     │                                      │                                  │
-    │                                 [CallI.java]                            │
-    │                                 UUID.randomUUID()                       │
-    │                                 callId = "0fcb2a97..."                  │
-    │                                 CallManager.createCall(callId, [Ale,Fel])│
+    │                                [CallI.java]                             │
+    │                                UUID.randomUUID()                        │
+    │                                callId = "0fcb2a97..."                   │
+    │                                CallManager.createCall(callId, [Ale,Fel])│
     │                                      │                                  │
-    │                                      ├─ notifyCallEvent(Fel, incoming) ─> │
-    │                                      │                 onCallEvent() ───> │
-    │                                      │                 [Modal: Llamada]  │
-    │                                      │                 [Entrante de Ale] │
+    │                                      ├─notifyCallEvent(Fel, incoming)─> │
+    │                                      │               onCallEvent() ───> │
+    │                                      │                [Modal: Llamada]  │
+    │                                      │                [Entrante de Ale] │
     │                                      │                                  │
     │ <─── notifyCallEvent(Ale, started) ──┤                                  │
     │  onCallEvent()                       │                                  │
@@ -574,54 +716,54 @@ Ale (caller)                        Servidor Java                      Fel (call
     │  ↓ getUserMedia()                    │                                  │
     │  ↓ ScriptProcessor                   │                                  │
     │                                      │                                  │
-    │                                      │                 [Fel acepta] <──── │
-    │                                      │ <─── acceptCall(callId, "Fel") ─── │
+    │                                      │               [Fel acepta] <──── │
+    │                                      │<─── acceptCall(callId, "Fel") ───│
     │                                      │                                  │
     │                                [CallI.acceptCall]                       │
     │                                participants.add("Fel")                  │
     │                                      │                                  │
-    │ <────── notifyCallEvent(accepted) ───┼─────────────────────────────────> │
-    │  onCallEvent()                       │                 onCallEvent()     │
-    │  [Fel aceptó]                        │                 _startAudioCapture()│
-    │                                      │                 ↓ AudioContext    │
-    │                                      │                 ↓ getUserMedia()  │
+    │ <────── notifyCallEvent(accepted) ───┼─────────────────────────────────>│
+    │  onCallEvent()                       │                 onCallEvent()    │
+    │  [Fel aceptó]                        │              _startAudioCapture()│
+    │                                      │                ↓ AudioContext    │
+    │                                      │                ↓ getUserMedia()  │
     │                                      │                                  │
-    │ [STREAMING BIDIRECCIONAL DE AUDIO - Cada ~46ms]                        │
+    │ [STREAMING BIDIRECCIONAL DE AUDIO - Cada ~46ms]                         │
     │                                      │                                  │
     ├─ onaudioprocess ────────────────────>│                                  │
-    │  Float32[2048] → PCM16[4096 bytes]  │                                  │
-    │  sendCallChunk(callId, "Ale", bytes)│                                  │
+    │   Float32[2048] → PCM16[4096 bytes]  │                                  │
+    │   sendCallChunk(callId, "Ale", bytes)│                                  │
     │                                      │                                  │
     │                                [sendCallChunk]                          │
     │                                getParticipants(callId)                  │
     │                                → [Ale, Fel]                             │
-    │                                reenviar a Fel ──────────────────────────> │
-    │                                obs.onCallChunk(chunk) ──────────────────> │
-    │                                      │                 onCallChunk()     │
-    │                                      │                 _playCallChunk()  │
-    │                                      │                 PCM16 → Float32   │
-    │                                      │                 AudioBuffer       │
-    │                                      │                 🔊 Reproducir     │
+    │                              reenviar a Fel ──────────────────────────> │
+    │                              obs.onCallChunk(chunk) ──────────────────> │
+    │                                      │                onCallChunk()     │
+    │                                      │                _playCallChunk()  │
+    │                                      │                PCM16 → Float32   │
+    │                                      │                AudioBuffer       │
+    │                                      │                Reproducir        │
     │                                      │                                  │
     │ [Simultaneamente Fel envía audio] <──────────────────────────────────── │
     │ <────────────────────────────────────┤ <─ sendCallChunk(callId, "Fel") ─┤
     │  onCallChunk()                       │  reenviar a Ale                  │
     │  _playCallChunk()                    │                                  │
-    │  🔊 Reproducir audio de Fel          │                                  │
+    │     Reproducir audio de Fel          │                                  │
     │                                      │                                  │
     │ [Ale termina llamada]                │                                  │
     ├─ endCall() ─────────────────────────>│                                  │
-    │  Ice: endCall(callId, "Ale")        │                                  │
+    │  Ice: endCall(callId, "Ale")         │                                  │
     │  _stopAudioCapture()                 │                                  │
     │                                      │                                  │
     │                                [CallI.endCall]                          │
     │                                activeCalls.remove(callId)               │
     │                                CallManager.endCall(callId)              │
     │                                      │                                  │
-    │ <──── notifyCallEvent(ended) ────────┼─────────────────────────────────> │
-    │  [Llamada terminada]                 │                 onCallEvent()     │
-    │                                      │                 _stopAudioCapture()│
-    │                                      │                 [Llamada terminada]│
+    │ <──── notifyCallEvent(ended) ────────┼─────────────────────────────────>│
+    │  [Llamada terminada]                 │                 onCallEvent()    │
+    │                                      │               _stopAudioCapture()│
+    │                                      │               [Llamada terminada]│
 ```
 
 ---
@@ -750,9 +892,9 @@ public static SavedAudio saveVoiceBytes(byte[] pcm16Data) throws IOException {
 ### Contratos y delimitación
 
 - **TCP entre proxy/usuarios y backend**: texto plano por líneas terminadas en `\n` (sin JSON) - solo para mensajes de texto.
-- **Ice ZeroC**: Binario sobre WebSocket en `/call` - para audio (notas de voz y llamadas).
-- **WebSocket proxy (puerto 3002)**: Notificaciones en tiempo real (opcional, para eventos no-audio).
+- **Ice ZeroC**: Binario sobre WebSocket en `ws://<host>:10010/call` - para audio (notas de voz y llamadas).
+- **HTTP Polling**: El cliente consulta `GET /updates` cada 1.5s para recibir mensajes de texto.
 - Comandos TCP soportados: `/msg`, `/msggroup`, `/creategroup`, `/joingroup`, `/quit` (audio NO usa estos comandos).
 - Cada usuario mantiene:
-  - Un socket TCP para mensajes de texto
+  - Un socket TCP (vía proxy) para mensajes de texto
   - Una conexión Ice bidireccional para audio con callbacks (VoiceObserver)

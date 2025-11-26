@@ -229,7 +229,7 @@ app.listen(HTTP_PORT, '0.0.0.0', () => {
   console.log(`╔═══════════════════════════════════════════════════════════╗`);
   console.log(`║   Chat Proxy Server - ES Modules                          ║`);
   console.log(`╠═══════════════════════════════════════════════════════════╣`);
-  console.log(`║   HTTP Server:  http://0.0.0.0:${HTTP_PORT}                        ║`);
+  console.log(`║   HTTP Server:  http://0.0.0.0:${HTTP_PORT}               ║`);
   console.log(`╚═══════════════════════════════════════════════════════════╝`);
   
   const config = getConfig();
