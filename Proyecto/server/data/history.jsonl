@@ -68,6 +68,7 @@
 {"audioFile":"server\\data\\voice\\voice-1764028094189-2c61acda-4df0-494f-83dd-96478b0fbb43.wav","sender":"seb","scope":"group","id":"38ff1334-1c72-4dfd-90d5-71e0052b8ee9","type":"voice_group","timestamp":"2025-11-24T23:48:14.192988200Z","group":"Compunet","sizeBytes":135212}
 {"audioFile":"server\\data\\voice\\voice-1764028305333-b570ebe1-48c4-4117-83dd-834fc4ccc519.wav","sender":"seb","scope":"group","id":"2e1ae299-1615-4dc6-bbd6-da77e92740be","type":"voice_group","timestamp":"2025-11-24T23:51:45.353253300Z","group":"Compunet","sizeBytes":188460}
 {"audioFile":"server\\data\\voice\\voice-1764028366871-4c4b9688-5666-4016-81c3-170db39ad1d3.wav","sender":"Fel","scope":"group","id":"af24bf0d-6e1a-45eb-912b-448b2e4a1e46","type":"voice_group","timestamp":"2025-11-24T23:52:46.875624Z","group":"Compunet","sizeBytes":335916}
+<<<<<<< HEAD
 {"sender":"Sebas","scope":"private","recipient":"Pau","id":"846bd3f5-27ab-47e8-a213-1c818ab33c4c","type":"text","message":"Hola","timestamp":"2025-11-26T03:41:09.731720Z"}
 {"audioFile":"server\\data\\voice\\voice-1764128478322-d60da16c-338b-4225-a641-7745fc499b3d.wav","sender":"Sebas","scope":"private","recipient":"Pau","id":"489f996c-dcab-4546-9d3a-03d2b842f9d4","type":"voice_note","timestamp":"2025-11-26T03:41:18.350067100Z","sizeBytes":303148}
 {"audioFile":"server\\data\\voice\\voice-1764128519460-b90ed596-3e86-4a8f-87be-6d242f0de1d4.wav","sender":"Sebas","scope":"private","recipient":"Pau","id":"b90a8439-b16d-4331-8556-952858811cbd","type":"voice_note","timestamp":"2025-11-26T03:41:59.465268Z","sizeBytes":520236}
@@ -94,3 +95,8 @@
 {"callId":"60a6c517-6c5c-4660-b30a-2b31862c456f","sender":"server","scope":"call","id":"baae0115-1bd9-45eb-a417-6d0381caf313","type":"call_started","timestamp":"2025-11-26T05:41:24.885530300Z","participants":["Sebas","Pau"]}
 {"callId":"60a6c517-6c5c-4660-b30a-2b31862c456f","sender":"server","scope":"call","endedBy":"Sebas","id":"3dde0b70-ef5b-41d0-9e92-a5d53c5afafc","type":"call_ended","timestamp":"2025-11-26T05:41:50.934414800Z","participants":["Sebas","Pau"]}
 {"audioFile":"server\\data\\voice\\voice-1764135725468-795034d3-e17e-45c3-8cde-93cd043e29b8.wav","sender":"Sebas","scope":"private","recipient":"Pau","id":"8fe6215b-c187-40b7-a2a4-528801b2c6c6","type":"voice_note","timestamp":"2025-11-26T05:42:05.497398800Z","sizeBytes":208940}
+=======
+{"audioFile":"server\\data\\voice\\voice-1764130929385-91e7d344-47b1-41d1-a1fa-aaeb692c3abf.wav","sender":"Ale","scope":"private","recipient":"Fel","id":"a11ebcc9-bf63-4acd-bf67-4bec92567774","type":"voice_note","timestamp":"2025-11-26T04:22:09.435451400Z","sizeBytes":241708}
+{"audioFile":"server\\data\\voice\\voice-1764131630957-52677398-3440-4ce5-867d-c658f1f5ec99.wav","sender":"Ale","scope":"private","recipient":"Fel","id":"0cb9bcd7-fd88-4251-b3fa-978962a64874","type":"voice_note","timestamp":"2025-11-26T04:33:51.023589900Z","sizeBytes":282668}
+{"audioFile":"server\\data\\voice\\voice-1764131652194-5c328995-ff4b-4b60-933b-25f56769822a.wav","sender":"Fel","scope":"private","recipient":"Ale","id":"2e178b7e-cc82-496f-8ed9-21427e077b0b","type":"voice_note","timestamp":"2025-11-26T04:34:12.198111800Z","sizeBytes":294956}
+>>>>>>> 747c0b0b2791b6885392284547563f1c38e160b3

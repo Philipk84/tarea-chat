@@ -6,13 +6,11 @@ import {
   getUpdates,
   getPrivateHistory,
   getGroupHistory,
-  startCall,
-  endCall,
 } from "../api/http.js";
 
 import voiceDelegate from "../services/voiceDelegate.js";
-import { createRecorder, createCallStream } from "../services/recorder.js";
-import { playPcm16 } from "../services/callPlayer.js";
+import callManager from "../services/callManager.js";
+import { createRecorder } from "../services/recorder.js";
 
 function Chat() {
   const username = localStorage.getItem("chat_username");
@@ -24,12 +22,12 @@ function Chat() {
 
   let recBtn = null;
   let voiceInitErrorShown = false;
-    // Estado para llamadas
-  let currentCall = null; // { id, peers, stream }
-
   
   // Almacenar mensajes de voz pendientes por conversación
   const pendingVoiceMessages = {}; // { "user:id" o "group:id": [entries] }
+  
+  // Inicializar callManager
+  callManager.init(username);
 
   // Función auxiliar para obtener clave de chat
   function getChatKey(chat) {
@@ -82,21 +80,9 @@ function Chat() {
   });
   */
 
-    voiceDelegate.subscribe(async (msg) => {
-    // 1) Mensajes de audio de llamada (call_chunk) que vienen por ICE
-    if (msg && msg.type === "call_chunk") {
-      const { callId, fromUser, audio } = msg.chunk;
-
-      // Solo reproducir si es la llamada actual y no soy yo
-      if (currentCall && currentCall.id === callId && fromUser !== username) {
-        await playPcm16(audio);
-      }
-      return; // no seguimos, porque esto no es una nota de voz normal
-    }
-
-    // 2) Notas de voz normales (VoiceEntry) – compatibilidad con lo que ya tenías
-    const entry = msg.entry || msg; // por si en el futuro voiceDelegate envía {type:'voice', entry}
-
+    voiceDelegate.subscribe((entry) => {
+    // Los eventos de llamada (call_chunk, call_event) los maneja callManager
+    // Aquí solo procesamos VoiceEntry (notas de voz)
     console.log("[Voice] Notificación recibida:", entry);
     
     if (isEntryForCurrentChat(entry)) {
@@ -184,6 +170,31 @@ function Chat() {
 
   header.appendChild(callBtn);
   header.appendChild(hangBtn);
+
+  // Modal para llamadas entrantes
+  const callModal = document.createElement("div");
+  callModal.style.display = "none";
+  callModal.style.position = "fixed";
+  callModal.style.top = "50%";
+  callModal.style.left = "50%";
+  callModal.style.transform = "translate(-50%, -50%)";
+  callModal.style.background = "white";
+  callModal.style.padding = "20px";
+  callModal.style.borderRadius = "8px";
+  callModal.style.boxShadow = "0 4px 6px rgba(0,0,0,0.3)";
+  callModal.style.zIndex = "1000";
+
+  const callModalText = document.createElement("p");
+  callModal.appendChild(callModalText);
+
+  const acceptCallBtn = document.createElement("button");
+  acceptCallBtn.textContent = "✅ Aceptar";
+  acceptCallBtn.style.marginRight = "10px";
+  callModal.appendChild(acceptCallBtn);
+
+  const rejectCallBtn = document.createElement("button");
+  rejectCallBtn.textContent = "❌ Rechazar";
+  callModal.appendChild(rejectCallBtn);
 
   const messages = document.createElement("div");
   messages.classList.add("messages");
@@ -279,6 +290,7 @@ function Chat() {
 
   root.appendChild(sidebar);
   root.appendChild(main);
+  root.appendChild(callModal);
 
   // ----- ESTADO -----
   let currentChat = null; // { type: "user" | "group", id: string }
@@ -380,14 +392,21 @@ joinGroupBtn.onclick = async () => {
     }
   };
 
-    // ----- LLAMADAS -----
+  // ----- LLAMADAS CON ICE -----
   async function makeCallToCurrentUser() {
-    if (!currentChat || currentChat.type !== "user") {
-      alert("Para llamar, abre un chat directo con un usuario.");
+    if (!currentChat) {
+      alert("Selecciona primero un usuario o grupo");
       return;
     }
+    
     try {
-      await startCall(username, currentChat.id);
+      if (currentChat.type === "user") {
+        await callManager.startPrivateCall(currentChat.id);
+        alert(`Llamando a ${currentChat.id}...`);
+      } else if (currentChat.type === "group") {
+        await callManager.startGroupCall(currentChat.id);
+        alert(`Llamando al grupo ${currentChat.id}...`);
+      }
     } catch (e) {
       alert("Error iniciando llamada: " + (e.message || e));
     }
@@ -395,20 +414,70 @@ joinGroupBtn.onclick = async () => {
 
   async function hangUpCall() {
     try {
-      if (currentCall) {
-        await endCall(username, currentCall.id);
-        if (currentCall.stream) {
-          await currentCall.stream.stop();
-        }
-        currentCall = null;
-      } else {
-        // por si el servidor cree que hay llamada
-        await endCall(username);
-      }
+      await callManager.endCall();
+      alert("Llamada finalizada");
     } catch (e) {
       alert("Error terminando llamada: " + (e.message || e));
     }
   }
+  
+  // Manejar llamadas entrantes
+  callManager.onIncomingCall((call) => {
+    let callerInfo;
+    if (call.type === "private") {
+      callerInfo = `${call.caller} te está llamando`;
+    } else {
+      callerInfo = `Llamada grupal entrante en ${call.group}`;
+    }
+    
+    callModalText.textContent = callerInfo;
+    callModal.style.display = "block";
+    
+    acceptCallBtn.onclick = async () => {
+      try {
+        await callManager.acceptCall(call.callId);
+        callModal.style.display = "none";
+        alert("Llamada aceptada");
+      } catch (e) {
+        alert("Error aceptando llamada: " + (e.message || e));
+        callModal.style.display = "none";
+      }
+    };
+    
+    rejectCallBtn.onclick = async () => {
+      try {
+        await callManager.rejectCall(call.callId);
+        callModal.style.display = "none";
+      } catch (e) {
+        alert("Error rechazando llamada: " + (e.message || e));
+        callModal.style.display = "none";
+      }
+    };
+  });
+  
+  // Manejar eventos de llamada para notificaciones en UI
+  callManager.onCallEvent((event) => {
+    console.log("[Call Event]", event);
+    
+    const eventMessages = {
+      call_started: "Llamada iniciada",
+      call_accepted: `${event.caller} aceptó la llamada`,
+      call_rejected: `${event.caller} rechazó la llamada`,
+      call_ended: "Llamada finalizada",
+    };
+    
+    const message = eventMessages[event.type];
+    if (message) {
+      const div = document.createElement("div");
+      div.classList.add("message", "system");
+      div.textContent = `🔔 ${message}`;
+      div.style.textAlign = "center";
+      div.style.fontStyle = "italic";
+      div.style.color = "#666";
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+    }
+  });
 
 
   msgInput.addEventListener("keydown", (e) => {
@@ -551,53 +620,13 @@ joinGroupBtn.onclick = async () => {
     // Ignorar otros tipos (llamadas, etc.)
   }
 
-    // ----- POLLING AUTOMÁTICO DE NUEVOS MENSAJES Y LLAMADAS -----
+  // ----- POLLING AUTOMÁTICO DE NUEVOS MENSAJES -----
   async function pollUpdates() {
     try {
       const { items } = await getUpdates(username);
       if (!items || !Array.isArray(items)) return;
 
       for (const line of items) {
-        // 1) Inicio de llamada
-        if (line.startsWith("LLAMADA_INICIADA:")) {
-          // Ejemplo:
-          // "LLAMADA_INICIADA: call123 user1:ip:puerto,user2:ip:puerto"
-          const [, rest] = line.split("LLAMADA_INICIADA:");
-          const trimmed = rest.trim();
-          const [callId, peersStr] = trimmed.split(" ", 2);
-
-          const peers = peersStr
-            ? peersStr.split(",").map((p) => {
-                const [name, ip, port] = p.split(":");
-                return { name, ip, port };
-              })
-            : [];
-
-          // Arrancar el envío de audio de esta llamada
-          if (!currentCall || currentCall.id !== callId) {
-            const stream = createCallStream(username, callId);
-            await stream.start();
-            currentCall = { id: callId, peers, stream };
-            console.log("[Call] Llamada iniciada:", currentCall);
-          }
-
-          // Muestra también el texto en la UI si quieres
-          appendIncoming(line);
-          continue;
-        }
-
-        // 2) Fin de llamada
-        if (line.startsWith("LLAMADA_TERMINADA:")) {
-          if (currentCall && currentCall.stream) {
-            await currentCall.stream.stop();
-          }
-          currentCall = null;
-          console.log("[Call] Llamada terminada");
-          appendIncoming(line);
-          continue;
-        }
-
-        // 3) Otros mensajes normales
         appendIncoming(line);
       }
     } catch (e) {
