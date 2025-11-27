@@ -53,20 +53,3 @@ export function getGroupHistory(group) {
 export function getUpdates(user) {
   return get("/updates", { user });
 }
-
-export function startCall(caller, callee) {
-  return post("/call/start", { caller, callee });
-}
-
-export function startGroupCall(caller, groupName) {
-  return post("/call/group", { caller, groupName });
-}
-
-export function endCall(user, callId) {
-  return post("/call/end", { user, callId });
-}
-
-// (Opcional) registrar puerto UDP en el server, si estás usando /udpport
-export function registerUdpPort(user, port) {
-  return post("/udp/register", { user, port });
-}

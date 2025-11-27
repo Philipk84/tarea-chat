@@ -32,10 +32,6 @@ export const config = {
   // El proxy local reenvía historial/audio al servidor principal si es necesario
   httpBaseUrl: '',
   
-  // Servidor WebSocket (notificaciones en tiempo real) - usar proxy local
-  wsHost: '',
-  wsPort: 3002,
-  
   // Servidor Ice (llamadas y audio) - apuntar al servidor Java
   iceHost: ICE_SERVER_IP || '',
   icePort: 10010,

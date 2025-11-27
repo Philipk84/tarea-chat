@@ -27,7 +27,6 @@ const userMessages = {};  // { username: [mensajes pendientes] }
 
 let globalSocket = null;
 let connected = false;
-let recvBuffer = '';
 
 // ─────────────────────────────────────────────────────────────
 // Conexión TCP persistente (global)
@@ -38,10 +37,6 @@ function connectTCP() {
   globalSocket.connect(TCP_PORT, TCP_HOST, () => {
     connected = true;
     console.log(`[TCP] Conectado a ${TCP_HOST}:${TCP_PORT}`);
-  });
-
-  globalSocket.on('data', (chunk) => {
-    recvBuffer += chunk.toString('utf8');
   });
 
   globalSocket.on('close', () => {
@@ -400,12 +395,6 @@ export {
   
   // Audio
   getVoiceFile,
-  
-  // Llamadas
-  startCall,
-  startGroupCall,
-  endCall,
-  registerUdpPort,
   
   // Sistema
   getHealth,

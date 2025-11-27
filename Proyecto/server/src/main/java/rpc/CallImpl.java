@@ -16,18 +16,11 @@ import Chat.CallEvent;
 import java.util.UUID;
 
 
-public class CallI implements Call {
-
-    @SuppressWarnings("unused")
-    private final ChatServer chatServer;
+public class CallImpl implements Call {
     // username -> observer proxy
     private final Map<String, VoiceObserverPrx> observers = new ConcurrentHashMap<>();
     // callId -> Set<participants>
     private final Map<String, Set<String>> activeCalls = new ConcurrentHashMap<>();
-
-    public CallI(ChatServer chatServer) {
-        this.chatServer = chatServer;
-    }
 
     @Override
     public void subscribe(String username, VoiceObserverPrx obs, Current current) {

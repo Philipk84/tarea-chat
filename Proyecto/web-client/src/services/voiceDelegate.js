@@ -109,10 +109,11 @@ class VoiceDelegate {
 
       // Determinar host del servidor Ice
       const serverHost = config.iceHost || window.location.hostname || 'localhost';
-      console.log("[VoiceDelegate] Conectando a servidor Ice en:", serverHost, ":", config.icePort);
+      const serverPort = config.icePort || 10010;
+      console.log("[VoiceDelegate] Conectando a servidor Ice en:", serverHost, ":", serverPort);
       
-      const base = await this.communicator.stringToProxy(
-        `Call:ws -h ${serverHost} -p 10010 -r /call`
+      const base = this.communicator.stringToProxy(
+        `Call:ws -h ${serverHost} -p ${serverPort} -r /call`
       );
 
       const prx = await Slice.Chat.CallPrx.checkedCast(base);

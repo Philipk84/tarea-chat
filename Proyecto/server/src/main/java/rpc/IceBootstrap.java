@@ -30,7 +30,7 @@ public final class IceBootstrap {
                                 "ws -p 10010 -r /call"
                         );
 
-                Call servant = new CallI(chatServer);
+                Call servant = new CallImpl();
                 adapter.add(servant, Util.stringToIdentity("Call"));
 
                 adapter.activate();
