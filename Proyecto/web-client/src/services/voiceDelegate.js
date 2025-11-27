@@ -4,7 +4,6 @@ import { config } from "../config.js";
 
 const Ice = IceModule.Ice || IceModule;
 
-// Muy parecido a IceDelegatge del repo audio_rep
 class VoiceDelegate {
   constructor() {
     this.communicator = null;
@@ -65,7 +64,7 @@ class VoiceDelegate {
       try {
         this.connection.close();
       } catch (_) {
-        // ignore
+        // Se ignoran errores al cerrar la conexión
       }
       this.connection = null;
     }
@@ -77,7 +76,7 @@ class VoiceDelegate {
           result.catch(() => {});
         }
       } catch (_) {
-        // ignore cleanup failures
+        // Se ignoran errores al limpiar recursos
       }
     }
     this._adapter = null;
@@ -86,7 +85,7 @@ class VoiceDelegate {
       try {
         this.communicator.destroy();
       } catch (_) {
-        // no-op
+        // Se ignoran errores al destruir el comunicador
       }
     }
     this.communicator = null;

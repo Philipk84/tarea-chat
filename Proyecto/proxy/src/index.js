@@ -155,61 +155,6 @@ app.get('/voice/:file', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// Rutas de Llamadas
-// ─────────────────────────────────────────────────────────────
-
-app.post('/call/start', async (req, res) => {
-  try {
-    const { caller, callee } = req.body;
-    const result = await startCall(caller, callee);
-    res.json(result);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-app.post('/call/start-group', async (req, res) => {
-  try {
-    const { caller, groupName } = req.body;
-    const result = await startGroupCall(caller, groupName);
-    res.json(result);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-app.post('/call/end', async (req, res) => {
-  try {
-    const { user, callId } = req.body;
-    const result = await endCall(user, callId);
-    res.json(result);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-app.post('/call/udp', async (req, res) => {
-  try {
-    const { user, port } = req.body;
-    const result = await registerUdpPort(user, port);
-    res.json(result);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-// Endpoint alternativo para UDP (compatibilidad)
-app.post('/udp/register', async (req, res) => {
-  try {
-    const { user, port } = req.body;
-    const result = await registerUdpPort(user, port);
-    res.json(result);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-// ─────────────────────────────────────────────────────────────
 // Rutas de Sistema
 // ─────────────────────────────────────────────────────────────
 

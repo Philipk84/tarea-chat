@@ -62,7 +62,7 @@ export function createRecorder(username, target) {
   };
 }
 
-// NUEVO: grabador en streaming para llamadas
+// Grabador en streaming para llamadas
 export function createCallStream(username, callId) {
   let audioCtx = null;
   let stream = null;
@@ -79,7 +79,7 @@ export function createCallStream(username, callId) {
       processor.onaudioprocess = (e) => {
         const input = e.inputBuffer.getChannelData(0);
         const pcm16 = float32ToPCM16(input);
-        // enviar este frame por ICE
+        // Se envía este frame por ICE
         voiceDelegate
           .sendCallChunk(callId, username, pcm16)
           .catch((err) => console.error("Error enviando chunk de llamada:", err));

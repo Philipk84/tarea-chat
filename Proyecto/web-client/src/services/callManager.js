@@ -43,10 +43,9 @@ class CallManager {
    */
   _handleCallChunk(chunk) {
     if (!this.currentCall || this.currentCall.callId !== chunk.callId) {
-      //console.warn("[CallManager] Chunk recibido para llamada no activa");
+      // No es una llamada en curso
       return;
     }
-    
     // Reproducir el audio del otro participante
     this._playCallChunk(chunk.fromUser, chunk.audio);
   }
@@ -265,7 +264,7 @@ class CallManager {
   }
 
   /**
-   * Convertir Float32 PCM a PCM16 Little Endian
+   * Convertir Float32 a PCM16 Little Endian
    */
   _float32ToPCM16(float32) {
     const buffer = new ArrayBuffer(float32.length * 2);

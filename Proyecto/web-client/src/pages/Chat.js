@@ -51,41 +51,11 @@ function Chat() {
     }
   }
 
-  /** 
-  voiceDelegate.subscribe((entry) => {
-    console.log("[Voice] Notificación recibida:", entry);
-    
-    // Verificar si el entry es para el chat actual
-    if (isEntryForCurrentChat(entry)) {
-      // Mostrar inmediatamente
-      appendHistoryItem(entry);
-      messages.scrollTop = messages.scrollHeight;
-    } else {
-      // Guardar en pendientes para cuando se abra ese chat
-      let chatKey;
-      if (entry.scope === "private") {
-        // Determinar el otro usuario
-        const otherUser = entry.sender === username ? entry.recipient : entry.sender;
-        chatKey = `user:${otherUser}`;
-      } else {
-        chatKey = `group:${entry.group}`;
-      }
-      
-      if (!pendingVoiceMessages[chatKey]) {
-        pendingVoiceMessages[chatKey] = [];
-      }
-      pendingVoiceMessages[chatKey].push(entry);
-      console.log(`[Voice] Mensaje guardado para ${chatKey}`);
-    }
-  });
-  */
-
     voiceDelegate.subscribe((entry) => {
-    // Los eventos de llamada (call_chunk, call_event) los maneja callManager
-    // Aquí solo procesamos VoiceEntry (notas de voz)
+    // Se procesa el VoiceEntry (notas de voz)
     console.log("[Voice] Notificación recibida:", entry);
     
-    // Filtrar solo VoiceEntry (tienen audioFile y type="voice_note" o "voice_group")
+    // Filtrar solo VoiceEntry, tienen audioFile y pueden ser tipo "voice_note" o "voice_group"
     if (!entry.audioFile || (entry.type !== "voice_note" && entry.type !== "voice_group")) {
       console.log("[Voice] Ignorando notificación que no es VoiceEntry");
       return;
@@ -258,7 +228,7 @@ function Chat() {
 
     await voiceDelegate.ensureReady();
 
-    // Si ya está grabando, paramos y enviamos
+    // Si ya está grabando, se deja de grabar y se envia
     if (currentRecorder) {
       try {
         await currentRecorder.stop();
@@ -305,7 +275,7 @@ function Chat() {
   const to = directInput.value.trim();
   if (!to) return;
   if (to === username) {
-    alert("No puedes chatear contigo mismo 😉");
+    alert("No puedes chatear contigo mismo ;)");
     return;
   }
   currentChat = { type: "user", id: to };
@@ -316,7 +286,7 @@ function Chat() {
 // Cambiar cuando se pierda el foco
 directInput.addEventListener("change", openDirectChat);
 
-// Cambiar al presionar Enter
+// Cambiar al presionar Enter (Solo hace mas interactiva la pagina)
 directInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     e.preventDefault();
@@ -325,30 +295,28 @@ directInput.addEventListener("keydown", (e) => {
   }
 });
 
-
-  // Crear grupo
+// Crear grupo
 createGroupBtn.onclick = async () => {
   const gname = groupNameInput.value.trim();
   if (!gname) return;
 
   try {
-    // 1) Crear grupo como el usuario actual
+    // Se crea un grupo como el usuario actual
     await createGroup(gname, username);
 
-    // 2) Asegurar que el creador esté dentro del grupo
+    // Se asegura que el creador esté dentro del grupo
     await joinGroup(gname, username);
 
-    // 3) Seleccionar el grupo como chat actual
+    // Se selecciona el grupo como chat actual
     currentChat = { type: "group", id: gname };
     chatTitle.textContent = "Grupo: " + gname;
 
-    // 4) Cargar historial de ese grupo
+    // Se carga el historial de ese grupo
     await loadHistory();
   } catch (e) {
     alert("Error creando grupo: " + (e.message || e));
   }
 };
-
 
 // Unirse a grupo manualmente
 joinGroupBtn.onclick = async () => {

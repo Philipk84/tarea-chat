@@ -384,59 +384,6 @@ async function getVoiceFile(fileName) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Servicios de Llamadas
-// ─────────────────────────────────────────────────────────────
-
-/**
- * Inicia una llamada privada
- */
-async function startCall(caller, callee) {
-  if (!caller || !callee) {
-    throw new Error("caller y callee requeridos");
-  }
-
-  const reply = await sendCommandFromUser(caller, `/call ${callee}`);
-  return { reply };
-}
-
-/**
- * Inicia una llamada grupal
- */
-async function startGroupCall(caller, groupName) {
-  if (!caller || !groupName) {
-    throw new Error("caller y groupName requeridos");
-  }
-
-  const reply = await sendCommandFromUser(caller, `/callgroup ${groupName}`);
-  return { reply };
-}
-
-/**
- * Termina una llamada
- */
-async function endCall(user, callId) {
-  if (!user) {
-    throw new Error("user requerido");
-  }
-
-  const cmd = callId ? `/endcall ${callId}` : `/endcall`;
-  const reply = await sendCommandFromUser(user, cmd);
-  return { reply };
-}
-
-/**
- * Registra puerto UDP de un usuario
- */
-async function registerUdpPort(user, port) {
-  if (!user || !port) {
-    throw new Error("user y port requeridos");
-  }
-
-  const reply = await sendCommandFromUser(user, `/udpport ${port}`);
-  return { reply };
-}
-
-// ─────────────────────────────────────────────────────────────
 // Estado del sistema
 // ─────────────────────────────────────────────────────────────
 
