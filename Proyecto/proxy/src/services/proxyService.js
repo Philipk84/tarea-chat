@@ -401,12 +401,6 @@ export {
   // Audio
   getVoiceFile,
   
-  // Llamadas
-  startCall,
-  startGroupCall,
-  endCall,
-  registerUdpPort,
-  
   // Sistema
   getHealth,
   getConfig
