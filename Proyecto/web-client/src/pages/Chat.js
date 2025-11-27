@@ -378,10 +378,8 @@ function Chat() {
     try {
       if (currentChat.type === "user") {
         await callManager.startPrivateCall(currentChat.id);
-        alert(`Llamando a ${currentChat.id}...`);
       } else if (currentChat.type === "group") {
         await callManager.startGroupCall(currentChat.id);
-        alert(`Llamando al grupo ${currentChat.id}...`);
       }
     } catch (e) {
       alert("Error iniciando llamada: " + (e.message || e));
@@ -392,7 +390,6 @@ function Chat() {
     console.log("[Chat] hangUpCall ejecutado - stack:", new Error().stack);
     try {
       await callManager.endCall();
-      alert("Llamada finalizada");
     } catch (e) {
       alert("Error terminando llamada: " + (e.message || e));
     }
@@ -414,7 +411,6 @@ function Chat() {
       try {
         await callManager.acceptCall(call.callId);
         callModal.style.display = "none";
-        alert("Llamada aceptada");
       } catch (e) {
         alert("Error aceptando llamada: " + (e.message || e));
         callModal.style.display = "none";

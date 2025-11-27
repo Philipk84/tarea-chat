@@ -10,6 +10,7 @@ class CallManager {
     this.audioContext = null;
     this.mediaStream = null;
     this.audioProcessor = null;
+    this.captureToken = 0; // invalida intentos de captura en curso cuando se detiene
     this.remoteAudioBuffers = new Map(); // username -> AudioBuffer[]
     this.onCallEventListeners = [];
     this.onIncomingCallListeners = [];
@@ -194,16 +195,34 @@ class CallManager {
    */
   async _startAudioCapture(callId) {
     try {
+      // Token para evitar condiciones de carrera si se detiene mientras inicia
+      const token = ++this.captureToken;
+
+      // Solicitar acceso al micrófono primero (evita crear AudioContext si se cancela)
+      const localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      // Si se invalidó durante la espera, detener stream y abortar
+      if (token !== this.captureToken) {
+        try { localStream.getTracks().forEach(t => t.stop()); } catch {}
+        return;
+      }
+
       // Crear contexto de audio
       this.audioContext = new AudioContext({ sampleRate: 44100 });
-      
-      // Solicitar acceso al micrófono
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      
+      if (!this.audioContext || token !== this.captureToken) {
+        try { localStream.getTracks().forEach(t => t.stop()); } catch {}
+        return;
+      }
+
+      // Asignar stream ahora que el contexto es válido
+      this.mediaStream = localStream;
+
       const source = this.audioContext.createMediaStreamSource(this.mediaStream);
       this.audioProcessor = this.audioContext.createScriptProcessor(2048, 1, 1);
       
       this.audioProcessor.onaudioprocess = (e) => {
+        // Evitar procesar si la captura ya fue detenida
+        if (token !== this.captureToken) return;
         const input = e.inputBuffer.getChannelData(0);
         const pcm16 = this._float32ToPCM16(input);
         
@@ -225,6 +244,8 @@ class CallManager {
    * Detener captura de audio
    */
   _stopAudioCapture() {
+    // Invalida cualquier _startAudioCapture en progreso
+    this.captureToken++;
     if (this.audioProcessor) {
       this.audioProcessor.disconnect();
       this.audioProcessor = null;
