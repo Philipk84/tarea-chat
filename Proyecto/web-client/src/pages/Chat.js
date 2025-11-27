@@ -150,6 +150,7 @@ function Chat() {
 
   // Modal para llamadas entrantes
   const callModal = document.createElement("div");
+  callModal.classList.add("call-modal");
   callModal.style.display = "none";
   callModal.style.position = "fixed";
   callModal.style.top = "50%";
