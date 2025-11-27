@@ -179,3 +179,9 @@
 {"sender":"Felipe","scope":"private","recipient":"Juan","id":"aaf6aada-3b15-40ce-a5be-50052bd7bce3","type":"text","message":"Hola","timestamp":"2025-11-26T23:59:52.378269600Z"}
 {"sender":"Juan","scope":"private","recipient":"Felipe","id":"b64b678f-1a8d-488c-84b9-f08845b0c424","type":"text","message":"Hola","timestamp":"2025-11-27T00:00:06.876070900Z"}
 {"audioFile":"server\\data\\voice\\voice-1764201667236-4a28211c-de31-40f3-a6d9-1c3dcfc554d6.wav","sender":"Felipe","scope":"private","recipient":"Juan","id":"e3047cdf-4ecf-43c7-86ae-1b0ad645b955","type":"voice_note","timestamp":"2025-11-27T00:01:07.239002700Z","sizeBytes":237612}
+{"sender":"Felipe","scope":"private","recipient":"Juan","id":"1bc978ce-f9de-40eb-b13a-6fdba0fcaaeb","type":"text","message":"Que ta?","timestamp":"2025-11-27T00:48:19.554906700Z"}
+{"sender":"Felipe","scope":"private","recipient":"Juan","id":"ddc9b59f-fd2d-4875-9ef1-bba583a0c982","type":"text","message":"Bien y vos?","timestamp":"2025-11-27T00:54:14.104826700Z"}
+{"sender":"Juan","scope":"private","recipient":"Felipe","id":"6f6f25ab-8797-4bb1-a826-2971768510df","type":"text","message":"Bien tambien si","timestamp":"2025-11-27T00:54:28.393501900Z"}
+{"audioFile":"server\\data\\voice\\voice-1764206130339-d700a015-d43a-4af7-b785-a4094dc9d77f.wav","sender":"Juan","scope":"private","recipient":"Felipe","id":"38eaa4b6-ad74-44a2-a04d-723788b5fb82","type":"voice_note","timestamp":"2025-11-27T01:15:30.363595300Z","sizeBytes":376876}
+{"sender":"Juan","scope":"private","recipient":"Felipe","id":"ee079c74-4a05-4806-9b34-23e6cb41172e","type":"text","message":"Ve y vos que","timestamp":"2025-11-27T01:16:07.959208300Z"}
+{"sender":"Felipe","scope":"private","recipient":"Juan","id":"eec6e197-71cc-4d9e-bed0-d32a6f54397a","type":"text","message":"Nada normal la vd","timestamp":"2025-11-27T01:16:14.504607500Z"}

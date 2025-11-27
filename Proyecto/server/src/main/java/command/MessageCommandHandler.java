@@ -54,8 +54,6 @@ public class MessageCommandHandler implements CommandHandler {
         }
         
         targetHandler.sendMessage("MENSAJE_PRIVADO de " + userName + ": " + message);
-        
-        clientHandler.sendMessage("Mensaje enviado a " + targetUser);
 
         HistoryService.logTextPrivate(userName, targetUser, message);
     }

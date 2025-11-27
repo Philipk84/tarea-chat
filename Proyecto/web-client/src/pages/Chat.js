@@ -51,7 +51,7 @@ function Chat() {
     }
   }
 
-    voiceDelegate.subscribe((entry) => {
+  voiceDelegate.subscribe((entry) => {
     // Se procesa el VoiceEntry (notas de voz)
     console.log("[Voice] Notificación recibida:", entry);
     
@@ -80,7 +80,6 @@ function Chat() {
       console.log(`[Voice] Mensaje guardado para ${chatKey}`);
     }
   });
-
 
   // ----- ESTRUCTURA GENERAL -----
   const root = document.createElement("div");
@@ -138,10 +137,12 @@ function Chat() {
   // ----- BOTONES PARA LLAMADAS -----
   const callBtn = document.createElement("button");
   callBtn.textContent = "📞 Llamar";
+  callBtn.classList.add("call-btn", "call");
   callBtn.onclick = makeCallToCurrentUser;
 
   const hangBtn = document.createElement("button");
   hangBtn.textContent = "⛔ Colgar";
+  hangBtn.classList.add("call-btn", "hangup");
   hangBtn.onclick = hangUpCall;
 
   header.appendChild(callBtn);
@@ -184,6 +185,7 @@ function Chat() {
 
   const sendBtn = document.createElement("button");
   sendBtn.textContent = "Enviar";
+  sendBtn.classList.add("send-btn");
 
   let currentRecorder = null;
 
@@ -191,6 +193,7 @@ function Chat() {
   recBtn.textContent = "🎤";
   recBtn.disabled = true;
   recBtn.title = "Conectando con el servicio de voz...";
+  recBtn.classList.add("voice-btn");
 
   voiceDelegate.onStatusChange((status, detail) => {
     if (!recBtn) return;
@@ -256,7 +259,6 @@ function Chat() {
   };
 
   inputBar.appendChild(recBtn);
-
   inputBar.appendChild(msgInput);
   inputBar.appendChild(sendBtn);
 
@@ -272,68 +274,67 @@ function Chat() {
   let currentChat = null; // { type: "user" | "group", id: string }
 
   function openDirectChat() {
-  const to = directInput.value.trim();
-  if (!to) return;
-  if (to === username) {
-    alert("No puedes chatear contigo mismo ;)");
-    return;
+    const to = directInput.value.trim();
+    if (!to) return;
+    if (to === username) {
+      alert("No puedes chatear contigo mismo ;)");
+      return;
+    }
+    currentChat = { type: "user", id: to };
+    chatTitle.textContent = "Chat con: " + to;
+    loadHistory();
   }
-  currentChat = { type: "user", id: to };
-  chatTitle.textContent = "Chat con: " + to;
-  loadHistory();
-}
 
-// Cambiar cuando se pierda el foco
-directInput.addEventListener("change", openDirectChat);
+  // Cambiar cuando se pierda el foco
+  directInput.addEventListener("change", openDirectChat);
 
-// Cambiar al presionar Enter (Solo hace mas interactiva la pagina)
-directInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    openDirectChat();
-    msgInput.focus();
-  }
-});
+  // Cambiar al presionar Enter (Solo hace mas interactiva la pagina)
+  directInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      openDirectChat();
+      msgInput.focus();
+    }
+  });
 
-// Crear grupo
-createGroupBtn.onclick = async () => {
-  const gname = groupNameInput.value.trim();
-  if (!gname) return;
+  // Crear grupo
+  createGroupBtn.onclick = async () => {
+    const gname = groupNameInput.value.trim();
+    if (!gname) return;
 
-  try {
-    // Se crea un grupo como el usuario actual
-    await createGroup(gname, username);
+    try {
+      // Se crea un grupo como el usuario actual
+      await createGroup(gname, username);
 
-    // Se asegura que el creador esté dentro del grupo
-    await joinGroup(gname, username);
+      // Se asegura que el creador esté dentro del grupo
+      await joinGroup(gname, username);
 
-    // Se selecciona el grupo como chat actual
-    currentChat = { type: "group", id: gname };
-    chatTitle.textContent = "Grupo: " + gname;
+      // Se selecciona el grupo como chat actual
+      currentChat = { type: "group", id: gname };
+      chatTitle.textContent = "Grupo: " + gname;
 
-    // Se carga el historial de ese grupo
-    await loadHistory();
-  } catch (e) {
-    alert("Error creando grupo: " + (e.message || e));
-  }
-};
+      // Se carga el historial de ese grupo
+      await loadHistory();
+    } catch (e) {
+      alert("Error creando grupo: " + (e.message || e));
+    }
+  };
 
-// Unirse a grupo manualmente
-joinGroupBtn.onclick = async () => {
-  const gname = groupNameInput.value.trim();
-  if (!gname) return;
+  // Unirse a grupo manualmente
+  joinGroupBtn.onclick = async () => {
+    const gname = groupNameInput.value.trim();
+    if (!gname) return;
 
-  try {
-    await joinGroup(gname, username);
+    try {
+      await joinGroup(gname, username);
 
-    currentChat = { type: "group", id: gname };
-    chatTitle.textContent = "Grupo: " + gname;
-    await loadHistory();
-  } catch (e) {
-    alert("Error uniéndose al grupo: " + (e.message || e));
-  }
-};
-
+      currentChat = { type: "group", id: gname };
+      chatTitle.textContent = "Grupo: " + gname;
+      await loadHistory();
+    } catch (e) {
+      alert("Error uniéndose al grupo: " + (e.message || e));
+    }
+  };
 
   // ----- ENVÍO DE MENSAJES -----
   sendBtn.onclick = async () => {
@@ -446,14 +447,10 @@ joinGroupBtn.onclick = async () => {
       const div = document.createElement("div");
       div.classList.add("message", "system");
       div.textContent = `🔔 ${message}`;
-      div.style.textAlign = "center";
-      div.style.fontStyle = "italic";
-      div.style.color = "#666";
       messages.appendChild(div);
       messages.scrollTop = messages.scrollHeight;
     }
   });
-
 
   msgInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") sendBtn.click();
@@ -534,7 +531,7 @@ joinGroupBtn.onclick = async () => {
         appendMessage({ from: item.sender, group: item.group, text: item.message });
       } else {
         const other = item.sender === username ? item.recipient : item.sender;
-        appendMessage({ from: item.sender, to: other, text: item.message });
+        appendMessage({ from: item.sender, to: item.recipient, text: item.message });
       }
       return;
     }
@@ -558,7 +555,7 @@ joinGroupBtn.onclick = async () => {
         if (item.sender === username) {
           label.textContent = `(Yo) → ${target}: nota de voz`;
         } else {
-          label.textContent = `${item.sender} → Tú: nota de voz`;
+          label.textContent = `${item.sender} → ${item.recipient}: Nota de voz`;
         }
       }
       row.appendChild(label);
@@ -578,8 +575,9 @@ joinGroupBtn.onclick = async () => {
       if (item.timestamp) {
         const time = document.createElement("div");
         time.style.fontSize = "0.8em";
-        time.style.color = "#666";
+        time.style.color = "#ffffffff";
         time.style.marginTop = "2px";
+        time.style.marginLeft = "4px";
         const date = new Date(item.timestamp);
         time.textContent = date.toLocaleTimeString();
         row.appendChild(time);
@@ -608,7 +606,6 @@ joinGroupBtn.onclick = async () => {
       console.error("Error obteniendo updates:", e.message);
     }
   }
-
 
   function appendIncoming(line) {
     const div = document.createElement("div");

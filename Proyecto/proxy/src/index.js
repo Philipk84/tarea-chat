@@ -13,10 +13,6 @@ import {
   sendGroupMessage,
   getHistory,
   getVoiceFile,
-  startCall,
-  startGroupCall,
-  endCall,
-  registerUdpPort,
   getHealth,
   getConfig
 } from './services/proxyService.js';

@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.DatagramSocket;
-import java.net.DatagramPacket;
 import java.net.SocketAddress;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -69,9 +68,6 @@ public class ChatServer implements ServerService {
             Thread serverThread = getTcpThread();
             serverThread.start();
 
-            // Thread udpThread = getUdpThread();
-            // udpThread.start();
-
             // Arrancar ICE para notas de voz / llamadas
             rpc.IceBootstrap.start(this);
             
@@ -80,27 +76,6 @@ public class ChatServer implements ServerService {
             running = false;
             return "Error iniciando servidor: " + e.getMessage();
         }
-    }
-
-    private Thread getUdpThread() {
-        Thread udpThread = new Thread(() -> {
-            System.out.println("Servidor UDP escuchando en puerto " + (config.port() + 1) + " (0.0.0.0)...");
-            byte[] receiveData = new byte[4096];
-
-            while (running && !udpSocket.isClosed()) {
-                try {
-                    DatagramPacket packet = new DatagramPacket(receiveData, receiveData.length);
-                    udpSocket.receive(packet);
-                    //threadPool.submit(new UDPMessageHandler(packet, udpSocket, udpClients));
-                } catch (Exception e) {
-                    if (running && !udpSocket.isClosed()) {
-                        System.err.println("Error procesando mensaje UDP: " + e.getMessage());
-                    }
-                }
-            }
-        });
-        udpThread.setDaemon(true);
-        return udpThread;
     }
 
     private Thread getTcpThread() {

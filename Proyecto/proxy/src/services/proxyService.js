@@ -63,36 +63,6 @@ connectTCP();
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Envía una línea al socket global y espera respuesta
- */
-function sendCommandLine(line, timeoutMs = 1500) {
-  return new Promise((resolve, reject) => {
-    if (!connected) return reject(new Error('Socket no conectado'));
-
-    recvBuffer = '';
-    globalSocket.write(line.trim() + '\n', 'utf8', (err) => {
-      if (err) return reject(err);
-    });
-
-    const t = setTimeout(() => {
-      if (recvBuffer.trim().length > 0) {
-        clearTimeout(t);
-        return resolve(recvBuffer.trim());
-      }
-      reject(new Error('Timeout esperando respuesta del servidor'));
-    }, timeoutMs);
-
-    const poll = setInterval(() => {
-      if (recvBuffer.includes('\n') || recvBuffer.length > 512) {
-        clearInterval(poll);
-        clearTimeout(t);
-        return resolve(recvBuffer.trim());
-      }
-    }, 50);
-  });
-}
-
-/**
  * Envía un comando usando el socket de un usuario específico
  */
 function sendCommandFromUser(username, command, timeoutMs = 1500) {
@@ -236,7 +206,7 @@ async function sendPrivateMessage(sender, receiver, message) {
 
   console.log(`[CHAT] ✓ Enviando mensaje de ${sender} a ${receiver}`);
   client.write(`/msg ${receiver} ${message}\n`);
-  return { reply: "Mensaje enviado" };
+  return;
 }
 
 // ─────────────────────────────────────────────────────────────
